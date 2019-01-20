@@ -1,43 +1,20 @@
 <template>
-  <div class="border">
+  <div class="bg-dark">
     <div class="card float-left">
-      <img
-        src="/static/professional.jpg"
-        class="img float-left card"
-        alt="Portrait"
-        width="256"
-        height="256"
-      >
+      <img src="/static/logo.png" class="img img-responsive" alt="Portrait">
+      <h3 class="text-danger">&nbsp;A Crazy Programmer...</h3>
     </div>
-    <div class="container">
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav">
-            <li class="nav-item active">
-              <router-link to="/" class="nav-link" exact>world</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/app">App</router-link>
-            </li>
-          </ul>
-        </div>
-      </nav>
-      <router-view/>
-    </div>
+
+    <NavigationComponent class="float-right"/>
   </div>
 </template>
 
 <script>
-import BootstrapVue from "bootstrap-vue";
-import "bootstrap/dist/css/bootstrap.css";
-import "bootstrap-vue/dist/bootstrap-vue.css";
-
+import NavigationComponent from "@/components/NavigationComponent.vue";
 export default {
   name: "App",
-  data: function() {
-    return {
-      imgSrc: "/static/professional.jpg"
-    };
+  components: {
+    NavigationComponent
   }
 };
 </script>
