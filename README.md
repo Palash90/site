@@ -1,4 +1,4 @@
-This is the source code of [palashkantikundu.in](palashkantikundu.in). This is a React application.
+This is the source code of [palashkantikundu.in](http://palashkantikundu.in). This is a React application.
 
 ### `npm start`
 
