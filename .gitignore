@@ -3,4 +3,5 @@ node_modules
 
 #Remove distribution package
 dist
+build
 
