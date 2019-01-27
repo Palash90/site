@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
-import GoodReads from './Components/GoodReads/GoodReadsBooksHistory';
+import GoodReads from './Components/GoodReads/GoodReads';
 
 
 
 class App extends Component {
   render() {
     return (
-      <div className="App">
+      <div>
         <p>Palash Kanti Kundu</p>
         <GoodReads />
       </div>
