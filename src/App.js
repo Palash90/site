@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import GoodReads from './Components/GoodReads/GoodReads';
+import GoodReads from './Components/GoodReads/GoodReadsBooksHistory';
 
 
 
