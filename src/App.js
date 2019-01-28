@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import GoodReads from './Components/GoodReads/GoodReads';
+import GitHub from './Components/GitHub/GitHub';
 
 
 
@@ -9,6 +10,7 @@ class App extends Component {
       <div>
         <p>Palash Kanti Kundu</p>
         <GoodReads />
+        <GitHub />
       </div>
     );
   }
