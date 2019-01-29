@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import GoodReads from './Components/GoodReads/GoodReads';
 import GitHub from './Components/GitHub/GitHub';
 import Header from './Components/Header/Header';
+import Home from './Components/Home/Home';
+import Footer from './Components/Footer/Footer';
 
 
 
@@ -10,13 +12,10 @@ class App extends Component {
     return (
       <div>
         <Header />
-        <div className="float-left">
-          <GoodReads />
-        </div>
-        <div className="float-right">
-          <GitHub />
-        </div>
+        <Home />
+        <Footer />
       </div>
+      
     );
   }
 }
