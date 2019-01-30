@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Footer(props) {
     return (
-        <footer className="footer">
+        <div className="footer">
             <div className="d-flex justify-content-center">
                 <div className="p-2">
                     <img src="./static/si-glyph-smartphone.svg" alt="Phone: " />
@@ -29,6 +29,6 @@ export default function Footer(props) {
                     <span className="text-danger">2019 Palash Kanti Kundu</span>
                 </div>
             </div>
-        </footer>
+        </div>
     );
 }

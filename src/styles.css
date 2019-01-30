@@ -17,5 +17,6 @@
   }
 
   .fixed-container {
-    position: relative
+    position: fixed;
+    top:0
   }
