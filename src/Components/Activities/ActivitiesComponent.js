@@ -1,26 +1,24 @@
 import React from 'react';
+import GitHub from '../GitHub/GitHub';
+import GoodReads from '../GoodReads/GoodReads';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import "react-tabs/style/react-tabs.css";
-import Home from '../Home/Home';
-import Header from '../Header/Header';
-import Activities from '../Activities/ActivitiesComponent';
 
-export default function Footer(props) {
+export default function Activities(props) {
     return (
         <Tabs defaultIndex={0} >
             <div className="d-flex flex-column justify-content-start">
-                <Header className="d-flex justify-content-start" />
                 <TabList className="d-flex justify-content-end">
-                    <Tab>Home</Tab>
-                    <Tab>Activities</Tab>
+                    <Tab>Github</Tab>
+                    <Tab>Good Reads</Tab>
                 </TabList>
             </div>
             <div className="d-flex flex-column justify-content-center">
                 <TabPanel>
-                    <Home />
+                    <GitHub />
                 </TabPanel>
                 <TabPanel>
-                    <Activities />
+                    <GoodReads />
                 </TabPanel>
             </div>
         </Tabs>
