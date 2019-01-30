@@ -45,3 +45,25 @@
     height: 55vh;
     width: 99vw;
 }
+
+
+
+<div className="d-flex flex-column justify-content-around">
+        <Tabs defaultIndex={1}>
+          <TabList className="header">
+            <h1>Tabbed Interface</h1>
+            <Tab>Git</Tab>
+            <Tab>Tab 2</Tab>
+          </TabList>
+          <div className="main">
+            <TabPanel>
+              <LinkedInComponent />
+            </TabPanel>
+            <TabPanel>
+              <TestComponent index={2} />
+            </TabPanel>
+          </div>
+        </Tabs>
+        <footer className="footer">Static Footer</footer>
+      </div>
+
