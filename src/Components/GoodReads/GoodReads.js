@@ -4,7 +4,7 @@ import GoodReadsBooksHistory from './GoodReadsBooksHistory';
 export default function GoodReads(props) {
     return (
 
-        <div className="scroller">
+        <div>
             <GoodReadsBooksHistory />
         </div>
     )

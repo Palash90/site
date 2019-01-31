@@ -7,22 +7,24 @@ import Activities from '../Activities/ActivitiesComponent';
 
 export default function Footer(props) {
     return (
-        <Tabs defaultIndex={0} >
-            <div className="d-flex flex-column justify-content-start">
-                <Header className="d-flex justify-content-start" />
-                <TabList className="d-flex justify-content-end">
-                    <Tab>Home</Tab>
-                    <Tab>Activities</Tab>
+        <div className="d-flex flex-column justify-content-around">
+            <Tabs defaultIndex={1}>
+                <TabList className="header">
+                    <Header />
+                    <div className="d-flex justify-content-end">
+                        <Tab>Home</Tab>
+                        <Tab>Activities</Tab>
+                    </div>
                 </TabList>
-            </div>
-            <div className="d-flex flex-column justify-content-center">
-                <TabPanel>
-                    <Home />
-                </TabPanel>
-                <TabPanel>
-                    <Activities />
-                </TabPanel>
-            </div>
-        </Tabs>
+                <div className="main">
+                    <TabPanel>
+                        <Home />
+                    </TabPanel>
+                    <TabPanel>
+                        <Activities />
+                    </TabPanel>
+                </div>
+            </Tabs>
+        </div>
     );
 }
