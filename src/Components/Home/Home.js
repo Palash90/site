@@ -1,4 +1,5 @@
 import React from 'react';
+import Infolet from '../Infolet/Infolet';
 
 export default function Home(props) {
     return (
@@ -11,6 +12,7 @@ export default function Home(props) {
             <div>
                 <h1>Hello,</h1>
                 <h2>A bit about me:</h2>
+                <Infolet />
             </div>
         </div>
     );

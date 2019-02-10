@@ -8,7 +8,7 @@ import Activities from '../Activities/ActivitiesComponent';
 export default function Footer(props) {
     return (
         <div className="d-flex flex-column justify-content-around">
-            <Tabs defaultIndex={1}>
+            <Tabs defaultIndex={0}>
                 <TabList className="header">
                     <Header />
                     <div className="d-flex justify-content-end">
