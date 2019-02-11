@@ -35,9 +35,9 @@ export default class CustomPlot extends React.Component {
     }
     showDetailsInDiv(data) {
         var details = '';
-        var infotext = data.data.points.map(function (d) {
+        data.data.points.map(function (d) {
             details = d.hovertext;
-            return (d.data.name + ': x= ' + d.x + ', y= ' + d.y);
+            return null;
         });
         for (var key in this.props.data.configuration.detailsData) {
             if (key === details) {
