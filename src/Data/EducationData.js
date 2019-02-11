@@ -94,5 +94,5 @@ var plotData = {
     }
 }
 
-var educationData = { tableData: tableData, plotData: plotData }
+var educationData = { tableData: tableData, plotData: plotData, changeMode: 'click' }
 export default educationData;
