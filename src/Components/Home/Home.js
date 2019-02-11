@@ -1,5 +1,4 @@
 import React from 'react';
-import Infolet from '../Infolet/Infolet';
 
 export default function Home(props) {
     
