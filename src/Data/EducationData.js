@@ -65,7 +65,7 @@ var plotData = {
         {
             orientation: 'h',
             x: ['1990-08-21', '1995-04-01', '2005-04-30', '2007-06-28', '2011-06-09'],
-            y: ['', '', '', '', ""],
+            y: ['', '', '', '', '', ''],
             hovertext: ['Born', 'Started Schooling', 'Madhyamik', 'Uchcha Madhyamik (10 + 2)', 'B. Tech'],
             type: 'scatter',
             mode: 'lines+markers',
@@ -80,6 +80,16 @@ var plotData = {
         yaxis: {
             fixedrange: true,
             title: 'Degree'
+        }
+    },
+    configuration: {
+        showDetails: true,
+        detailsData: {
+            'Born': {State: 'West Bengal'},
+            'Started Schooling': {},
+            'Madhyamik': {},
+            'Uchcha Madhyamik (10 + 2)': {},
+            'B. Tech': {}
         }
     }
 }

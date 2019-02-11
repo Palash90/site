@@ -7,10 +7,10 @@ export default class CustomPlot extends React.Component {
         super(props);
         this.updateDimensions = this.updateDimensions.bind(this);
         this.updateState = this.updateState.bind(this);
+        this.showDetailsInDiv = this.showDetailsInDiv.bind(this);
         this.state = {
             layout: this.props.data.layout
         };
-        this.updateState();
     }
 
     componentDidMount() {
@@ -25,16 +25,52 @@ export default class CustomPlot extends React.Component {
         var state = this.state.layout;
         state['paper_bgcolor'] = 'rgba(0,0,0,0)';
         state['plot_bgcolor'] = 'rgba(0,0,0,0)';
-        state['width'] = (window.innerWidth * 98 / 100);
-        this.setState({layout:state})
+
+        if (this.props.data.configuration.showDetails) {
+            state['width'] = (window.innerWidth * 78 / 100);
+        } else {
+            state['width'] = (window.innerWidth * 98 / 100);
+        }
+        this.setState({ layout: state })
+    }
+    showDetailsInDiv(data) {
+        var details = '';
+        var infotext = data.data.points.map(function (d) {
+            details = d.hovertext;
+            return (d.data.name + ': x= ' + d.x + ', y= ' + d.y);
+        });
+        for (var key in this.props.data.configuration.detailsData) {
+            if (key === details) {
+                this.setState({ details: this.props.data.configuration.detailsData[key] });
+            }
+        }
     }
 
     render() {
         return (
-            <Plot
-                data={this.props.data.data}
-                layout={this.state.layout}
-                config={{ displayModeBar: false, responsive: true }} />
+            <div className="row">
+                <div className={this.props.data.configuration.showDetails ? "cols-10" : "cols-11"}>
+                    <Plot
+                        data={this.props.data.data}
+                        layout={this.state.layout}
+                        config={{ displayModeBar: false, responsive: true }}
+                        onHover={(data) => this.showDetailsInDiv({ data })}
+                        onUnhover={() => this.setState({ details: null })} />
+                </div>
+                <div className="cols-1">
+
+                </div>
+                {
+                    this.props.data.configuration.showDetails ?
+                        <div className="cols-1">
+                            <div className="card">
+                                {
+                                    JSON.stringify(this.state.details)
+                                }
+                            </div>
+                        </div> : ''
+                }
+            </div>
         );
     }
 }
