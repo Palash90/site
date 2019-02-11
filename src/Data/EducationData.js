@@ -11,7 +11,7 @@ var madhyamik = {
         data: '75.75%'
     }, {
         id: 'year',
-        data: '2005'
+        data: '1995-2005'
     }, {
         id: 'Institution',
         data: 'Barddhaman Sri Ramakrishna Uchcha Vidyalaya'
@@ -30,7 +30,7 @@ var uchchaMadhyamik = {
         data: '72%'
     }, {
         id: 'year',
-        data: '2007'
+        data: '2005-2007'
     }, {
         id: 'Institution',
         data: 'Barddhaman Sri Ramakrishna Uchcha Vidyalaya'
@@ -49,7 +49,7 @@ var bTech = {
         data: 'DGPA 7.34'
     }, {
         id: 'year',
-        data: '2011'
+        data: '2007-2011'
     }, {
         id: 'Institution',
         data: 'College of Engineering and Management, Kolaghat'
@@ -64,13 +64,24 @@ var plotData = {
     data: [
         {
             orientation: 'h',
-            x: ['2005-04-30', '2007-06-28', '2011-06-09'],
-            y: ['', '', ""],
+            x: ['1990-08-21', '1995-04-01', '2005-04-30', '2007-06-28', '2011-06-09'],
+            y: ['', '', '', '', ""],
+            hovertext: ['Born', 'Started Schooling', 'Madhyamik', 'Uchcha Madhyamik (10 + 2)', 'B. Tech'],
             type: 'scatter',
             mode: 'lines+markers',
-            x0: '2005-04-30'
+            y0: '2005-04-30'
         }
-    ]
+    ],
+    layout: {
+        xaxis: {
+            fixedrange: true,
+            title: 'Time'
+        },
+        yaxis: {
+            fixedrange: true,
+            title: 'Degree'
+        }
+    }
 }
 
 var educationData = { tableData: tableData, plotData: plotData }

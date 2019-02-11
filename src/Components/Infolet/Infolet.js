@@ -10,13 +10,21 @@ export default class Infolet extends React.Component {
     }
     render() {
         return (
-            <div className="infolet-div"
-                onClick={() => this.setState({ showTable: !this.state.showTable })}>
-                {
-                    this.state.showTable ?
-                        <TableData data={this.props.tableData} /> :
-                        <CustomPlot data={this.props.plotData} />
-                }
+            <div>
+                <div className="infolet-div">
+                    {
+                        this.state.showTable ?
+                            <TableData data={this.props.tableData} /> :
+                            <CustomPlot data={this.props.plotData} />
+                    }
+                </div>
+                <button onClick={() => this.setState({ showTable: !this.state.showTable })}>
+                    {
+                        this.state.showTable ?
+                            'Pictorial' :
+                            'Tabular'
+                    }
+                </button>
             </div>
         );
     }
