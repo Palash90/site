@@ -1,0 +1,21 @@
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="150px" height="80px" viewBox="0 0 300 160" enable-background="new 0 0 384.616 36.652"
+	 xml:space="preserve">
+     <style>
+    .txtStl { font: italic 90px serif;}
+  </style>
+
+
+<text fill="url(#skyGradient)" x="0" y="100" class="txtStl">Palash</text>
+<defs>
+        <linearGradient id="skyGradient" x1="100%" y1="100%">
+          <stop offset="0%" stop-color="lightblue" stop-opacity=".5">
+            <animate attributeName="stop-color" values="#5e1224;blue;red;red;black;red;red" dur="14s" repeatCount="indefinite" />
+          </stop>
+          <stop offset="100%" stop-color="lightblue" stop-opacity=".5">
+            <animate attributeName="stop-color" values="#5e1224;orange;darkgreen;blue;" dur="14s" repeatCount="indefinite" />
+            <animate attributeName="offset" values=".95;.80;.60;.40;.20;0;.20;.40;.60;.80;.95" dur="14s" repeatCount="indefinite" />
+          </stop>
+        </linearGradient>
+</defs>
+</svg>
