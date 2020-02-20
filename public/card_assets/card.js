@@ -13,20 +13,21 @@ function changeLetter() {
   var frontBgIndex = parseInt(lightColors.length * Math.random());
   var backBgIndex = parseInt(lightColors.length * Math.random());
 
-  document.getElementById("front").innerHTML = contents[contentIndex].content;
+  var content = contents[contentIndex];
+  document.getElementById("front").innerHTML = content.content;
 
-  if (
-    contents[contentIndex].type &&
-    contents[contentIndex].type === "calculation"
-  ) {
-    document.getElementById("back").innerHTML = eval(
-      contents[contentIndex].content
-    );
-  } else if (
-    contents[contentIndex].type &&
-    contents[contentIndex].type === "alphabet"
-  ) {
-    document.getElementById("back").innerHTML = contents[contentIndex].content;
+  if (content.type && content.type === "calculation") {
+    document.getElementById("back").innerHTML = eval(content.content);
+  } else if (content.type && content.type === "alphabet") {
+    var desc = content.desc ? content.desc : {};
+    console.log(desc);
+    var language = desc.language ? desc.language : "";
+    console.log(language);
+    var html = "\
+    <label>Language: " + language + "</label>\
+    ";
+
+    document.getElementById("back").innerHTML = html;
   }
 
   var frontClass = "card__face card__face--front content " + styles[styleIndex];
