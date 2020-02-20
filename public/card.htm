@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Learn</title>
+    <meta charset="utf-8">
+    <link rel="icon" href="img/favicon.ico" type="image/png">
+    <link rel="stylesheet" type="text/css" href="card_assets/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="card_assets/data.js" type="text/javascript"></script>
+    <script src="card_assets/card.js" type="text/javascript"></script>
+</head>
+
+<body onload="addListener(); changeLetter();">
+    <div class="row">
+        <div class="column">
+            <div class="scene scene--card">
+                <div class="card">
+                    <div id="front" class="">front</div>
+                    <div id="back" class="card__face card__face--back">back</div>
+                </div>
+                <button id="refresh" onclick="changeLetter();">&#x21bb;</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
