@@ -1,4 +1,5 @@
 var styles = ["textBlue", "textGreen", "textRed", "textSlate", "textBrown", "textMaroon"];
+var lightColors = ["AliceBlue", "Azure", "Beige", "FloralWhite", "GhostWhite", "HoneyDew", "Ivory", "LightCyan", "MintCream", "Linen", "OldLace", "SeaShell", "Snow", "WhiteSmoke"];
 var bengaliAlphabets = [{
     "content": "&#x0985;",
     "type": "alphabet",
