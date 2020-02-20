@@ -36,32 +36,32 @@ body {
 }
 
 .textBlue {
-  text-shadow: 10px 10px 10px slateblue;
+  text-shadow: 1vw 1vw 1vw slateblue;
   color: blue;
 }
 
 .textGreen {
-  text-shadow: 10px 10px 10px lightgreen;
+  text-shadow: 1vw 1vw 1vw lightgreen;
   color: darkgreen;
 }
 
 .textRed {
-  text-shadow: 10px 10px 10px lightcoral;
+  text-shadow: 1vw 1vw 1vw lightcoral;
   color: darkred;
 }
 
 .textSlate {
-  text-shadow: 10px 10px 10px slategray;
+  text-shadow: 1vw 1vw 1vw slategray;
   color: teal;
 }
 
 .textBrown {
-  text-shadow: 10px 10px 10px hotpink;
+  text-shadow: 1vw 1vw 1vw hotpink;
   color: indigo;
 }
 
 .textMaroon {
-  text-shadow: 10px 10px 10px goldenrod;
+  text-shadow: 1vw 1vw 1vw goldenrod;
   color: maroon;
 }
 
