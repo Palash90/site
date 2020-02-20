@@ -1,231 +1,403 @@
-var styles = ["textBlue", "textGreen", "textRed", "textSlate", "textBrown", "textMaroon"];
-var lightColors = ["AliceBlue", "Azure", "Beige", "FloralWhite", "GhostWhite", "HoneyDew", "Ivory", "LightCyan", "MintCream", "Linen", "OldLace", "SeaShell", "Snow", "WhiteSmoke"];
-var bengaliAlphabets = [{
-    "content": "&#x0985;",
-    "type": "alphabet",
-    "desc": {
-        "language": "Bengali"
+var styles = [
+  "textBlue",
+  "textGreen",
+  "textRed",
+  "textSlate",
+  "textBrown",
+  "textMaroon"
+];
+var lightColors = [
+  "AliceBlue",
+  "Azure",
+  "Beige",
+  "FloralWhite",
+  "GhostWhite",
+  "HoneyDew",
+  "Ivory",
+  "LightCyan",
+  "MintCream",
+  "Linen",
+  "OldLace",
+  "SeaShell",
+  "Snow",
+  "WhiteSmoke"
+];
+var bengaliAlphabets = [
+  {
+    content: "&#x0985;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
     }
-}, {
-    "content": "&#x0986;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0987;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0988;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0989;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x098A;",
-    "type": "alphabet",
-}, {
-    "content": "&#x098B;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x098C;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x098F;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0990;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0993;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0994;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0995;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0996;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0997;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0998;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0999;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x099A;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x099B;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x099C;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x099D;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x099E;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x099F;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A0;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A1;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A2;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A3;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A4;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A5;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A6;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A7;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09A8;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09AA;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09AB;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09AC;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09AD;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09AE;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09AF;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09B0;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09B2;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09B6;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09B7;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09B8;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09B9;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09DC;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09DD;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09DF;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x09CE;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0981;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0982;",
-    "type": "alphabet",
-    "desc": ""
-}, {
-    "content": "&#x0983;",
-    "type": "alphabet",
-    "desc": ""
-}];
+  },
+  {
+    content: "&#x0986;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0987;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0988;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0989;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x098A;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x098B;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x098C;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x098F;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0990;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0993;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0994;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0995;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0996;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0997;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0998;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0999;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x099A;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x099B;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x099C;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x099D;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x099E;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x099F;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A0;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A1;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A2;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A3;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A4;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A5;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A6;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A7;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09A8;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09AA;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09AB;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09AC;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09AD;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09AE;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09AF;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09B0;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09B2;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09B6;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09B7;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09B8;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09B9;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09DC;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09DD;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x09DF;",
+    type: "alphabet",
+    desc: ""
+  },
+  {
+    content: "&#x09CE;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0981;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0982;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  },
+  {
+    content: "&#x0983;",
+    type: "alphabet",
+    desc: {
+      language: "Bengali"
+    }
+  }
+];
 
-
-
-
-
-
-var plus = [{
-    "content": "2+2",
-    "type": "calculation",
-    "answer": "4"
-}, {
-    "content": "10+2",
-    "type": "calculation"
-}, {
-    "content": "7+2",
-    "type": "calculation"
-}, {
-    "content": "7+9",
-    "type": "calculation"
-}];
-
+var plus = [
+  {
+    content: "2+2",
+    type: "calculation",
+    answer: "4"
+  },
+  {
+    content: "10+2",
+    type: "calculation"
+  },
+  {
+    content: "7+2",
+    type: "calculation"
+  },
+  {
+    content: "7+9",
+    type: "calculation"
+  }
+];
 
 var contents = bengaliAlphabets.concat(plus);
