@@ -1,7 +1,29 @@
-function changeLetter() {
-  var synth = window.speechSynthesis;
-  console.log(synth);
 
+// Create a new utterance for the specified text and add it to
+// the queue.
+function speak(text) {
+  // Create a new instance of SpeechSynthesisUtterance.
+  var msg = new SpeechSynthesisUtterance();
+
+  // Set the text.
+  msg.text = text;
+
+  // Set the attributes.
+  msg.volume = parseFloat(1);
+  msg.rate = parseFloat(0.2);
+  msg.pitch = parseFloat(0.3);
+
+  // If a voice has been selected, find the voice and set the
+  // utterance instance's voice attribute.
+
+  msg.voice = speechSynthesis.getVoices()[0];
+
+  console.log("Trying to Speak aloud");
+  // Queue this utterance.
+  window.speechSynthesis.speak(msg);
+}
+
+function changeLetter() {
   var cardClasses = document.querySelector(".card").classList;
 
   if (cardClasses.value.includes("is-flipped")) {
@@ -20,12 +42,15 @@ function changeLetter() {
     document.getElementById("back").innerHTML = eval(content.content);
   } else if (content.type && content.type === "alphabet") {
     var desc = content.desc ? content.desc : {};
-    console.log(desc);
     var language = desc.language ? desc.language : "";
-    console.log(language);
-    var html = "\
-    <label>Language: " + language + "</label>\
-    ";
+    var html =
+      "\
+    <label>Language: " +
+      language +
+      "</label>\
+    <obj id='objct' data =" +
+      JSON.stringify(content) +
+      " />";
 
     document.getElementById("back").innerHTML = html;
   }
@@ -52,5 +77,16 @@ function addListener() {
   var card = document.querySelector(".card");
   card.addEventListener("click", function() {
     card.classList.toggle("is-flipped");
+
+    var synth = window.speechSynthesis;
+    console.log(synth);
+
+    if (synth && document.getElementById("objct")) {
+      var content = JSON.parse(
+        document.getElementById("objct").getAttribute("data")
+      );
+      console.log(content);
+      if (content.type === "alphabet") speak(content.content);
+    }
   });
 }
