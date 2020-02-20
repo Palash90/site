@@ -2,6 +2,12 @@
 function changeLetter() {
     var synth = window.speechSynthesis;
     console.log(synth);
+    
+    var cardClasses = document.querySelector(".card").classList;
+
+    if (cardClasses.value.includes("is-flipped")) {
+        cardClasses.toggle("is-flipped");
+    }
 
     var contentIndex = parseInt(contents.length * Math.random());
     var styleIndex = parseInt(styles.length * Math.random());
