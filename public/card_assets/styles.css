@@ -1,118 +1,112 @@
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
+  margin: 0;
 }
 
 .column {
-    float: none;
-    text-align: center;
-    vertical-align: middle;
-    width: 99vw;
-    padding: 15px;
-    align-content: center;
-    align-items: center;
+  float: none;
+  text-align: center;
+  vertical-align: middle;
+  width: 100vw;
+  align-content: center;
+  align-items: center;
 }
-.row{
-    height: 40vh;
-    align-items: center;
-    align-content: center;
+.row {
+  padding-top: 1vh;
+  width: 98vw;
+  height: 50vh;
+  align: center;
 }
 
 .row:after {
-    content: "";
-    display: table;
-    clear: both;
+  align: center;
+  display: table;
+  clear: both;
 }
 
 .content {
-    font-size: 30vh;
+  font-size: 30vh;
 }
 
-
 .button {
-    font-size: 5vh;
+  font-size: 5vh;
 }
 
 .textBlue {
-    text-shadow: 10px 10px 10px slateblue;
-    color: blue;
+  text-shadow: 10px 10px 10px slateblue;
+  color: blue;
 }
 
 .textGreen {
-    text-shadow: 10px 10px 10px lightgreen;
-    color: darkgreen;
+  text-shadow: 10px 10px 10px lightgreen;
+  color: darkgreen;
 }
 
 .textRed {
-    text-shadow: 10px 10px 10px lightcoral;
-    color: darkred;
+  text-shadow: 10px 10px 10px lightcoral;
+  color: darkred;
 }
 
 .textSlate {
-    text-shadow: 10px 10px 10px slategray;
-    color: teal;
+  text-shadow: 10px 10px 10px slategray;
+  color: teal;
 }
 
 .textBrown {
-    text-shadow: 10px 10px 10px hotpink;
-    color: indigo;
+  text-shadow: 10px 10px 10px hotpink;
+  color: indigo;
 }
 
 .textMaroon {
-    text-shadow: 10px 10px 10px goldenrod;
-    color: maroon;
+  text-shadow: 10px 10px 10px goldenrod;
+  color: maroon;
 }
 
-
-@media screen and (max-width:99vw) {
-    .column {
-        width: 100vw;
-    }
+@media screen and (max-width: 99vw) {
+  .column {
+    width: 100vw;
+  }
 }
-
-
 
 .scene {
-    width: 40vw;
-    height: 40vh;
-    border: 1px solid #CCC;
-    margin: 40px 0;
-    perspective: 600px;
-  }
-  
-  .card {
-    position: relative;
-    width: 40vw;
-    height: 40vh;
-    cursor: pointer;
-    transform-style: preserve-3d;
-    transform-origin: center right;
-    transition: transform 1s;
-  }
-  
-  .card.is-flipped {
-    transform: translateX(-100%) rotateY(-180deg);
-  }
-  
-  .card__face {
-    position: absolute;
-    width: 40vw;
-    height: 40vh;
-    line-height: 40vh;
-    text-align: center;
-    font-weight: bold;
-    backface-visibility: hidden;
-  }
-  
-  .card__face--front {
-    background: aliceblue;
-  }
-  
-  .card__face--back {
-    background: beige;
-    transform: rotateY(180deg);
-  }
-  
+  width: 100vw;
+  height: 50vh;
+  border: 1px solid #ccc;
+  perspective: 600px;
+}
+
+.card {
+  position: relative;
+  width: 100vw;
+  height: 50vh;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transform-origin: center right;
+  transition: transform 1s;
+}
+
+.card.is-flipped {
+  transform: translateX(-100%) rotateY(-180deg);
+}
+
+.card__face {
+  position: absolute;
+  width: 100vw;
+  height: 50vh;
+  line-height: 50vh;
+  text-align: center;
+  font-weight: bold;
+  backface-visibility: hidden;
+}
+
+.card__face--front {
+  background: aliceblue;
+}
+
+.card__face--back {
+  background: beige;
+  transform: rotateY(180deg);
+}
