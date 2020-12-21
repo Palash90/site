@@ -681,11 +681,11 @@ for (var i = 1; i <= 99; i++) {
       content: i + "+" + j,
       type: "calculation"
     });
-
-    minus.push({
-      content: i + "-" + j,
-      type: "calculation"
-    });
+    if (j < i)
+      minus.push({
+        content: i + "-" + j,
+        type: "calculation"
+      });
   }
 }
 
@@ -693,30 +693,80 @@ var shapes = [{
   content: "Circle",
   type: "shape"
 
-},{
+}, {
   content: "Rectangle",
   type: "shape"
 
-},{
+}, {
   content: "Square",
   type: "shape"
 
-},{
+}, {
   content: "Triangle",
   type: "shape"
 
-},{
+}, {
   content: "Semi Circle",
   type: "shape"
 
-},{
+}, {
   content: "Oval",
   type: "shape"
 
-},{
+}, {
   content: "Diamond",
+  type: "shape"
+
+}, {
+  content: "Heart",
+  type: "shape"
+
+}, {
+  content: "Star",
   type: "shape"
 
 }]
 
-var contents = [{content:"", type:""}];
+var colors = [{
+  content: "darkred",
+  type: "color",
+  name: "Deep Red"
+
+}, {
+  content: "deeppink",
+  type: "color",
+  name: "Deep Pink"
+
+}, {
+  content: "orange",
+  type: "color",
+  name: "Orange"
+
+}, {
+  content: "purple",
+  type: "color",
+  name: "Purple"
+
+}, {
+  content: "lightgreen",
+  type: "color",
+  name: "Light Green"
+
+}, {
+  content: "lightpink",
+  type: "color",
+  name: "Light Pink"
+
+}, {
+  content: "lightblue",
+  type: "color",
+  name: "Light Blue"
+
+}, {
+  content: "red",
+  type: "color",
+  name: "Red"
+
+}]
+
+var contents = [{ content: "", type: "" }];

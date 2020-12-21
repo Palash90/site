@@ -37,6 +37,7 @@ function changeLetter() {
 
   var content = contents[contentIndex];
   document.getElementById("front").innerHTML = content.content ? content.content : "";
+  document.getElementById("refresh").disabled = false;
 
   if (content.type && content.type === "calculation") {
     document.getElementById("back").innerHTML = eval(content.content);
@@ -56,6 +57,12 @@ function changeLetter() {
   } else if (content.type && content.type === "shape") {
     document.getElementById("back").innerHTML = content.content ? content.content : "";
     document.getElementById("front").innerHTML = draw(content.content ? content.content : "");
+  } else if (content.type && content.type === "color") {
+    document.getElementById("back").innerHTML = content.name ? content.name : "";
+    document.getElementById("front").innerHTML = drawColor(content.content ? content.content : "");
+  } else {
+    document.getElementById("back").innerHTML = "";
+    document.getElementById("refresh").disabled = true;
   }
 
   var frontClass = "card__face card__face--front content " + styles[styleIndex];
@@ -74,6 +81,12 @@ function changeLetter() {
   document
     .getElementById("back")
     .setAttribute("style", "background:" + lightColors[backBgIndex] + ";");
+
+  if (content.type && content.type === "color") {
+    document
+      .getElementById("front")
+      .setAttribute("style", "background:white;");
+  }
 }
 
 function addListener() {
