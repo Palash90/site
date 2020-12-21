@@ -23,7 +23,7 @@ body {
 .top-row {
   padding-top: 1vh;
   width: 98vw;
-  height: 5vh;
+  height: 20vh;
   align-items: center;
 }
 .row:after {
@@ -33,7 +33,7 @@ body {
 }
 
 .content {
-  font-size: 30vh;
+  font-size: 8vh;
 }
 
 .button {

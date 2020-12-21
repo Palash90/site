@@ -46,7 +46,7 @@ function changeLetter() {
     var language = desc.language ? desc.language : "";
     var html =
       "\
-    <label>Language: " +
+    <label>" +
       language +
       "</label>\
     <obj id='objct' data =" +
