@@ -690,5 +690,3 @@ for (var i = 1; i <= 99; i++) {
 }
 
 var contents = plus.concat(hindiAlphabets).concat(bengaliAlphabets).concat(minus);
-
-console.log(JSON.stringify(contents));
