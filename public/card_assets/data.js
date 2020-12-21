@@ -689,6 +689,40 @@ for (var i = 1; i <= 99; i++) {
   }
 }
 
+var comparisons = []
+for (var i = 1; i <= 100; i++) {
+  for (var j = 1; j <= 100; j++) {
+    var answer;
+    if (i < j) {
+      answer = "<"
+    } else if (i > j) {
+      answer = ">"
+    } else {
+      answer = "="
+    }
+
+    comparisons.push({
+      content: i + " __ " + j,
+      type: "comparison",
+      answer: answer
+    })
+  }
+}
+
+var beforeAfter = []
+for (var i = 1; i <= 100; i++) {
+  beforeAfter.push({
+    content: i + " __ ",
+    type: "comparison",
+    answer: i + 1
+  })
+  beforeAfter.push({
+    content: " __ " + i,
+    type: "comparison",
+    answer: i - 1
+  })
+}
+
 var shapes = [{
   content: "Circle",
   type: "shape"

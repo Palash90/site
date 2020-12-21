@@ -60,6 +60,8 @@ function changeLetter() {
   } else if (content.type && content.type === "color") {
     document.getElementById("back").innerHTML = content.name ? content.name : "";
     document.getElementById("front").innerHTML = drawColor(content.content ? content.content : "");
+  }else if(content.type && content.type === 'comparison'){
+    document.getElementById("back").innerHTML = content.answer;
   } else {
     document.getElementById("back").innerHTML = "";
     document.getElementById("refresh").disabled = true;
