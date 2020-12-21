@@ -19,6 +19,7 @@
             <label>Select Learning Items - </label>
             <input type = "checkbox" id="comparison" onclick="changeContent();">Comparison</input>
             <input type = "checkbox" id="beforeAfter" onclick="changeContent();">Before After</input>
+            <input type = "checkbox" id="between" onclick="changeContent();">Between Numbers</input>
             <input type = "checkbox" id="plus" onclick="changeContent();">Plus</input>
             <input type = "checkbox" id="minus" onclick="changeContent();">Minus</input>
             <input type = "checkbox" id="bn-alpha" onclick="changeContent();">Bengali Alphabets</input>

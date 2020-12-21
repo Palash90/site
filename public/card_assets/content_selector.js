@@ -6,6 +6,9 @@ function changeContent() {
     if (document.getElementById("beforeAfter").checked) {
         contents = contents.concat(beforeAfter);
     }
+    if (document.getElementById("between").checked) {
+        contents = contents.concat(between);
+    }
     if (document.getElementById("plus").checked) {
         contents = contents.concat(plus);
     }
@@ -26,7 +29,7 @@ function changeContent() {
     }
     if (document.getElementById("all").checked) {
         contents = plus.concat(minus).concat(bengaliAlphabets).concat(hindiAlphabets).concat(shapes)
-            .concat(colors).concat(comparisons).concat(beforeAfter)
+            .concat(colors).concat(comparisons).concat(beforeAfter).concat(between)
     }
     if (contents.length == 0) {
         contents.push({ content: "" })

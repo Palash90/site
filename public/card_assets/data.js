@@ -678,12 +678,12 @@ for (var i = 1; i <= 99; i++) {
   for (var j = 1; j <= 20; j++) {
 
     plus.push({
-      content: i + "+" + j,
+      content: i + " + " + j,
       type: "calculation"
     });
     if (j < i)
       minus.push({
-        content: i + "-" + j,
+        content: i + " - " + j,
         type: "calculation"
       });
   }
@@ -710,6 +710,7 @@ for (var i = 1; i <= 100; i++) {
 }
 
 var beforeAfter = []
+var between = []
 for (var i = 1; i <= 100; i++) {
   beforeAfter.push({
     content: i + " __ ",
@@ -720,6 +721,11 @@ for (var i = 1; i <= 100; i++) {
     content: " __ " + i,
     type: "comparison",
     answer: i - 1
+  })
+  between.push({
+    content: i + " |__| " + (i + 2),
+    type: "comparison",
+    answer: i + 1
   })
 }
 
