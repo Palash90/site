@@ -18,9 +18,14 @@ body {
   padding-top: 1vh;
   width: 98vw;
   height: 50vh;
-  align: center;
+  align-items: center;
 }
-
+.top-row {
+  padding-top: 1vh;
+  width: 98vw;
+  height: 5vh;
+  align-items: center;
+}
 .row:after {
   align: center;
   display: table;

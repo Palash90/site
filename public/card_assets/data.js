@@ -689,4 +689,34 @@ for (var i = 1; i <= 99; i++) {
   }
 }
 
-var contents = plus.concat(hindiAlphabets).concat(bengaliAlphabets).concat(minus);
+var shapes = [{
+  content: "Circle",
+  type: "shape"
+
+},{
+  content: "Rectangle",
+  type: "shape"
+
+},{
+  content: "Square",
+  type: "shape"
+
+},{
+  content: "Triangle",
+  type: "shape"
+
+},{
+  content: "Semi Circle",
+  type: "shape"
+
+},{
+  content: "Oval",
+  type: "shape"
+
+},{
+  content: "Diamond",
+  type: "shape"
+
+}]
+
+var contents = [{content:"", type:""}];

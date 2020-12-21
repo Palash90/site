@@ -36,7 +36,7 @@ function changeLetter() {
   var backBgIndex = parseInt(lightColors.length * Math.random());
 
   var content = contents[contentIndex];
-  document.getElementById("front").innerHTML = content.content;
+  document.getElementById("front").innerHTML = content.content ? content.content : "";
 
   if (content.type && content.type === "calculation") {
     document.getElementById("back").innerHTML = eval(content.content);
@@ -53,6 +53,9 @@ function changeLetter() {
       " />";
 
     document.getElementById("back").innerHTML = html;
+  } else if (content.type && content.type === "shape") {
+    document.getElementById("back").innerHTML = content.content ? content.content : "";
+    document.getElementById("front").innerHTML = draw(content.content ? content.content : "");
   }
 
   var frontClass = "card__face card__face--front content " + styles[styleIndex];
@@ -75,7 +78,7 @@ function changeLetter() {
 
 function addListener() {
   var card = document.querySelector(".card");
-  card.addEventListener("click", function() {
+  card.addEventListener("click", function () {
     card.classList.toggle("is-flipped");
 
     var synth = window.speechSynthesis;
@@ -86,7 +89,7 @@ function addListener() {
         document.getElementById("objct").getAttribute("data")
       );
       console.log(content);
-      if (content.type === "alphabet") speak(content.content);
+      //if (content.type === "alphabet") speak(content.content);
     }
   });
 }
