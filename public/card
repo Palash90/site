@@ -23,6 +23,7 @@
             <input type = "checkbox" id="hi-alpha" onclick="changeContent();">Hindi Alphabets</input>
             <input type = "checkbox" id="shapes" onclick="changeContent();">Shapes</input>
             <input type = "checkbox" id="colors" onclick="changeContent();">Colors</input>
+            <input type = "checkbox" id="all" onclick="changeContent();">All</input>
         </div>
     </div>
     <div id="contentRow" class="row">
