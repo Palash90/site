@@ -1,7 +1,7 @@
 
 // Create a new utterance for the specified text and add it to
 // the queue.
-function speak(text) {
+function speak(text, language) {
   // Create a new instance of SpeechSynthesisUtterance.
   var msg = new SpeechSynthesisUtterance();
 
@@ -16,14 +16,20 @@ function speak(text) {
   // If a voice has been selected, find the voice and set the
   // utterance instance's voice attribute.
 
-  msg.voice = speechSynthesis.getVoices()[0];
+  speechSynthesis.getVoices().forEach(element => {
+      if(element.lang === language){
+        msg.voice = element
+      }    
+  });
 
   console.log("Trying to Speak aloud");
   // Queue this utterance.
-  window.speechSynthesis.speak(msg);
+  if (msg.voice) {
+    window.speechSynthesis.speak(msg);
+  }
 }
 
-function changeLetter() {
+function changeContent() {
   var cardClasses = document.querySelector(".card").classList;
 
   if (cardClasses.value.includes("is-flipped")) {
@@ -60,7 +66,7 @@ function changeLetter() {
   } else if (content.type && content.type === "color") {
     document.getElementById("back").innerHTML = content.name ? content.name : "";
     document.getElementById("front").innerHTML = drawColor(content.content ? content.content : "");
-  }else if(content.type && content.type === 'comparison'){
+  } else if (content.type && content.type === 'comparison') {
     document.getElementById("back").innerHTML = content.answer;
   } else {
     document.getElementById("back").innerHTML = "";
@@ -104,7 +110,7 @@ function addListener() {
         document.getElementById("objct").getAttribute("data")
       );
       console.log(content);
-      //if (content.type === "alphabet") speak(content.content);
+      if (content.type === "alphabet") speak(content.content, content.lang);
     }
   });
 }

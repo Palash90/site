@@ -13,20 +13,20 @@
     <script type="text/javascript" src="card_assets/content_selector.js"></script>
 </head>
 
-<body onload="addListener(); changeLetter();">
+<body onload="addListener(); changeContent();">
     <div class="top-row">
         <div class="column">
             <label>Select Learning Items - </label>
-            <input type = "checkbox" id="comparison" onclick="changeContent();">Comparison</input>
-            <input type = "checkbox" id="beforeAfter" onclick="changeContent();">Before After</input>
-            <input type = "checkbox" id="between" onclick="changeContent();">Between Numbers</input>
-            <input type = "checkbox" id="plus" onclick="changeContent();">Plus</input>
-            <input type = "checkbox" id="minus" onclick="changeContent();">Minus</input>
-            <input type = "checkbox" id="bn-alpha" onclick="changeContent();">Bengali Alphabets</input>
-            <input type = "checkbox" id="hi-alpha" onclick="changeContent();">Hindi Alphabets</input>
-            <input type = "checkbox" id="shapes" onclick="changeContent();">Shapes</input>
-            <input type = "checkbox" id="colors" onclick="changeContent();">Colors</input>
-            <input type = "checkbox" id="all" onclick="changeContent();">All</input>
+            <input type = "checkbox" id="comparison" onclick="changeSelection();">Comparison</input>
+            <input type = "checkbox" id="beforeAfter" onclick="changeSelection();">Before After</input>
+            <input type = "checkbox" id="between" onclick="changeSelection();">Between Numbers</input>
+            <input type = "checkbox" id="plus" onclick="changeSelection();">Plus</input>
+            <input type = "checkbox" id="minus" onclick="changeSelection();">Minus</input>
+            <input type = "checkbox" id="bn-alpha" onclick="changeSelection();">Bengali Alphabets</input>
+            <input type = "checkbox" id="hi-alpha" onclick="changeSelection();">Hindi Alphabets</input>
+            <input type = "checkbox" id="shapes" onclick="changeSelection();">Shapes</input>
+            <input type = "checkbox" id="colors" onclick="changeSelection();">Colors</input>
+            <input type = "checkbox" id="all" onclick="changeSelection();">All</input>
         </div>
     </div>
     <div id="contentRow" class="row">
@@ -36,7 +36,7 @@
                     <div id="front" class="">front</div>
                     <div id="back" class="card__face card__face--back">back</div>
                 </div>
-                <button id="refresh" onclick="changeLetter();">&#x21bb;</button>
+                <button id="refresh" onclick="changeContent();">&#x21bb;</button>
             </div>
         </div>
     </div>

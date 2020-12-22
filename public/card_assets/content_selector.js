@@ -1,4 +1,4 @@
-function changeContent() {
+function changeSelection() {
     contents = []
     if (document.getElementById("comparison").checked) {
         contents = contents.concat(comparisons);
@@ -34,5 +34,5 @@ function changeContent() {
     if (contents.length == 0) {
         contents.push({ content: "" })
     }
-    changeLetter();
+    changeContentdds();
 }
