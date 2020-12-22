@@ -47,7 +47,7 @@ function changeContent() {
 
   if (content.type && content.type === "calculation") {
     document.getElementById("back").innerHTML = eval(content.content);
-  } else if (content.type && content.type === "alphabet") {
+  } else if (content.type && (content.type === "alphabet" || content.type === "word" || content.type === "sentence")) {
     var desc = content.desc ? content.desc : {};
     var language = desc.language ? desc.language : "";
     var html =

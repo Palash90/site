@@ -8,6 +8,9 @@
     <link rel="stylesheet" type="text/css" href="card_assets/styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="card_assets/data.js" type="text/javascript"></script>
+    <script src="card_assets/bengali_contents.js" type="text/javascript"></script>
+    <script src="card_assets/hindi_contents.js" type="text/javascript"></script>
+    <script src="card_assets/english_contents.js" type="text/javascript"></script>
     <script src="card_assets/draw.js" type="text/javascript"></script>
     <script src="card_assets/card.js" type="text/javascript"></script>
     <script type="text/javascript" src="card_assets/content_selector.js"></script>
@@ -22,8 +25,9 @@
             <input type = "checkbox" id="between" onclick="changeSelection();">Between Numbers</input>
             <input type = "checkbox" id="plus" onclick="changeSelection();">Plus</input>
             <input type = "checkbox" id="minus" onclick="changeSelection();">Minus</input>
-            <input type = "checkbox" id="bn-alpha" onclick="changeSelection();">Bengali Alphabets</input>
-            <input type = "checkbox" id="hi-alpha" onclick="changeSelection();">Hindi Alphabets</input>
+            <input type = "checkbox" id="bn-alpha" onclick="changeSelection();">Bengali Contents</input>
+            <input type = "checkbox" id="hi-alpha" onclick="changeSelection();">Hindi Contents</input>
+            <input type = "checkbox" id="en-alpha" onclick="changeSelection();">English Contents</input>
             <input type = "checkbox" id="shapes" onclick="changeSelection();">Shapes</input>
             <input type = "checkbox" id="colors" onclick="changeSelection();">Colors</input>
             <input type = "checkbox" id="all" onclick="changeSelection();">All</input>

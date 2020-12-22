@@ -16,10 +16,13 @@ function changeSelection() {
         contents = contents.concat(minus);
     }
     if (document.getElementById("bn-alpha").checked) {
-        contents = contents.concat(bengaliAlphabets);
+        contents = contents.concat(bengaliAlphabets).concat(bengaliWords).concat(bengaliSentences);
     }
     if (document.getElementById("hi-alpha").checked) {
-        contents = contents.concat(hindiAlphabets);
+        contents = contents.concat(hindiAlphabets).concat(hindiWords).concat(hindiSentences);
+    }
+    if (document.getElementById("en-alpha").checked) {
+        contents = contents.concat(englishAlphabets).concat(englishWords).concat(englishSentences);
     }
     if (document.getElementById("shapes").checked) {
         contents = contents.concat(shapes);
@@ -29,10 +32,11 @@ function changeSelection() {
     }
     if (document.getElementById("all").checked) {
         contents = plus.concat(minus).concat(bengaliAlphabets).concat(hindiAlphabets).concat(shapes)
-            .concat(colors).concat(comparisons).concat(beforeAfter).concat(between)
+            .concat(colors).concat(comparisons).concat(beforeAfter).concat(between).concat(bengaliSentences).concat(bengaliWords)
+            .concat(hindiSentences).concat(hindiWords).concat(englishWords).concat(englishSentences).concat(englishAlphabets)
     }
     if (contents.length == 0) {
         contents.push({ content: "" })
     }
-    changeContentdds();
+    changeContent();
 }

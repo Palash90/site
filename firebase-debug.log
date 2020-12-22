@@ -1,25 +1,29 @@
-[debug] [2020-12-22T04:40:03.929Z] ----------------------------------------------------------------------
-[debug] [2020-12-22T04:40:03.935Z] Command:       /usr/local/bin/node /usr/local/bin/firebase serve
-[debug] [2020-12-22T04:40:03.935Z] CLI Version:   7.13.1
-[debug] [2020-12-22T04:40:03.935Z] Platform:      linux
-[debug] [2020-12-22T04:40:03.935Z] Node Version:  v12.16.1
-[debug] [2020-12-22T04:40:03.988Z] Time:          Tue Dec 22 2020 10:10:03 GMT+0530 (India Standard Time)
-[debug] [2020-12-22T04:40:03.989Z] ----------------------------------------------------------------------
-[debug] [2020-12-22T04:40:03.989Z] 
-[debug] [2020-12-22T04:40:04.061Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2020-12-22T04:40:04.062Z] > authorizing via signed-in user
-[debug] [2020-12-22T04:40:04.062Z] [iam] checking project my-site-9f0f7 for permissions ["firebase.projects.get"]
-[debug] [2020-12-22T04:40:04.066Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/my-site-9f0f7:testIamPermissions  
+[debug] [2020-12-22T06:33:45.475Z] ----------------------------------------------------------------------
+[debug] [2020-12-22T06:33:45.480Z] Command:       /usr/local/bin/node /usr/local/bin/firebase serve
+[debug] [2020-12-22T06:33:45.481Z] CLI Version:   7.13.1
+[debug] [2020-12-22T06:33:45.481Z] Platform:      linux
+[debug] [2020-12-22T06:33:45.481Z] Node Version:  v12.16.1
+[debug] [2020-12-22T06:33:45.534Z] Time:          Tue Dec 22 2020 12:03:45 GMT+0530 (India Standard Time)
+[debug] [2020-12-22T06:33:45.534Z] ----------------------------------------------------------------------
+[debug] [2020-12-22T06:33:45.535Z] 
+[debug] [2020-12-22T06:33:45.596Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2020-12-22T06:33:45.597Z] > authorizing via signed-in user
+[debug] [2020-12-22T06:33:45.597Z] [iam] checking project my-site-9f0f7 for permissions ["firebase.projects.get"]
+[debug] [2020-12-22T06:33:45.601Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2020-12-22T06:33:45.602Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+ <request body omitted>
+[debug] [2020-12-22T06:33:46.193Z] <<< HTTP RESPONSE 200
+[debug] [2020-12-22T06:33:46.265Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/my-site-9f0f7:testIamPermissions  
 
-[debug] [2020-12-22T04:40:05.871Z] <<< HTTP RESPONSE 200
-[debug] [2020-12-22T04:40:05.874Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/my-site-9f0f7  
+[debug] [2020-12-22T06:33:47.991Z] <<< HTTP RESPONSE 200
+[debug] [2020-12-22T06:33:47.994Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/my-site-9f0f7  
  
-[debug] [2020-12-22T04:40:06.496Z] <<< HTTP RESPONSE 200
+[debug] [2020-12-22T06:33:48.504Z] <<< HTTP RESPONSE 200
 [info] 
 [info] === Serving from '/home/palash/git/site'...
 [info] 
-[debug] [2020-12-22T04:40:06.502Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/my-site-9f0f7/webApps/-/config  
+[debug] [2020-12-22T06:33:48.511Z] >>> HTTP REQUEST GET https://firebase.googleapis.com/v1beta1/projects/my-site-9f0f7/webApps/-/config  
  
-[debug] [2020-12-22T04:40:07.790Z] <<< HTTP RESPONSE 200
+[debug] [2020-12-22T06:33:49.751Z] <<< HTTP RESPONSE 200
 [info] i  hosting: Serving hosting files from: public
 [info] ✔  hosting: Local server: http://localhost:5000
