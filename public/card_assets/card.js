@@ -61,7 +61,7 @@ function changeContent() {
 
     document.getElementById("back").innerHTML = html;
   } else if (content.type && content.type === "shape") {
-    document.getElementById("back").innerHTML = content.content ? content.content : "";
+    document.getElementById("back").innerHTML = content.desc ? content.desc : content.content;
     document.getElementById("front").innerHTML = draw(content.content ? content.content : "");
   } else if (content.type && content.type === "color") {
     document.getElementById("back").innerHTML = content.name ? content.name : "";
@@ -103,13 +103,11 @@ function addListener() {
     card.classList.toggle("is-flipped");
 
     var synth = window.speechSynthesis;
-    console.log(synth);
 
     if (synth && document.getElementById("objct")) {
       var content = JSON.parse(
         document.getElementById("objct").getAttribute("data")
       );
-      console.log(content);
       if (content.type === "alphabet") speak(content.content, content.lang);
     }
   });

@@ -25,6 +25,10 @@ var lightColors = [
 
 var plus = [];
 var minus = [];
+var plusBengali = [];
+var plusHindi = [];
+var minusBengali = [];
+var minusHindi = [];
 
 for (var i = 1; i <= 99; i++) {
   for (var j = 1; j <= 20; j++) {
@@ -35,13 +39,13 @@ for (var i = 1; i <= 99; i++) {
       answer: eval(i + j)
     });
 
-    plus.push({
+    plusBengali.push({
       content: convertToBengaliNumber(i) + " + " + convertToBengaliNumber(j),
       type: "calculation",
       answer: convertToBengaliNumber(eval(i + j))
     });
 
-    plus.push({
+    plusHindi.push({
       content: convertToHindiNumber(i) + " + " + convertToHindiNumber(j),
       type: "calculation",
       answer: convertToHindiNumber(eval(i + j))
@@ -54,13 +58,13 @@ for (var i = 1; i <= 99; i++) {
         answer: eval(i - j)
       });
 
-      minus.push({
+      minusBengali.push({
         content: convertToBengaliNumber(i) + " - " + convertToBengaliNumber(j),
         type: "calculation",
         answer: convertToBengaliNumber(eval(i - j))
       });
 
-      minus.push({
+      minusHindi.push({
         content: convertToHindiNumber(i) + " - " + convertToHindiNumber(j),
         type: "calculation",
         answer: convertToHindiNumber(eval(i - j))
@@ -71,6 +75,8 @@ for (var i = 1; i <= 99; i++) {
 }
 
 var comparisons = []
+var comparisonsBengali = []
+var comparisonsHindi = []
 for (var i = 1; i <= 100; i++) {
   for (var j = 1; j <= 100; j++) {
     var answer;
@@ -88,13 +94,13 @@ for (var i = 1; i <= 100; i++) {
       answer: answer
     });
 
-    comparisons.push({
+    comparisonsBengali.push({
       content: convertToBengaliNumber(i) + " __ " + convertToBengaliNumber(j),
       type: "comparison",
       answer: answer
     });
 
-    comparisons.push({
+    comparisonsHindi.push({
       content: convertToHindiNumber(i) + " __ " + convertToHindiNumber(j),
       type: "comparison",
       answer: answer
@@ -103,7 +109,11 @@ for (var i = 1; i <= 100; i++) {
 }
 
 var beforeAfter = []
+var beforeAfterBengali = []
+var beforeAfterHindi = []
 var between = []
+var betweenBengali = []
+var betweenHindi = []
 for (var i = 1; i <= 150; i++) {
   beforeAfter.push({
     content: i + " __ ",
@@ -121,33 +131,33 @@ for (var i = 1; i <= 150; i++) {
     answer: i + 1
   })
 
-  beforeAfter.push({
+  beforeAfterBengali.push({
     content: convertToBengaliNumber(i) + " __ ",
     type: "comparison",
     answer: convertToBengaliNumber(i + 1)
   })
-  beforeAfter.push({
+  beforeAfterBengali.push({
     content: " __ " + convertToBengaliNumber(i),
     type: "comparison",
     answer: convertToBengaliNumber(i - 1)
   })
-  between.push({
+  betweenBengali.push({
     content: convertToBengaliNumber(i) + " |__| " + convertToBengaliNumber(i + 2),
     type: "comparison",
     answer: convertToBengaliNumber(i + 1)
   })
 
-  beforeAfter.push({
+  beforeAfterHindi.push({
     content: convertToHindiNumber(i) + " __ ",
     type: "comparison",
     answer: convertToHindiNumber(i + 1)
   })
-  beforeAfter.push({
+  beforeAfterHindi.push({
     content: " __ " + convertToHindiNumber(i),
     type: "comparison",
     answer: convertToHindiNumber(i - 1)
   })
-  between.push({
+  betweenHindi.push({
     content: convertToHindiNumber(i) + " |__| " + convertToHindiNumber(i + 2),
     type: "comparison",
     answer: convertToHindiNumber(i + 1)
@@ -156,47 +166,51 @@ for (var i = 1; i <= 150; i++) {
 
 var shapes = [{
   content: "Circle",
-  type: "shape"
-
+  type: "shape",
+  desc: "Circle/বৃত্ত/वृत्त"
 }, {
   content: "Rectangle",
-  type: "shape"
-
+  type: "shape",
+  desc: "Rectangle/আয়তক্ষেত্র/आयत"
 }, {
   content: "Square",
-  type: "shape"
+  type: "shape",
+  desc: "Square/বর্গক্ষেত্র"
 
 }, {
   content: "Triangle",
-  type: "shape"
+  type: "shape",
+  desc: "Triangle/ত্রিভুজ/त्रिकोण"
 
 }, {
   content: "Semi Circle",
-  type: "shape"
+  type: "shape",
+  desc: "Semi Circle/অর্ধ বৃত্ত/अर्द्धवृत्त"
 
 }, {
   content: "Oval",
-  type: "shape"
+  type: "shape",
+  desc: "Oval/ডিম্বাকৃতি/अंडाकार"
 
 }, {
   content: "Diamond",
-  type: "shape"
+  type: "shape",
+  desc: "Diamond/ডায়মন্ড/हीरे"
 
 }, {
   content: "Heart",
-  type: "shape"
+  type: "shape",
 
 }, {
   content: "Star",
-  type: "shape"
-
+  type: "shape",
+  desc: "Star/তারা/सितारा"
 }]
 
 var colors = [{
   content: "darkred",
   type: "color",
   name: "Deep Red"
-
 }, {
   content: "deeppink",
   type: "color",

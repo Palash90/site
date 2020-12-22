@@ -22,16 +22,26 @@
         <div class="column">
             <label>Select Learning Items - </label>
             <input type = "checkbox" id="comparison" onclick="changeSelection();">Comparison</input>
+            <input type = "checkbox" id="comparisonBengali" onclick="changeSelection();">Comparison in Bengali</input>
+            <input type = "checkbox" id="comparisonHindi" onclick="changeSelection();">Comparison in Hindi</input>
             <input type = "checkbox" id="beforeAfter" onclick="changeSelection();">Before After</input>
+            <input type = "checkbox" id="beforeAfterBengali" onclick="changeSelection();">Before After in Bengali</input>
+            <input type = "checkbox" id="beforeAfterHindi" onclick="changeSelection();">Before After in Hindi</input>
             <input type = "checkbox" id="between" onclick="changeSelection();">Between Numbers</input>
+            <input type = "checkbox" id="betweenBengali" onclick="changeSelection();">Between Numbers in Bengali</input>
+            <input type = "checkbox" id="betweenHindi" onclick="changeSelection();">Between Numbers in Hindi</input>
             <input type = "checkbox" id="plus" onclick="changeSelection();">Plus</input>
+            <input type = "checkbox" id="plusBengali" onclick="changeSelection();">Plus in Bengali</input>
+            <input type = "checkbox" id="plusHindi" onclick="changeSelection();">Plus in Hindi</input>
             <input type = "checkbox" id="minus" onclick="changeSelection();">Minus</input>
+            <input type = "checkbox" id="minusBengali" onclick="changeSelection();">Minus in Bengali</input>
+            <input type = "checkbox" id="minusHindi" onclick="changeSelection();">Minus in Hindi</input>
             <input type = "checkbox" id="bn-alpha" onclick="changeSelection();">Bengali Contents</input>
             <input type = "checkbox" id="hi-alpha" onclick="changeSelection();">Hindi Contents</input>
             <input type = "checkbox" id="en-alpha" onclick="changeSelection();">English Contents</input>
             <input type = "checkbox" id="shapes" onclick="changeSelection();">Shapes</input>
             <input type = "checkbox" id="colors" onclick="changeSelection();">Colors</input>
-            <input type = "checkbox" id="all" onclick="changeSelection();">All</input>
+            <input type = "checkbox" id="all" onclick="toggleAll();">All</input>
         </div>
     </div>
     <div id="contentRow" class="row">
