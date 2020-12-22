@@ -31,13 +31,42 @@ for (var i = 1; i <= 99; i++) {
 
     plus.push({
       content: i + " + " + j,
-      type: "calculation"
+      type: "calculation",
+      answer: eval(i + j)
     });
-    if (j < i)
+
+    plus.push({
+      content: convertToBengaliNumber(i) + " + " + convertToBengaliNumber(j),
+      type: "calculation",
+      answer: convertToBengaliNumber(eval(i + j))
+    });
+
+    plus.push({
+      content: convertToHindiNumber(i) + " + " + convertToHindiNumber(j),
+      type: "calculation",
+      answer: convertToHindiNumber(eval(i + j))
+    });
+
+    if (j < i) {
       minus.push({
         content: i + " - " + j,
-        type: "calculation"
+        type: "calculation",
+        answer: eval(i - j)
       });
+
+      minus.push({
+        content: convertToBengaliNumber(i) + " - " + convertToBengaliNumber(j),
+        type: "calculation",
+        answer: convertToBengaliNumber(eval(i - j))
+      });
+
+      minus.push({
+        content: convertToHindiNumber(i) + " - " + convertToHindiNumber(j),
+        type: "calculation",
+        answer: convertToHindiNumber(eval(i - j))
+      });
+    }
+
   }
 }
 
@@ -55,6 +84,18 @@ for (var i = 1; i <= 100; i++) {
 
     comparisons.push({
       content: i + " __ " + j,
+      type: "comparison",
+      answer: answer
+    });
+
+    comparisons.push({
+      content: convertToBengaliNumber(i) + " __ " + convertToBengaliNumber(j),
+      type: "comparison",
+      answer: answer
+    });
+
+    comparisons.push({
+      content: convertToHindiNumber(i) + " __ " + convertToHindiNumber(j),
       type: "comparison",
       answer: answer
     })
@@ -78,6 +119,38 @@ for (var i = 1; i <= 150; i++) {
     content: i + " |__| " + (i + 2),
     type: "comparison",
     answer: i + 1
+  })
+
+  beforeAfter.push({
+    content: convertToBengaliNumber(i) + " __ ",
+    type: "comparison",
+    answer: convertToBengaliNumber(i + 1)
+  })
+  beforeAfter.push({
+    content: " __ " + convertToBengaliNumber(i),
+    type: "comparison",
+    answer: convertToBengaliNumber(i - 1)
+  })
+  between.push({
+    content: convertToBengaliNumber(i) + " |__| " + convertToBengaliNumber(i + 2),
+    type: "comparison",
+    answer: convertToBengaliNumber(i + 1)
+  })
+
+  beforeAfter.push({
+    content: convertToHindiNumber(i) + " __ ",
+    type: "comparison",
+    answer: convertToHindiNumber(i + 1)
+  })
+  beforeAfter.push({
+    content: " __ " + convertToHindiNumber(i),
+    type: "comparison",
+    answer: convertToHindiNumber(i - 1)
+  })
+  between.push({
+    content: convertToHindiNumber(i) + " |__| " + convertToHindiNumber(i + 2),
+    type: "comparison",
+    answer: convertToHindiNumber(i + 1)
   })
 }
 

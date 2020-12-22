@@ -46,7 +46,7 @@ function changeContent() {
   document.getElementById("refresh").disabled = false;
 
   if (content.type && content.type === "calculation") {
-    document.getElementById("back").innerHTML = eval(content.content);
+    document.getElementById("back").innerHTML = content.answer;
   } else if (content.type && (content.type === "alphabet" || content.type === "word" || content.type === "sentence")) {
     var desc = content.desc ? content.desc : {};
     var language = desc.language ? desc.language : "";
