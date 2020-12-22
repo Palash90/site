@@ -711,7 +711,7 @@ for (var i = 1; i <= 100; i++) {
 
 var beforeAfter = []
 var between = []
-for (var i = 1; i <= 100; i++) {
+for (var i = 1; i <= 150; i++) {
   beforeAfter.push({
     content: i + " __ ",
     type: "comparison",
