@@ -2,11 +2,12 @@ import { Col, Container, Row } from "react-bootstrap"
 
 export default function Blogs() {
     return <>
-        <h1>{window.findProp("labels.blogs")}</h1>
+        <h1 style={{color:'tomato'}}>{window.findProp("labels.blogs")}</h1>
+        <p>{window.findProp("contents.blogs.intro")}</p>
         <Container>
             <Row>
-                <Col><h2>{window.findProp("labels.swe")}</h2></Col>
-                <Col><h2>{window.findProp("labels.music")}</h2></Col>
+                <Col><h2 style={{color:'turquoise'}}>{window.findProp("labels.swe")}</h2></Col>
+                <Col><h2 style={{color:'turquoise'}}>{window.findProp("labels.music")}</h2></Col>
             </Row>
             <Row>
                 <Col>
