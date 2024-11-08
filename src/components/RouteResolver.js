@@ -3,16 +3,16 @@ import Home from "./Home"
 import Projects from "./Projects"
 import About from "./About"
 import Project from "./Project"
-import Blog from "./Blog"
-import Blogs from "./Blogs"
+import Contents from "./Contents"
+import Content from "./Content"
 
 export default function RouteResolver() {
     return (
         <Router>
             <Routes>
                 <Route path='/' element={<Home />} />
-                <Route path='/blogs' element={<Blogs />} />
-                <Route path='/blog/:blogId' element={<Blog />} />
+                <Route path='/contents' element={<Contents />} />
+                <Route path='/content/:contentId' element={<Content />} />
                 <Route path='/projects' element={<Projects />} />
                 <Route path='/project/:projectId' element={<Project />} />
                 <Route path='/about' element={<About />} />

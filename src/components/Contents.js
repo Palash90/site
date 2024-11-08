@@ -1,9 +1,9 @@
 import { Col, Container, Row } from "react-bootstrap"
 
-export default function Blogs() {
+export default function Contents() {
     return <>
-        <h1 style={{color:'tomato'}}>{window.findProp("labels.blogs")}</h1>
-        <p>{window.findProp("contents.blogs.intro")}</p>
+        <h1 style={{color:'tomato'}}>{window.findProp("labels.contents")}</h1>
+        <p>{window.findProp("pages.contents.intro")}</p>
         <Container>
             <Row>
                 <Col><h2 style={{color:'turquoise'}}>{window.findProp("labels.swe")}</h2></Col>
@@ -12,12 +12,12 @@ export default function Blogs() {
             <Row>
                 <Col>
                     <ul>
-                        {window.findProp("blogs.swe").map(b => <li>{b.publishDate ? b.publishDate + " - " : ""} <a href={"/blog/" + b.id}>{b.title}</a></li>)}
+                        {window.findProp("contents.swe").map(b => <li key={b.id}>{b.publishDate ? b.publishDate + " - " : ""} <a href={"/content/" + b.id}>{b.title}</a></li>)}
                     </ul>
                 </Col>
                 <Col>
                     <ul>
-                        {window.findProp("blogs.music").map(b => <li>{b.publishDate ? b.publishDate + " - " : ""} <a href={"/blog/" + b.id}>{b.title}</a></li>)}
+                        {window.findProp("contents.music").map(b => <li key={b.id}>{b.publishDate ? b.publishDate + " - " : ""} <a href={"/content/" + b.id}>{b.title}</a></li>)}
                     </ul>
                 </Col>
             </Row>

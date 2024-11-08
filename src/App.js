@@ -12,7 +12,7 @@ function Header() {
       <Navbar.Collapse id="basic-navbar-nav">
         <Nav className="justify-content-end flex-grow-1 pe-6">
           {
-            window.findProp("navLinks").map((l) => <Nav.Link href={l.link}>{l.label}</Nav.Link>)
+            window.findProp("navLinks").map((l) => <Nav.Link key={l.link} href={l.link}>{l.label}</Nav.Link>)
           }
         </Nav>
         <br />
