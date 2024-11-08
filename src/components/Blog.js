@@ -1,6 +1,5 @@
 import Markdown from "react-markdown"
 import { useParams } from "react-router-dom"
-import findProp from "./data"
 import React, { useState, useEffect } from 'react';
 
 export default function Blog() {
@@ -11,8 +10,9 @@ export default function Blog() {
     let params = useParams()
 
     useEffect(() => {
-        var blog = findProp("blogs.swe").concat(findProp("blogs.music")).find(b => b.id == params.blogId)
+        var blog = window.findProp("blogs.swe").concat(window.findProp("blogs.music")).find(b => b.id == params.blogId)
         if (blog) {
+            console.log(blog)
             fetch(blog.url)
                 .then(response => {
                     if (!response.ok) {
@@ -21,6 +21,7 @@ export default function Blog() {
                     return response.text();
                 })
                 .then(data => {
+                    console.log(data)
                     setData(data);
                     setLoading(false);
                 })
@@ -29,7 +30,7 @@ export default function Blog() {
                     setLoading(false);
                 });
         } else {
-            setError({ message: findProp("labels.blogNotExists") });
+            setError({ message: window.findProp("labels.blogNotExists") });
             setLoading(false);
         }
     }, []);

@@ -1,6 +1,4 @@
-import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
-import findProp from "./data";
 import { Container, Row } from 'react-bootstrap';
 import { Github, PlayCircle } from 'react-bootstrap-icons';
 
@@ -18,10 +16,10 @@ function ProjectCard(props) {
 }
 export default function Projects() {
     return <>
-        <h1>{findProp("labels.projects")}</h1>
+        <h1>{window.findProp("labels.projects")}</h1>
         <Container>
             <Row>
-                {findProp("projects").map(p => <ProjectCard name={p.name} desc={p.desc} url={p.url} type={p.type} />)}
+                {window.findProp("projects").map(p => <ProjectCard name={p.name} desc={p.desc} url={p.url} type={p.type} />)}
             </Row>
         </Container>
     </>
