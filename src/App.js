@@ -1,8 +1,8 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import RouteResolver from './components/RouteResolver';
-import { CCircle } from 'react-bootstrap-icons';
 import { Container, Nav, Navbar } from 'react-bootstrap';
+import { FaRegCopyright } from 'react-icons/fa';
 
 function Header() {
   return (<Navbar expand="lg" bg="dark" style={{ borderBottom: "1px solid" }} sticky='top'>
@@ -24,7 +24,7 @@ function Header() {
 function Footer() {
   return <Navbar bg="dark" style={{ borderTop: "1px solid" }} sticky='bottom'>
     <Container fluid className='justify-content-center'>
-      <Navbar.Text><CCircle size={15} /> {window.findProp("name") + " " + new Date().getFullYear()}  </Navbar.Text>
+      <Navbar.Text><FaRegCopyright size={15} /> {window.findProp("name") + " " + new Date().getFullYear()}  </Navbar.Text>
     </Container>
   </Navbar>;
 }

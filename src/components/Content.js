@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Blog from "./Blog";
-import YouTube from "react-youtube";
-import { Container } from "react-bootstrap";
 import Yt from "./Yt";
 
 export default function Content() {

@@ -1,6 +1,4 @@
 import React from 'react';
-import { Container } from 'react-bootstrap';
-import YouTube from 'react-youtube';
 import './Yt.css'
 
 function Yt(props) {
