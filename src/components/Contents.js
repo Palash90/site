@@ -1,13 +1,13 @@
 import { Col, Container, Row } from "react-bootstrap"
+import PageIntro from "./PageIntro"
 
 export default function Contents() {
     return <>
-        <h1 style={{color:'tomato'}}>{window.findProp("labels.contents")}</h1>
-        <p>{window.findProp("pages.contents.intro")}</p>
-        <Container>
+        <Container fluid>
+            <PageIntro h1={window.findProp("labels.contents")} p={window.findProp("pages.contents.intro")} />
             <Row>
-                <Col><h2 style={{color:'turquoise'}}>{window.findProp("labels.swe")}</h2></Col>
-                <Col><h2 style={{color:'turquoise'}}>{window.findProp("labels.music")}</h2></Col>
+                <Col><h2 style={{ color: 'turquoise' }}>{window.findProp("labels.swe")}</h2></Col>
+                <Col><h2 style={{ color: 'turquoise' }}>{window.findProp("labels.music")}</h2></Col>
             </Row>
             <Row>
                 <Col>

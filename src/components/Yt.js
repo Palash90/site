@@ -3,7 +3,7 @@ import { Col, Container, Row } from 'react-bootstrap';
 
 function Yt(props) {
 
-    return <Container>
+    return <Container fluid>
         <Row className="justify-content-md-center">
             <Col style={{border:'1px solid', width:'100vw', height:'70vh'}}>
                 <iframe

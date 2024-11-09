@@ -4,7 +4,7 @@ import Yt from './Yt';
 import Blog from './Blog';
 
 export default function Both(props) {
-    return <Container>
+    return <Container fluid>
         <Row>
             <Col><Yt ytId={props.ytId} /></Col>
         </Row>

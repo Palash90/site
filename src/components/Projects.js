@@ -4,8 +4,9 @@ import { IoGameControllerOutline } from 'react-icons/io5';
 import { FaGithub, FaInfoCircle, FaJava, FaReact, FaRust } from 'react-icons/fa';
 import { useState } from 'react';
 import Blog from './Blog';
+import PageIntro from './PageIntro';
 
-function ProjectModal() {
+function ProjectModal(props) {
     const [show, setShow] = useState(false);
 
     const handleClose = () => setShow(false);
@@ -16,12 +17,19 @@ function ProjectModal() {
             <Card.Link variant="primary" onClick={handleShow}>
                 <FaInfoCircle size={60} />
             </Card.Link>
-            <Modal show={show} onHide={handleClose}>
+            <Modal show={show}
+                onHide={handleClose}
+                size="xl"
+                aria-labelledby="contained-modal-title-vcenter"
+                centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Modal heading</Modal.Title>
+                    <Modal.Title>{props.title}</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
-                    <Blog />
+                <Modal.Body style={{
+                    maxHeight: 'calc(100vh - 210px)',
+                    overflowY: 'auto'
+                }}>
+                    <Blog mdUrl={props.mdUrl} />
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={handleClose}>
@@ -34,7 +42,7 @@ function ProjectModal() {
 }
 
 function ProjectCard(props) {
-    const { name, desc, url, type } = props;
+    const { name, desc, url, mdUrl, type } = props;
     const getTechStackIcon = () => {
         switch (type) {
             case "react":
@@ -49,12 +57,12 @@ function ProjectCard(props) {
     }
 
     return (
-        <Card style={{ width: '15rem' }}>
+        <Card style={{ width: '100%', height: '100%' }}>
             <Card.Body>
                 <Card.Title>{name}</Card.Title>
                 <Card.Text>{desc}</Card.Text>
                 <Card.Text>{window.findProp("pages.projects.techStack")}{getTechStackIcon()}</Card.Text>
-                <Container>
+                <Container fluid>
                     <Row>
                         <Col>
                             <Card.Link href={url} target={type === "react" ? '' : '_blank'}>
@@ -62,7 +70,7 @@ function ProjectCard(props) {
                             </Card.Link>
                         </Col>
                         <Col>
-                            {type !== "react" ? <ProjectModal /> : <></>}
+                            {type !== "react" && mdUrl ? <ProjectModal title={name} mdUrl={mdUrl} /> : <></>}
                         </Col>
                     </Row>
                 </Container>
@@ -72,11 +80,10 @@ function ProjectCard(props) {
 }
 export default function Projects() {
     return <>
-        <h1 style={{ color: 'tomato' }}>{window.findProp("labels.projects")}</h1>
-        <p>{window.findProp("pages.projects.intro")}</p>
-        <Container>
+        <Container fluid>
+            <PageIntro h1={window.findProp("labels.projects")} p={window.findProp("pages.projects.intro")} />
             <Row>
-                {window.findProp("projects").map(p => <Col><ProjectCard name={p.name} desc={p.desc} url={p.url} type={p.type} /></Col>)}
+                {window.findProp("projects").map(p => <Col><ProjectCard name={p.name} desc={p.desc} url={p.url} mdUrl={p.mdUrl} type={p.type} /></Col>)}
             </Row>
         </Container>
     </>
