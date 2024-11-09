@@ -1,0 +1,75 @@
+.dark-theme {
+  background-color: #333;
+  color: #fff;
+}
+
+.grid-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.grid-row {
+  display: flex;
+  justify-content: center;
+}
+
+.grid-cell {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 5px;
+  border: 2px solid #ddd;
+  transition: transform 1s ease, background-color 0.3s ease;
+  /* Slow transition for animation */
+  cursor: pointer;
+  font-size: 14px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.grid-cell:hover {
+  transform: scale(1.1);
+  border-color: #007bff;
+}
+
+/* Rotate button styles with hover effect */
+.rotate-button {
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.rotate-button:hover {
+  background-color: #28a745;
+  /* Green on hover */
+  transform: scale(1.1);
+  /* Slight scale on hover */
+}
+
+/* Dark theme grid styling */
+.dark-theme .grid-cell {
+  border-color: #555;
+  /* Darker border in dark theme */
+}
+
+.dark-theme .grid-cell:hover {
+  border-color: #007bff;
+  /* Keep hover effect blue in dark theme */
+}
+
+.dark-theme .rotate-button:hover {
+  background-color: #17a2b8;
+  /* Teal hover for buttons in dark theme */
+}
+
+/* Button styles for both themes */
+button {
+  margin: 5px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:hover {
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  /* Add shadow on hover */
+}
