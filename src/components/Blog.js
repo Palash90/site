@@ -1,6 +1,9 @@
 import Markdown from "react-markdown"
 import { Col, Container, Image, Row } from "react-bootstrap";
 import { useState } from "react";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
+import rehypeRaw from "rehype-raw";
 
 export default function Blog(props) {
     const [mdData, setMdData] = useState(null);
@@ -37,7 +40,13 @@ export default function Blog(props) {
     return <Container fluid>
         <Row>
             <Col>
-                <Markdown components={components}>{mdData}</Markdown>
+                <Markdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    components={components}
+                    rehypePlugins={[rehypeRaw]}
+                >
+                    {mdData}
+                </Markdown>
             </Col>
         </Row>
     </Container>

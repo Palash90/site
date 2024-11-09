@@ -1,13 +1,10 @@
 import { useParams } from "react-router-dom";
-import Home from "./Home";
-import GridApp from "./tic-tac-slide/App"
 import { Col, Container, Row } from "react-bootstrap";
-
+import GridApp from "./tic-tac-slide/App";
 
 export default function CustomComponent() {
     const componentMap = {
-        hdlEmulator: <Home />,
-        hdlEmulator: <GridApp />
+        "tic-tac-slide": <GridApp />
     }
     let params = useParams()
     console.log(componentMap, params.componentId, componentMap[params.componentId])

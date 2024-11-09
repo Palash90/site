@@ -1,7 +1,7 @@
 import Card from 'react-bootstrap/Card';
 import { Button, Col, Container, Modal, Row } from 'react-bootstrap';
 import { IoGameControllerOutline } from 'react-icons/io5';
-import { FaGithub, FaInfoCircle, FaJava, FaReact, FaRust } from 'react-icons/fa';
+import { FaGithub, FaInfoCircle, FaJava, FaMarkdown, FaReact, FaRust } from 'react-icons/fa';
 import { useState } from 'react';
 import Blog from './Blog';
 import PageIntro from './PageIntro';
@@ -51,6 +51,8 @@ function ProjectCard(props) {
                 return <FaJava size={40} />
             case "rust":
                 return <FaRust size={40} />
+            case "markdown":
+                return <FaMarkdown size={40} />
             default:
                 return <></>
         }
