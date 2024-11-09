@@ -5,6 +5,7 @@ import About from "./About"
 import Project from "./Project"
 import Contents from "./Contents"
 import Content from "./Content"
+import CustomComponent from "./CustomComponent"
 
 export default function RouteResolver() {
     return (
@@ -15,6 +16,7 @@ export default function RouteResolver() {
                 <Route path='/content/:contentId' element={<Content />} />
                 <Route path='/projects' element={<Projects />} />
                 <Route path='/project/:projectId' element={<Project />} />
+                <Route path='/component/:componentId' element={<CustomComponent />} />
                 <Route path='/about' element={<About />} />
             </Routes>
         </Router>

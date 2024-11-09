@@ -1,19 +1,22 @@
 import React from 'react';
-import './Yt.css'
+import { Col, Container, Row } from 'react-bootstrap';
 
 function Yt(props) {
 
-    return <div className="video-responsive">
-        <iframe
-            width="100%"
-            height="60%"
-            src={`https://www.youtube.com/embed/${props.ytUrl}`}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            title="Embedded youtube"
-        />
-    </div>
+    return <Container>
+        <Row className="justify-content-md-center">
+            <Col style={{border:'1px solid', width:'100vw', height:'70vh'}}>
+                <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${props.ytId}?autoplay=1`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title="Embedded youtube"
+                />
+            </Col>
+        </Row>
+    </Container>
 }
 
 export default Yt;

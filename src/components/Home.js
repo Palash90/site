@@ -14,7 +14,7 @@ export default function Home() {
                     <h3>{window.findProp('pages.home.moto')}</h3>
                 </Col>
                 <Col>
-                    <Image fluid src="https://palash90.github.io/site-assets/Man.png" style={{ background: 'transparent' }} />
+                    <Image fluid src="https://palash90.github.io/site-assets/profile.jpg" style={{ background: 'transparent' }} />
                 </Col>
             </Row>
         </Container>
