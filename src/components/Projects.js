@@ -83,7 +83,7 @@ export default function Projects() {
         <Container fluid>
             <PageIntro h1={window.findProp("labels.projects")} p={window.findProp("pages.projects.intro")} />
             <Row>
-                {window.findProp("projects").map(p => <Col><ProjectCard name={p.name} desc={p.desc} url={p.url} mdUrl={p.mdUrl} type={p.type} /></Col>)}
+                {window.findProp("projects").map(p => <Col key={p.id}><ProjectCard name={p.name} desc={p.desc} url={p.url} mdUrl={p.mdUrl} type={p.type} /></Col>)}
             </Row>
         </Container>
     </>
