@@ -13,7 +13,7 @@ export default function Content() {
     let params = useParams()
 
     useEffect(() => {
-        var content = window.findProp("contents.swe").concat(window.findProp("contents.music")).find(b => b.id == params.contentId)
+        var content = window.findProp("contents.swe").concat(window.findProp("contents.music")).find(b => b.id === params.contentId)
         if (content) {
             setType(content.type)
             setMdUrl(content.mdUrl);
