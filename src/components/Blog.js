@@ -1,6 +1,6 @@
 import Markdown from "react-markdown"
 import { Col, Container, Image, Row } from "react-bootstrap";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
@@ -16,7 +16,8 @@ export default function Blog(props) {
         }
     }
 
-    fetch(props.mdUrl)
+    useEffect(() => {
+        fetch(props.mdUrl)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -31,6 +32,8 @@ export default function Blog(props) {
             setError(error);
             setLoading(false);
         });
+    }, [props.mdUrl])
+    
 
     //fetchMarkDown(props.mdUrl, setMdData, setLoading, setError);
 
