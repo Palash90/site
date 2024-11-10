@@ -12,6 +12,7 @@ export default function RouteResolver() {
             <Routes>
                 <Route path='/' element={<Home />} />
                 <Route path='/contents' element={<Contents />} />
+                <Route path='/contents/:type' element={<Contents />} />
                 <Route path='/content/:contentId' element={<Content />} />
                 <Route path='/projects' element={<Projects />} />
                 <Route path='/component/:componentId' element={<CustomComponent />} />
