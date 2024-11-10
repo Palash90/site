@@ -11,8 +11,8 @@ export default function Contents() {
                 pColor={window.findProp("pages.contents.pColor")}
             />
             <Row>
-                <Col><h2 style={{ color: 'turquoise' }}>{window.findProp("labels.swe")}</h2></Col>
-                <Col><h2 style={{ color: 'turquoise' }}>{window.findProp("labels.music")}</h2></Col>
+                <Col><h2 style={{ color: window.findProp("pages.contents.sweHeadColor") }}>{window.findProp("labels.swe")}</h2></Col>
+                <Col><h2 style={{ color: window.findProp("pages.contents.musicHeadColor")  }}>{window.findProp("labels.music")}</h2></Col>
             </Row>
             <Row>
                 <Col>
@@ -33,7 +33,6 @@ export default function Contents() {
 
     function getContentLink(b) {
         var link = process.env.PUBLIC_URL + "#/content/" + b.id;
-        console.log("Making new type of links " + link)
         return <li key={b.id}>{b.publishDate ? b.publishDate + " - " : ""}
             <a href={link}>{b.title}</a>
         </li>
