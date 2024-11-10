@@ -1,10 +1,11 @@
 import Card from 'react-bootstrap/Card';
 import { Button, Col, Container, Modal, Row } from 'react-bootstrap';
 import { IoGameControllerOutline } from 'react-icons/io5';
-import { FaGithub, FaInfoCircle, FaJava, FaMarkdown, FaReact, FaRust } from 'react-icons/fa';
+import { FaExternalLinkAlt, FaGithub, FaInfoCircle, FaJava, FaMarkdown, FaPython, FaReact, FaRust } from 'react-icons/fa';
 import { useState } from 'react';
 import Blog from './Blog';
 import PageIntro from './PageIntro';
+import { TbBrandJavascript } from 'react-icons/tb';
 
 function ProjectModal(props) {
     const [show, setShow] = useState(false);
@@ -15,7 +16,7 @@ function ProjectModal(props) {
     return (
         <>
             <Card.Link variant="primary" onClick={handleShow}>
-                <FaInfoCircle size={60} />
+                <FaInfoCircle />
             </Card.Link>
             <Modal show={show}
                 onHide={handleClose}
@@ -42,17 +43,21 @@ function ProjectModal(props) {
 }
 
 function ProjectCard(props) {
-    const { name, desc, url, mdUrl, type } = props;
+    const { name, desc, playUrl, githubUrl, mdUrl, type } = props;
     const getTechStackIcon = () => {
         switch (type) {
             case "react":
-                return <FaReact size={40} />
+                return <FaReact title='React.js' />
             case "java":
-                return <FaJava size={40} />
+                return <FaJava title="Java" />
             case "rust":
-                return <FaRust size={40} />
+                return <FaRust title="Rust" />
             case "markdown":
-                return <FaMarkdown size={40} />
+                return <FaMarkdown title="MarkDown" />
+            case "python":
+                return <FaPython title="Python" />
+            case "javascript":
+                return <TbBrandJavascript />
             default:
                 return <></>
         }
@@ -64,19 +69,32 @@ function ProjectCard(props) {
                 <Card.Title>{name}</Card.Title>
                 <Card.Text>{desc}</Card.Text>
                 <Card.Text>{window.findProp("pages.projects.techStack")}{getTechStackIcon()}</Card.Text>
+            </Card.Body>
+            <Card.Footer>
                 <Container fluid>
                     <Row>
-                        <Col>
-                            <Card.Link href={url} target={type === "react" ? '' : '_blank'}>
-                                {type === "react" ? <IoGameControllerOutline size={60} /> : <FaGithub size={60} />}
-                            </Card.Link>
-                        </Col>
-                        <Col>
-                            {type !== "react" && mdUrl ? <ProjectModal title={name} mdUrl={mdUrl} /> : <></>}
-                        </Col>
+                        {
+                            playUrl ? <Col>
+                                <Card.Link href={playUrl} target={type === "react" ? '' : '_blank'}>
+                                    {type === "react" ? <IoGameControllerOutline /> : <FaExternalLinkAlt />}
+                                </Card.Link>
+                            </Col> : <></>
+                        }
+                        {
+                            githubUrl ? <Col>
+                                <Card.Link href={githubUrl} target={type === "react" ? '' : '_blank'}>
+                                    <FaGithub />
+                                </Card.Link>
+                            </Col> : <></>
+                        }
+                        {
+                            mdUrl ? <Col>
+                                <ProjectModal title={name} mdUrl={mdUrl} />
+                            </Col> : <></>
+                        }
                     </Row>
                 </Container>
-            </Card.Body>
+            </Card.Footer>
         </Card>
     );
 }
@@ -85,7 +103,15 @@ export default function Projects() {
         <Container fluid>
             <PageIntro h1={window.findProp("labels.projects")} p={window.findProp("pages.projects.intro")} />
             <Row>
-                {window.findProp("projects").map(p => <Col key={p.id}><ProjectCard name={p.name} desc={p.desc} url={p.url} mdUrl={p.mdUrl} type={p.type} /></Col>)}
+                {window.findProp("projects").map(p => <Col key={p.id}>
+                    <ProjectCard
+                        name={p.name}
+                        desc={p.desc}
+                        playUrl={p.playUrl}
+                        githubUrl={p.githubUrl}
+                        mdUrl={p.mdUrl}
+                        type={p.type} />
+                </Col>)}
             </Row>
         </Container>
     </>

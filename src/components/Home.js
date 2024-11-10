@@ -13,7 +13,7 @@ export default function Home() {
                     <Row>
                         <Col>
                             <div style={{ whiteSpace: "pre-line" }}>
-                                {window.findProp('pages.home.desc') + "\n\n\n\n\n\n\n"}
+                                {window.findProp('pages.home.desc')}
                             </div>
                         </Col>
                     </Row>

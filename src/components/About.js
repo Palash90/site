@@ -12,10 +12,7 @@ export default function About() {
             </Row>
             <Row>
                 <Col>
-                    Let's Connect:
-                </Col>
-                <Col>
-                    <Socials />
+                    Let's Connect: <Socials />
                 </Col>
             </Row>
         </Container>
