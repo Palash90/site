@@ -4,6 +4,7 @@ import Socials from "./Socials";
 
 export default function Home() {
     return <>
+        <h1>Home</h1>
         <Container fluid>
             <PageIntro h1={window.findProp('pages.home.greeting') + window.findProp('shortName')}
                 p={window.findProp('pages.home.tag')}

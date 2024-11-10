@@ -3,6 +3,7 @@ import PageIntro from "./PageIntro"
 
 export default function Contents() {
     return <>
+        <h1>Contents</h1>
         <Container fluid>
             <PageIntro h1={window.findProp("labels.contents")} p={window.findProp("pages.contents.intro")} />
             <Row>
@@ -12,12 +13,12 @@ export default function Contents() {
             <Row>
                 <Col>
                     <ul>
-                        {window.findProp("contents.swe").map(b => <li key={b.id}>{b.publishDate ? b.publishDate + " - " : ""} <a href={"/content/" + b.id}>{b.title}</a></li>)}
+                        {window.findProp("contents.swe").map(b => getContentLink(b))}
                     </ul>
                 </Col>
                 <Col>
                     <ul>
-                        {window.findProp("contents.music").map(b => <li key={b.id}>{b.publishDate ? b.publishDate + " - " : ""} <a href={"/content/" + b.id}>{b.title}</a></li>)}
+                        {window.findProp("contents.music").map(b => getContentLink(b))}
                     </ul>
                 </Col>
             </Row>
@@ -25,4 +26,12 @@ export default function Contents() {
 
     </>
 
+
+    function getContentLink(b) {
+        var link = process.env.PUBLIC_URL + "#/content/" + b.id;
+        console.log("Making new type of links " + link)
+        return <li key={b.id}>{b.publishDate ? b.publishDate + " - " : ""}
+            <a href={link}>{b.title}</a>
+        </li>
+    }
 }
