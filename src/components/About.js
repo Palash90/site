@@ -4,7 +4,6 @@ import Socials from "./Socials";
 
 export default function About() {
     return <>
-        <h1>About</h1>
         <Container>
             <Row>
                 <Col>

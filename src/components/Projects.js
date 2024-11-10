@@ -82,7 +82,6 @@ function ProjectCard(props) {
 }
 export default function Projects() {
     return <>
-        <h1>Projects</h1>
         <Container fluid>
             <PageIntro h1={window.findProp("labels.projects")} p={window.findProp("pages.projects.intro")} />
             <Row>

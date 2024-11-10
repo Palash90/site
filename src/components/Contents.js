@@ -3,7 +3,6 @@ import PageIntro from "./PageIntro"
 
 export default function Contents() {
     return <>
-        <h1>Contents</h1>
         <Container fluid>
             <PageIntro h1={window.findProp("labels.contents")} p={window.findProp("pages.contents.intro")} />
             <Row>
