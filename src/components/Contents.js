@@ -4,7 +4,12 @@ import PageIntro from "./PageIntro"
 export default function Contents() {
     return <>
         <Container fluid>
-            <PageIntro h1={window.findProp("labels.contents")} p={window.findProp("pages.contents.intro")} />
+            <PageIntro
+                h1={window.findProp("labels.contents")}
+                p={window.findProp("pages.contents.intro")}
+                h1Color={window.findProp("pages.contents.h1Color")}
+                pColor={window.findProp("pages.contents.pColor")}
+            />
             <Row>
                 <Col><h2 style={{ color: 'turquoise' }}>{window.findProp("labels.swe")}</h2></Col>
                 <Col><h2 style={{ color: 'turquoise' }}>{window.findProp("labels.music")}</h2></Col>

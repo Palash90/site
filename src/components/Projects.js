@@ -101,7 +101,12 @@ function ProjectCard(props) {
 export default function Projects() {
     return <>
         <Container fluid>
-            <PageIntro h1={window.findProp("labels.projects")} p={window.findProp("pages.projects.intro")} />
+            <PageIntro
+                h1={window.findProp("labels.projects")}
+                p={window.findProp("pages.projects.intro")}
+                h1Color={window.findProp("pages.projects.h1Color")}
+                pColor={window.findProp("pages.projects.pColor")}
+            />
             <Row>
                 {window.findProp("projects").map(p => <Col key={p.id}>
                     <ProjectCard

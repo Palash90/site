@@ -5,8 +5,11 @@ import Socials from "./Socials";
 export default function Home() {
     return <>
         <Container fluid>
-            <PageIntro h1={window.findProp('pages.home.greeting') + window.findProp('shortName')}
+            <PageIntro
+                h1={window.findProp('pages.home.greeting') + window.findProp('shortName')}
                 p={window.findProp('pages.home.tag')}
+                h1Color={window.findProp("pages.home.h1Color")}
+                pColor={window.findProp("pages.home.pColor")}
             />
             <Row>
                 <Col>
