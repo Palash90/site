@@ -1,7 +1,6 @@
 import { Col, Container, Row } from "react-bootstrap";
 import Blog from "./Blog";
 import Socials from "./Socials";
-import { Link } from "react-router-dom";
 
 export default function About() {
     return <>
