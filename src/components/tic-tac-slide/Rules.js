@@ -5,16 +5,23 @@ import I18nLabel from "./I18nLabel";
 import Markdown from "react-markdown";
 import rules from "./game_rules.js";
 import { Col, Row } from "react-bootstrap";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 
 export default function (props) {
     const { showRules, handleCloseRule } = useContext(AppContext);
 
-    return <Modal size="lg" style={{ color: "black" }} show={showRules} onHide={handleCloseRule} backdrop="static" keyboard={false}>
+    return <Modal size="lg" show={showRules} onHide={handleCloseRule} backdrop="static" keyboard={false}>
         <Modal.Header closeButton />
         <Modal.Body>
             <Row>
                 <Col>
-                    <Markdown>{rules()}</Markdown>
+                    <Markdown
+                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                        rehypePlugins={[rehypeRaw]}>
+                        {rules()}
+                    </Markdown>
                 </Col>
             </Row>
             <Row>
