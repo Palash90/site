@@ -44,20 +44,24 @@ function ProjectModal(props) {
 
 function ProjectCard(props) {
     const { name, desc, playUrl, githubUrl, mdUrl, type } = props;
+
     const getTechStackIcon = () => {
+        const title = window.findProp("techStack.title." + type);
+        const color = window.findProp("techStack.iconColor." + type);
+
         switch (type) {
             case "react":
-                return <FaReact title='React.js' />
+                return <FaReact color={color} title={title} />
             case "java":
-                return <FaJava title="Java" />
+                return <FaJava color={color} title={title} />
             case "rust":
-                return <FaRust title="Rust" />
+                return <FaRust color={color} title={title} />
             case "markdown":
-                return <FaMarkdown title="MarkDown" />
+                return <FaMarkdown color={color} title={title} />
             case "python":
-                return <FaPython title="Python" />
+                return <FaPython color={color} title={title} />
             case "javascript":
-                return <TbBrandJavascript />
+                return <TbBrandJavascript color={color} title={title} />
             default:
                 return <></>
         }
@@ -66,8 +70,8 @@ function ProjectCard(props) {
     return (
         <Card style={{ width: '100%', height: '100%' }}>
             <Card.Body>
-                <Card.Title>{name}</Card.Title>
-                <Card.Text>{desc}</Card.Text>
+                <Card.Title style={{ color: window.findProp("pages.projects.titleColor") }}>{name}</Card.Title>
+                <Card.Text style={{ color: window.findProp("pages.projects.bodyColor") }}>{desc}</Card.Text>
                 <Card.Text>{window.findProp("pages.projects.techStack")}{getTechStackIcon()}</Card.Text>
             </Card.Body>
             <Card.Footer>
@@ -115,7 +119,8 @@ export default function Projects() {
                         playUrl={p.playUrl}
                         githubUrl={p.githubUrl}
                         mdUrl={p.mdUrl}
-                        type={p.type} />
+                        type={p.type}
+                        iconColor={p.iconColor} />
                 </Col>)}
             </Row>
         </Container>
