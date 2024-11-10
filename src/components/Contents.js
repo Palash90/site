@@ -1,10 +1,11 @@
-import { Col, Container, Row } from "react-bootstrap"
+import { Col, Container, ListGroup, ListGroupItem, Row } from "react-bootstrap"
 import PageIntro from "./PageIntro"
 import { useParams } from "react-router";
 
 export default function Contents() {
     const type = useParams().type;
     var intro, header, h1Color;
+    var itemsPerPage = window.findProp("pages.contents.itemsPerPage");
 
     switch (type) {
         case "tech":
@@ -54,30 +55,38 @@ export default function Contents() {
                 }
             </Row>
             <Row>
-                {
-                    !type || type === "tech" ? <Col >
-                        <ul>
-                            {window.findProp("contents.swe").map(b => getContentLink(b))}
-                        </ul>
-                    </Col> : <></>
-                }
-                {
-                    !type || type === "music" ?
-                        <Col>
-                            <ul>
-                                {window.findProp("contents.music").map(b => getContentLink(b))}
-                            </ul>
-                        </Col> : <></>
-                }
+                {!type || type === "tech" ? getContentColumn("contents.swe") : <></>}
+                {!type || type === "music" ? getContentColumn("contents.music") : <></>}
             </Row>
         </Container >
 
     </>
 
+    function getContentColumn(type) {
+        var allContents = window.findProp(type);
+        var numColumns = Math.ceil(allContents.length / itemsPerPage);
+        var columns = []
+
+        for (var i = 0; i < numColumns; i++) {
+            var items = []
+            for (var j = 0; j < itemsPerPage; j++) {
+                var currentItemIndex = i * itemsPerPage + j;
+
+                if (currentItemIndex < allContents.length) {
+                    items.push(getContentLink(allContents[currentItemIndex]))
+                }
+
+            }
+            columns.push(<Col><ul >{items}</ul></Col>);
+        }
+
+        return columns;
+    }
 
     function getContentLink(b) {
         var link = process.env.PUBLIC_URL + "#/content/" + b.id;
-        return <li key={b.id}>{b.publishDate ? b.publishDate + " - " : ""}
+        return <li key={b.id}>
+            {b.publishDate ? b.publishDate + " - " : ""}
             <a href={link}>{b.title}</a>
         </li>
     }
