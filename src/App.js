@@ -32,10 +32,8 @@ function Footer() {
 function App() {
   return (
     <div className={window.findProp("pages.home.mainStyle")}>
-      <Header />
-      <br />
+      <Header/>
       <RouteResolver />
-      <br />
       <Footer />
     </div>
   );

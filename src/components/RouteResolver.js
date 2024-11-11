@@ -9,7 +9,7 @@ import { Container } from "react-bootstrap"
 
 export default function RouteResolver() {
     return (
-        <Container fluid className={window.findProp("pages.home.secondaryStyle")} >
+        <Container fluid className={window.findProp("pages.home.secondaryStyle") + " m-1"} >
             <Router>
                 <Routes>
                     <Route path='/' element={<Home />} />

@@ -1,30 +1,24 @@
-import { Card, Col, Container, Row } from "react-bootstrap";
+import { Col, Container, Row } from "react-bootstrap";
 import { FaGithub, FaLinkedin, FaYoutube } from "react-icons/fa";
 import { RiMailSendFill } from "react-icons/ri";
 
 export default function Socials() {
     return <>
-        <Container>
+        <Container fluid>
             <Row>
                 <Col>
-                    <Card.Link href="https://linkedin.com/in/palash90" target='_blank'>
+                    <a className="m-3 ms-0" href="https://linkedin.com/in/palash90" target='_blank' rel="noreferrer">
                         <FaLinkedin />
-                    </Card.Link>
-                </Col>
-                <Col>
-                    <Card.Link href="https://www.youtube.com/@GuitaleleTutorials" target='_blank'>
+                    </a>
+                    <a className="m-3 ms-0" href="https://www.youtube.com/@GuitaleleTutorials" target='_blank' rel="noreferrer">
                         <FaYoutube />
-                    </Card.Link>
-                </Col>
-                <Col>
-                    <Card.Link href="https://github.com/palash90" target='_blank'>
+                    </a>
+                    <a className="m-3 ms-0" href="https://github.com/palash90" target='_blank' rel="noreferrer">
                         <FaGithub />
-                    </Card.Link>
-                </Col>
-                <Col>
-                    <Card.Link className="button" href="mailto:connect@palashkantikundu.in" target='_blank'>
+                    </a>
+                    <a className="button m-3 ms-0" href="mailto:connect@palashkantikundu.in" target='_blank' rel="noreferrer">
                         <RiMailSendFill />
-                    </Card.Link>
+                    </a>
                 </Col>
             </Row>
         </Container>

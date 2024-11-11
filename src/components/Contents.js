@@ -1,11 +1,11 @@
 import { Col, Container, Row } from "react-bootstrap"
 import PageIntro from "./PageIntro"
 import { useParams } from "react-router";
+import ContentList from "./ContentList";
 
 export default function Contents() {
     const type = useParams().type;
     var intro, header, h1Color;
-    var itemsPerPage = window.findProp("pages.contents.itemsPerPage");
 
     switch (type) {
         case "tech":
@@ -55,41 +55,9 @@ export default function Contents() {
                 }
             </Row>
             <Row>
-                {!type || type === "tech" ? getContentColumn("contents.swe") : <></>}
-                {!type || type === "music" ? getContentColumn("contents.music") : <></>}
+                {!type || type === "tech" ? <Col><ContentList showDate type="contents.swe" /></Col> : <></>}
+                {!type || type === "music" ? <Col><ContentList showDate type="contents.music" /></Col> : <></>}
             </Row>
         </Container >
-
     </>
-
-    function getContentColumn(type) {
-        var allContents = window.findProp(type);
-        var numColumns = Math.ceil(allContents.length / itemsPerPage);
-        var columns = []
-
-        for (var i = 0; i < numColumns; i++) {
-            var items = []
-            for (var j = 0; j < itemsPerPage; j++) {
-                var currentItemIndex = i * itemsPerPage + j;
-
-                if (currentItemIndex < allContents.length) {
-                    items.push(getContentLink(allContents[currentItemIndex]))
-                }
-
-            }
-            columns.push(<Col><ul >{items}</ul></Col>);
-        }
-
-        return columns;
-    }
-
-    function getContentLink(b) {
-        var link = process.env.PUBLIC_URL + "#/content/" + b.id;
-        return <li key={b.id}>
-            <pre className={window.findProp("pages.contents.linkClass")}>
-                {b.publishDate ? b.publishDate + " - " : ""}
-                <a href={link}>{b.title}</a>
-            </pre>
-        </li>
-    }
 }
