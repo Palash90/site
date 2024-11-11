@@ -10,6 +10,7 @@ export default function Home() {
                 p={window.findProp('pages.home.tag')}
                 h1Color={window.findProp("pages.home.h1Color")}
                 pColor={window.findProp("pages.home.pColor")}
+                
             />
             <Row>
                 <Col>

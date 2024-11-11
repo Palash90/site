@@ -30,7 +30,7 @@ function ProjectModal(props) {
                     maxHeight: 'calc(100vh - 210px)',
                     overflowY: 'auto'
                 }}>
-                    <Blog mdUrl={props.mdUrl} />
+                    <Blog contentType="swe" mdUrl={props.mdUrl} />
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={handleClose}>
@@ -70,7 +70,7 @@ function ProjectCard(props) {
     return (
         <Card style={{ width: '100%', height: '100%' }}>
             <Card.Body>
-                <Card.Title style={{ color: window.findProp("pages.projects.titleColor") }}>{name}</Card.Title>
+                <Card.Title className={window.findProp("pages.home.mainStyle")} style={{ color: window.findProp("pages.projects.titleColor") }}>{name}</Card.Title>
                 <Card.Text style={{ color: window.findProp("pages.projects.bodyColor") }}>{desc}</Card.Text>
                 <Card.Text>{window.findProp("pages.projects.techStack")}{getTechStackIcon()}</Card.Text>
             </Card.Body>

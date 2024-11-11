@@ -1,4 +1,3 @@
-import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import RouteResolver from './components/RouteResolver';
 import { Container, Nav, Navbar } from 'react-bootstrap';
@@ -32,7 +31,7 @@ function Footer() {
 
 function App() {
   return (
-    <div className='lora-app'>
+    <div className={window.findProp("pages.home.mainStyle")}>
       <Header />
       <br />
       <RouteResolver />
