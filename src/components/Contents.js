@@ -86,7 +86,7 @@ export default function Contents() {
     function getContentLink(b) {
         var link = process.env.PUBLIC_URL + "#/content/" + b.id;
         return <li key={b.id}>
-            <pre className="tech-blog-content">
+            <pre className={window.findProp("pages.contents.linkClass")}>
                 {b.publishDate ? b.publishDate + " - " : ""}
                 <a href={link}>{b.title}</a>
             </pre>
