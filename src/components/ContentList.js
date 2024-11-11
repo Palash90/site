@@ -1,11 +1,19 @@
+import "./ContentList.css"
 function ContentLink(props) {
     var b = props.content
     var link = process.env.PUBLIC_URL + "#/content/" + b.id;
     return <li key={b.id}>
-        <span>
-            {b.publishDate && props.showDate ? b.publishDate + " - " : ""}
+
+        {b.publishDate && props.showDate ?
+            <>
+                <span className="date">{b.publishDate}</span>
+                <span>{" - "}</span></>
+            : <></>}
+
+        <span className="label">
             <a className={window.findProp("pages.contents.linkClass")} href={link}>{b.title}</a>
         </span>
+
     </li >
 }
 
