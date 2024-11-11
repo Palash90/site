@@ -47,9 +47,6 @@ export default function Blog(props) {
             });
     }, [props.mdUrl])
 
-
-    //fetchMarkDown(props.mdUrl, setMdData, setLoading, setError);
-
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error.message}</p>;
 

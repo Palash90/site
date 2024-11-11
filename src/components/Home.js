@@ -5,7 +5,7 @@ import ContentList from "./ContentList";
 
 export default function Home() {
     return <>
-        <Container fluid>
+        <Container className={window.findProp("pages.home.class")} fluid>
             <PageIntro
                 h1={window.findProp('pages.home.greeting') + window.findProp('shortName')}
                 p={window.findProp('pages.home.tag')}
@@ -27,14 +27,24 @@ export default function Home() {
                 </Col>
             </Row>
             <Row className="mt-3">
-                <Col>
-                    <h5>Recent Tech Blogs | <a href="#/contents/tech">Show All</a></h5>
-                    <p>Things I learnt recently</p>
+                <Col sm={12} md={6}>
+                    <h6>
+                        <b>{window.findProp("pages.home.techBlogHeader")}</b>
+                        <a href="#/contents/tech">
+                            {window.findProp("pages.home.techBlogShowAll")}
+                        </a>
+                    </h6>
+                    <p>{window.findProp("pages.home.techBlogTag")}</p>
                     <ContentList type="contents.swe" limit={5} />
                 </Col>
-                <Col>
-                    <h5>Recent Music Blogs | <a href="#/contents/tech">Show All</a></h5>
-                    <p>Things I explored recently</p>
+                <Col sm={12} md={6}>
+                    <h6>
+                        <b>{window.findProp("pages.home.techBlogHeader")}</b>
+                        <a href="#/contents/tech">
+                            {window.findProp("pages.home.musicBlogShowAll")}
+                        </a>
+                    </h6>
+                    <p>{window.findProp("pages.home.musicBlogTag")}</p>
                     <ContentList type="contents.music" limit={5} />
                 </Col>
             </Row>

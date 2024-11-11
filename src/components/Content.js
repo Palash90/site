@@ -14,16 +14,19 @@ export default function Content() {
     let params = useParams()
 
     useEffect(() => {
-        const sweContents = window.findProp("contents.swe").map(c => { return { ...c, "contentType": "swe" } })
-        const musicContents = window.findProp("contents.music").map(c => { return { ...c, "contentType": "music" } })
+        const sweContents = window.findProp("contents.swe")
+            .map(c => { return { ...c, "contentType": "swe" } })
+        const musicContents = window.findProp("contents.music")
+            .map(c => { return { ...c, "contentType": "music" } })
         var allContents = sweContents.concat(musicContents)
+        
         var content = allContents.find(b => b.id === params.contentId)
         if (content) {
-            if(content.mdUrl && content.videoId){
+            if (content.mdUrl && content.videoId) {
                 setType("both")
-            } else if(content.mdUrl && !content.videoId) {
+            } else if (content.mdUrl && !content.videoId) {
                 setType("markdown")
-            } else if(!content.mdUrl && content.videoId) {
+            } else if (!content.mdUrl && content.videoId) {
                 setType("video")
             } else {
                 setType(undefined)
