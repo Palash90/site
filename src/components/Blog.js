@@ -18,22 +18,22 @@ export default function Blog(props) {
 
     useEffect(() => {
         fetch(props.mdUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.text();
-        })
-        .then(data => {
-            setMdData(data);
-            setLoading(false);
-        })
-        .catch(error => {
-            setError(error);
-            setLoading(false);
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
+            .then(data => {
+                setMdData(data);
+                setLoading(false);
+            })
+            .catch(error => {
+                setError(error);
+                setLoading(false);
+            });
     }, [props.mdUrl])
-    
+
 
     //fetchMarkDown(props.mdUrl, setMdData, setLoading, setError);
 
