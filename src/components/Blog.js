@@ -9,6 +9,19 @@ export default function Blog(props) {
     const [mdData, setMdData] = useState(null);
     const [loading, setLoading] = useState(null);
     const [error, setError] = useState(null);
+    var className;
+
+    switch(props.contentType){
+        case "swe": 
+            className = window.findProp("pages.contents.techBlogClass")
+            break;
+        case "music":
+            className = window.findProp("pages.contents.musicBlogClass")
+            break;
+        default:
+            className = window.findProp("pages.contents.genericBlogClass")
+            break;
+    }
 
     const components = {
         img: (props) => {
@@ -40,7 +53,7 @@ export default function Blog(props) {
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error.message}</p>;
 
-    return <Container fluid>
+    return <Container className={className} fluid>
         <Row>
             <Col>
                 <Markdown

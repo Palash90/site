@@ -6,6 +6,7 @@ import Both from "./Both";
 
 export default function Content() {
     const [type, setType] = useState(null);
+    const [contentType, setContentType] = useState(null);
     const [ytId, setYtId] = useState(null);
     const [mdUrl, setMdUrl] = useState(null);
     const [error, setError] = useState(null);
@@ -13,9 +14,21 @@ export default function Content() {
     let params = useParams()
 
     useEffect(() => {
-        var content = window.findProp("contents.swe").concat(window.findProp("contents.music")).find(b => b.id === params.contentId)
+        const sweContents = window.findProp("contents.swe").map(c => { return { ...c, "contentType": "swe" } })
+        const musicContents = window.findProp("contents.music").map(c => { return { ...c, "contentType": "music" } })
+        var allContents = sweContents.concat(musicContents)
+        var content = allContents.find(b => b.id === params.contentId)
         if (content) {
-            setType(content.type)
+            if(content.mdUrl && content.videoId){
+                setType("both")
+            } else if(content.mdUrl && !content.videoId) {
+                setType("markdown")
+            } else if(!content.mdUrl && content.videoId) {
+                setType("video")
+            } else {
+                setType(undefined)
+            }
+            setContentType(content.contentType)
             setMdUrl(content.mdUrl);
             setYtId(content.videoId);
         } else {
@@ -28,9 +41,9 @@ export default function Content() {
     if (error) return <p>Error: {error.message}</p>;
 
     switch (type) {
-        case "markdown": return <Blog mdUrl={mdUrl} />
+        case "markdown": return <Blog contentType={contentType} mdUrl={mdUrl} />
         case "video": return <Yt ytId={ytId} />
-        case "both": return <Both ytId={ytId} mdUrl={mdUrl} />
+        case "both": return <Both contentType={contentType} ytId={ytId} mdUrl={mdUrl} />
         default: return <div>Unknown Content Type</div>
     }
 }

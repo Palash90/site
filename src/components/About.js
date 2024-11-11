@@ -3,7 +3,7 @@ import Blog from "./Blog";
 import Socials from "./Socials";
 export default function About() {
     return <>
-        <Container className="about">
+        <Container className={window.findProp("pages.about.blogClass")}>
             <Row>
                 <Col>
                     <Blog mdUrl={window.findProp("pages.about.mdUrl")} />
