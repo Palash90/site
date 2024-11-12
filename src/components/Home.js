@@ -39,7 +39,7 @@ export default function Home() {
                 </Col>
                 <Col sm={12} md={6}>
                     <h6>
-                        <b>{window.findProp("pages.home.techBlogHeader")}</b>
+                        <b>{window.findProp("pages.home.musicBlogHeader")}</b>
                         <a href="#/contents/tech">
                             {window.findProp("pages.home.musicBlogShowAll")}
                         </a>
