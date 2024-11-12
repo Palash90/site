@@ -52,6 +52,11 @@ export default function Blog(props) {
 
     return <Container className={className} fluid>
         <Row>
+            {props.publishDate?<Col><b>{window.findProp("labels.publishedOn")}</b>{props.publishDate}</Col>:<></>}
+            {props.lastUpdated?<Col><b>{window.findProp("labels.lastUpdated")}</b>{props.lastUpdated}</Col>:<></>}
+        </Row>
+        <br />
+        <Row>
             <Col>
                 <Markdown
                     remarkPlugins={[remarkGfm, remarkBreaks]}

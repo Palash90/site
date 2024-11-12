@@ -16,7 +16,7 @@ export default function Both(props) {
         </Row>
 
         <Row >
-            <Col><Blog contentType={props.contentType} mdUrl={props.mdUrl} /></Col>
+            <Col><Blog {...props} /></Col>
         </Row>
     </Container>
 

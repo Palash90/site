@@ -10,6 +10,8 @@ export default function Content() {
     const [ytId, setYtId] = useState(null);
     const [mdUrl, setMdUrl] = useState(null);
     const [error, setError] = useState(null);
+    const [publishDate, setPublishDate] = useState(null);
+    const [lastUpdated, setLastUpdated] = useState(null);
 
     let params = useParams()
 
@@ -31,7 +33,9 @@ export default function Content() {
             } else {
                 setType(undefined)
             }
-            setContentType(content.contentType)
+            setLastUpdated(content.lastUpdated);
+            setPublishDate(content.publishDate);
+            setContentType(content.contentType);
             setMdUrl(content.mdUrl);
             setYtId(content.videoId);
         } else {
@@ -44,9 +48,9 @@ export default function Content() {
     if (error) return <p>Error: {error.message}</p>;
 
     switch (type) {
-        case "markdown": return <Blog contentType={contentType} mdUrl={mdUrl} />
+        case "markdown": return <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} />
         case "video": return <Yt ytId={ytId} />
-        case "both": return <Both contentType={contentType} ytId={ytId} mdUrl={mdUrl} />
+        case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} />
         default: return <div>Unknown Content Type</div>
     }
 }
