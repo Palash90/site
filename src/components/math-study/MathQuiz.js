@@ -3,6 +3,7 @@ import { Button, Col, Container, Row } from "react-bootstrap";
 import Form from 'react-bootstrap/Form';
 import { BiAngry } from "react-icons/bi";
 import { FaStar } from "react-icons/fa";
+import { IoRefreshCircleOutline } from "react-icons/io5";
 
 export default function MathQuiz(props) {
     const [question, setQuestion] = useState('');
@@ -19,7 +20,7 @@ export default function MathQuiz(props) {
     const generateQA = () => {
         const getRandomNumber = (min, max, allowDecimal, decimalPlace) => {
             var rand = Math.random() * (max - min + 1) + min;
-
+            console.log(rand)
             if (allowDecimal) {
                 return rand.toFixed(decimalPlace)
             } else {
@@ -40,7 +41,7 @@ export default function MathQuiz(props) {
                 setCorrectAnswer(num1 + num2);
                 break;
             case 'subtract':
-                if (num1 < num2) {
+                if (!props.allowNegative && num1 < num2) {
                     [num1, num2] = [num2, num1]
                 }
                 setQuestion(`What is the value of ${num1} - ${num2}?`);
@@ -51,6 +52,7 @@ export default function MathQuiz(props) {
                 setCorrectAnswer(num1 * num2);
                 break;
             case 'divide':
+                num2 = num2 === 0 ? 5 : num2
                 setQuestion(`What is the value of ${num1} / ${num2}?`);
                 setCorrectAnswer([Math.floor(num1 / num2), num1 % num2]);
                 break;
@@ -100,11 +102,14 @@ export default function MathQuiz(props) {
     }
 
     const checkAnswer = () => {
-        if (parseInt(answer) === correctAnswer) {
-            setScore(score + 1)
+        var correct = false;
+        if (operation === 'divide') {
+            correct = parseInt(answer) === correctAnswer[0] && parseInt(remainder) === correctAnswer[1]
         } else {
-            setScore(score - 1)
+            correct = parseInt(answer) === correctAnswer
         }
+
+        setScore(correct ? score + 1 : score - 1);
         setAnswer('');
         setRemainder('');
         generateQA();
@@ -118,6 +123,11 @@ export default function MathQuiz(props) {
             <Col>
                 {scorePanel()}
             </Col>
+            <Col>
+                <Button onClick={() => props.setScreen(1)}>
+                    <IoRefreshCircleOutline />
+                </Button>
+            </Col>
         </Row>
         <Row>
             <Col>
@@ -126,11 +136,19 @@ export default function MathQuiz(props) {
         </Row>
         <Row>
             <Col>
-                <Form.Control type="text" placeholder="" value={answer} onChange={(e) => setAnswer(e.target.value)} />
+                <Form.Control
+                    type="text"
+                    placeholder={operation === 'divide' ? "Quotient" : "Answer"}
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)} />
             </Col>
             {
                 operation === 'divide' ? <Col>
-                    <Form.Control type="text" placeholder="" value={remainder} onChange={(e) => setRemainder(e.target.value)} />
+                    <Form.Control
+                        type="text"
+                        placeholder={operation === 'divide' ? "Remainder" : ""}
+                        value={remainder}
+                        onChange={(e) => setRemainder(e.target.value)} />
                 </Col> : <></>
             }
             <Col>
