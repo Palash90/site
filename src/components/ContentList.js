@@ -33,11 +33,11 @@ export default function ContentList(props) {
             var currentItemIndex = i * itemsPerPage + j;
 
             if (currentItemIndex < allContents.length) {
-                items.push(<ContentLink showDate={props.showDate} content={allContents[currentItemIndex]} />)
+                items.push(<ContentLink key={"content" + i + "-" + j} showDate={props.showDate} content={allContents[currentItemIndex]} />)
             }
 
         }
-        columns.push(<ul>{items}</ul>);
+        columns.push(<ul key={"col" + i}>{items}</ul>);
     }
 
     return columns;

@@ -1,16 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MathQuiz from "./MathQuiz";
 import Form from 'react-bootstrap/Form';
-import { Button, Col, Container, Row } from "react-bootstrap";
+import { Alert, Button, Col, Container, Row } from "react-bootstrap";
 
 export default function MathStudy() {
     const [screen, setScreen] = useState(1);
 
+    const [operations, setOperations] = useState([]);
+
     const [allowNegative, setAllowNegative] = useState(false);
     const [min1, setMin1] = useState(0)
-    const [max1, setMax1] = useState(1)
+    const [max1, setMax1] = useState(5)
     const [min2, setMin2] = useState(0)
-    const [max2, setMax2] = useState(1)
+    const [max2, setMax2] = useState(5)
+
+    const [addSelected, setAddSelected] = useState(false)
+    const [subSelected, setSubSelected] = useState(false)
+    const [mulSelected, setMulSelected] = useState(false)
+    const [divSelected, setDivSelected] = useState(false)
+
+    const [error, setError] = useState('')
+
+    useEffect(() => {
+        if (screen === 1) {
+            setOperations([]);
+            setAllowNegative(false);
+            setMin1(0);
+            setMax1(5);
+            setMin2(0);
+            setMax2(5);
+            setAddSelected(false);
+            setSubSelected(false);
+            setMulSelected(false);
+            setDivSelected(false);
+            setError('');
+        }
+    }, [screen])
+
 
     if (screen === 2) {
         return <MathQuiz
@@ -21,7 +47,7 @@ export default function MathStudy() {
             allowDecimal={false}
             decimalPlace={0}
             allowNegative={allowNegative}
-            operations={['add', 'subtract', 'multiply', 'divide']}
+            operations={operations}
             setScreen={setScreen}
         />
     }
@@ -34,15 +60,15 @@ export default function MathStudy() {
                     id="custom-switch"
                     label="Allow Negative Values"
                     value={allowNegative}
-                    disabled={true}
                     onChange={(e) => {
-                        //Todo --- Have to check why this is not working
-                        console.log(e.target.value)
-                        if (!e.target.value) {
+                        var newAllowNegative = !allowNegative
+
+                        if (!newAllowNegative) {
                             setMin1(0);
                             setMin2(0);
                         }
-                        setAllowNegative(e.target.value)
+
+                        setAllowNegative(newAllowNegative)
                     }}
                 />
             </Col>
@@ -73,45 +99,112 @@ export default function MathStudy() {
                     <Form.Range
                         value={max1}
                         onChange={(e) => setMax1(e.target.value)}
-                        min={1}
+                        min={5}
                         max={100}
                     />
                 </Col>
             </Row>
-        </Row>
 
-        <Row>
-            <Col>
-                <Form.Label>Range of Second Number</Form.Label>
-            </Col>
-            <Col>
-                <Form.Label>{min2}</Form.Label>
-            </Col>
-            <Col>
-                <Form.Label>{max2}</Form.Label>
-            </Col>
+
             <Row>
                 <Col>
-                    <Form.Range
-                        value={min2}
-                        onChange={(e) => setMin2(e.target.value)}
-                        min={-100}
-                        max={0}
-                        disabled={!allowNegative}
+                    <Form.Label>Range of Second Number</Form.Label>
+                </Col>
+                <Col>
+                    <Form.Label>{min2}</Form.Label>
+                </Col>
+                <Col>
+                    <Form.Label>{max2}</Form.Label>
+                </Col>
+                <Row>
+                    <Col>
+                        <Form.Range
+                            value={min2}
+                            onChange={(e) => setMin2(e.target.value)}
+                            min={-100}
+                            max={0}
+                            disabled={!allowNegative}
+                        />
+                    </Col>
+                    <Col>
+                        <Form.Range
+                            value={max2}
+                            onChange={(e) => setMax2(e.target.value)}
+                            min={5}
+                            max={100}
+                        />
+                    </Col>
+                </Row>
+            </Row>
+
+            <Row>
+                <Col>
+                    Select Operations:
+                </Col>
+                <Col>
+                    <Form.Check
+                        type='checkbox'
+                        label={`Addition`}
+                        value={addSelected}
+                        onChange={(e) => setAddSelected(e.target.checked)}
                     />
                 </Col>
                 <Col>
-                    <Form.Range
-                        value={max2}
-                        onChange={(e) => setMax2(e.target.value)}
-                        min={1}
-                        max={100}
+                    <Form.Check
+                        type='checkbox'
+                        label={`Subtraction`}
+                        value={subSelected}
+                        onChange={(e) => setSubSelected(e.target.checked)}
+                    />
+                </Col>
+                <Col>
+                    <Form.Check
+                        type='checkbox'
+                        label={`Multiplication`}
+                        value={mulSelected}
+                        onChange={(e) => setMulSelected(e.target.checked)}
+                    />
+                </Col>
+                <Col>
+                    <Form.Check
+                        type='checkbox'
+                        label={`Division`}
+                        value={divSelected}
+                        onChange={(e) => setDivSelected(e.target.checked)}
                     />
                 </Col>
             </Row>
+
         </Row>
 
+        {
+            error.length > 0 ? <Alert variant='danger'>
+                {error}
+            </Alert> : <></>
+        }
 
-        <Button onClick={() => setScreen(2)}>Start Quiz</Button>
+        <Button onClick={() => {
+            var newOperations = [];
+            if (addSelected) {
+                newOperations.push('add');
+            }
+            if (subSelected) {
+                newOperations.push('subtract');
+            }
+            if (mulSelected) {
+                newOperations.push('multiply');
+            }
+            if (divSelected) {
+                newOperations.push('divide');
+            }
+            if (newOperations.length > 0) {
+                setOperations(newOperations);
+                setScreen(2);
+                setError('');
+            } else {
+                setError('Please select at least one operation')
+            }
+
+        }}>Start Quiz</Button>
     </Container>
 }
