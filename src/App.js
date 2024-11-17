@@ -3,6 +3,8 @@ import RouteResolver from './components/RouteResolver';
 import { Container, Nav, Navbar } from 'react-bootstrap';
 import { FaRegCopyright } from 'react-icons/fa';
 
+import React, { useState, useEffect } from 'react';
+
 import ReactGA from 'react-ga4';
 ReactGA.initialize('G-R0XE0Q4Z0Q');
 
