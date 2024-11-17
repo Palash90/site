@@ -9,8 +9,8 @@ export default function CustomComponent() {
         "math-study": <MathStudy />
     }
     let params = useParams()
-    console.log(componentMap, params.componentId, componentMap[params.componentId])
-    return <Container>
+
+return <Container>
         <Row>
             <Col>
                 {componentMap[params.componentId]}

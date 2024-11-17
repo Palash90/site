@@ -39,7 +39,6 @@ export default function MathQuiz(props) {
     const generateQA = () => {
         const getRandomNumber = (min, max, allowDecimal, decimalPlace) => {
             var rand = parseFloat(Math.random() * (max - min + 1) + min);
-            console.log("Generated rand", rand)
             if (allowDecimal) {
                 return rand.toFixed(decimalPlace)
             } else {
