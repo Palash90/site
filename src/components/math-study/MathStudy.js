@@ -76,13 +76,7 @@ export default function MathStudy() {
 
         <Row>
             <Col>
-                <Form.Label>Range of First Number</Form.Label>
-            </Col>
-            <Col>
-                <Form.Label>{min1}</Form.Label>
-            </Col>
-            <Col>
-                <Form.Label>{max1}</Form.Label>
+                <Form.Label>Range of First Number: {min1} - {max1}</Form.Label>
             </Col>
             <Row>
                 <Col>
@@ -92,7 +86,6 @@ export default function MathStudy() {
                         min={-100}
                         max={0}
                         disabled={!allowNegative}
-
                     />
                 </Col>
                 <Col>
@@ -104,17 +97,9 @@ export default function MathStudy() {
                     />
                 </Col>
             </Row>
-
-
             <Row>
                 <Col>
-                    <Form.Label>Range of Second Number</Form.Label>
-                </Col>
-                <Col>
-                    <Form.Label>{min2}</Form.Label>
-                </Col>
-                <Col>
-                    <Form.Label>{max2}</Form.Label>
+                    <Form.Label>Range of Second Number: {min2} - {max2}</Form.Label>
                 </Col>
                 <Row>
                     <Col>
