@@ -6,7 +6,7 @@ import React from 'react';
 
 import ReactGA from 'react-ga4';
 ReactGA.initialize('G-R0XE0Q4Z0Q');
-ReactGA.pageview(window.location.pathname + window.location.search);
+ReactGA.send({hitType:"pageview",page:window.location.pathname+window.location.search});
 
 function Header() {
   return (<Navbar expand="lg" bg="dark" style={{ borderBottom: "1px solid" }} sticky='top'>
