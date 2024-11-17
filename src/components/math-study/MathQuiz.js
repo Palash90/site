@@ -202,6 +202,23 @@ export default function MathQuiz(props) {
         </Row>
         <MathQuizModal
             operations={props.operations}
+
+            addition={addition}
+            additionCorrect={additionCorrect}
+            additionWrong={additionWrong}
+
+            subtraction={subtraction}
+            subtractionCorrect={subtractionCorrect}
+            subtractionWrong={subtractionWrong}
+
+            multiplication={multiplication}
+            multiplicationCorrect={multiplicationCorrect}
+            multiplicationWrong={multiplicationWrong}
+
+            division={division}
+            divisionCorrect={divisionCorrect}
+            divisionWrong={divisionWrong}
+
             detailsRow={detailsRow}
             setDetailsRow={setDetailsRow} />
     </Container>
