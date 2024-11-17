@@ -186,16 +186,16 @@ export default function MathStudy() {
         <Button onClick={() => {
             var newOperations = [];
             if (addSelected) {
-                newOperations.push('add');
+                newOperations.push('a');
             }
             if (subSelected) {
-                newOperations.push('subtract');
+                newOperations.push('s');
             }
             if (mulSelected) {
-                newOperations.push('multiply');
+                newOperations.push('m');
             }
             if (divSelected) {
-                newOperations.push('divide');
+                newOperations.push('d');
             }
             if (newOperations.length > 0) {
                 setOperations(newOperations);

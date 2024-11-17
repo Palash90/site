@@ -1,6 +1,6 @@
 import { Col, Row } from "react-bootstrap"
 
-export default function IndividualScoreElement(props) {
+export default function Score(props) {
     return <><Row>
         <Col><span>{props.elem}: {props.score}</span></Col>
     </Row>
