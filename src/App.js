@@ -3,6 +3,9 @@ import RouteResolver from './components/RouteResolver';
 import { Container, Nav, Navbar } from 'react-bootstrap';
 import { FaRegCopyright } from 'react-icons/fa';
 
+import ReactGA from 'react-ga4';
+ReactGA.initialize('G-R0XE0Q4Z0Q');
+
 function Header() {
   return (<Navbar expand="lg" bg="dark" style={{ borderBottom: "1px solid" }} sticky='top'>
     <Container fluid>
@@ -30,6 +33,10 @@ function Footer() {
 
 
 function App() {
+  useEffect(() => {
+        ReactGA.pageview(window.location.pathname + window.location.search);
+          }, []);
+  })
   return (
     <div className={window.findProp("pages.home.mainStyle")}>
       <Header/>
