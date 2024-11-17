@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 
 import ReactGA from 'react-ga4';
 ReactGA.initialize('G-R0XE0Q4Z0Q');
+ReactGA.pageview(window.location.pathname + window.location.search);
 
 function Header() {
   return (<Navbar expand="lg" bg="dark" style={{ borderBottom: "1px solid" }} sticky='top'>
@@ -35,10 +36,6 @@ function Footer() {
 
 
 function App() {
-  useEffect(() => {
-        ReactGA.pageview(window.location.pathname + window.location.search);
-          }, []);
-
   return (
     <div className={window.findProp("pages.home.mainStyle")}>
       <Header/>
