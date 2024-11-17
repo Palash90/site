@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Button, Col, Container, Row } from "react-bootstrap";
+import { Button, Col, Container, Modal, Row } from "react-bootstrap";
 import Form from 'react-bootstrap/Form';
-import { BiAngry } from "react-icons/bi";
-import { FaStar } from "react-icons/fa";
 import { IoRefreshCircleOutline } from "react-icons/io5";
+import ScorePanel from "./ScorePanel";
+import IndividualScoreElement from "./IndividualScoreElement";
+import MathQuizModal from "./MathQuizModal";
 
 export default function MathQuiz(props) {
     const [question, setQuestion] = useState('');
@@ -89,40 +90,6 @@ export default function MathQuiz(props) {
         generateQA();
     }, [])
 
-    const scorePanel = () => {
-        if (score === 0) {
-            return <></>
-        } else if (score > 0) {
-            return <Row xs="auto">
-                <Col><FaStar style={{ color: 'yellow' }} size={50} /></Col>
-                <Col>
-                    <span style={{
-                        position: 'absolute',
-                        color: "lightgreen",
-                        fontWeight: 'bold',
-                        fontSize: '20px'
-                    }}>
-                        {score}
-                    </span>
-                </Col>
-            </Row>
-        } else {
-            return <Row xs="auto">
-                <Col><BiAngry style={{ color: 'red' }} size={50} /></Col>
-                <Col>
-                    <span style={{
-                        position: 'absolute',
-                        color: "lightgreen",
-                        fontWeight: 'bold',
-                        fontSize: '20px'
-                    }}>
-                        {Math.abs(score)}
-                    </span>
-                </Col>
-            </Row>
-        }
-    }
-
     const checkAnswer = () => {
         var correct = false;
         if (operation === 'divide') {
@@ -178,24 +145,16 @@ export default function MathQuiz(props) {
         generateQA();
     }
 
-    const individualScoreElement = (props) => {
-        return <><Row>
-            <Col><span>{props.elem}: {props.score}</span></Col>
-        </Row>
-            <Row xs={2}>
-                <Col><span style={{ color: 'lightgreen' }}>Correct: {props.correct}</span></Col>
-                <Col><span style={{ color: 'red' }}>Wrong: {props.wrong}</span></Col>
-            </Row>
-        </>
-    }
-
     return <Container className="justify-content-md-center">
         <Row >
             <Col>
-                {individualScoreElement({ elem: 'Total', score: total, correct: totalCorrect, wrong: totalWrong })}
+                <IndividualScoreElement elem='Total'
+                    score={total}
+                    correct={totalCorrect}
+                    wrong={totalWrong} />
             </Col>
             <Col>
-                {scorePanel()}
+                <ScorePanel score={score} />
             </Col>
             <Col>
                 <Button onClick={() => setDetailsRow(!detailsRow)}>
@@ -209,33 +168,7 @@ export default function MathQuiz(props) {
                 </Button>
             </Col>
         </Row>
-        {
-            detailsRow ? <Row className="mt-4 mb-4">
-                {
-                    props.operations.indexOf('add') >= 0 ? <Col>
-                        {individualScoreElement({ elem: 'Addition', score: addition, correct: additionCorrect, wrong: additionWrong })}
-                    </Col> : <></>
-                }
 
-                {
-                    props.operations.indexOf('subtract') >= 0 ? <Col>
-                        {individualScoreElement({ elem: 'Subtraction', score: subtraction, correct: subtractionCorrect, wrong: subtractionWrong })}
-                    </Col> : <></>
-                }
-
-                {
-                    props.operations.indexOf('multiply') >= 0 ? <Col>
-                        {individualScoreElement({ elem: 'Multiplication', score: multiplication, correct: multiplicationCorrect, wrong: multiplicationWrong })}
-                    </Col> : <></>
-                }
-
-                {
-                    props.operations.indexOf('divide') >= 0 ? <Col>
-                        {individualScoreElement({ elem: 'Division', score: division, correct: divisionCorrect, wrong: divisionWrong })}
-                    </Col> : <></>
-                }
-            </Row> : <></>
-        }
         <Row className="mt-4">
             <Col>
                 <h1>{question}</h1>
@@ -267,5 +200,9 @@ export default function MathQuiz(props) {
                 </Button>
             </Col>
         </Row>
+        <MathQuizModal
+            operations={props.operations}
+            detailsRow={detailsRow}
+            setDetailsRow={setDetailsRow} />
     </Container>
 }
