@@ -20,7 +20,7 @@ export default function Content() {
             .map(c => { return { ...c, "contentType": "swe" } })
         const musicContents = window.findProp("contents.music")
             .map(c => { return { ...c, "contentType": "music" } })
-        var allContents = sweContents.concat(musicContents)
+        var allContents = sweContents.concat(musicContents).concat(window.findProp("contents.drafts"))
         
         var content = allContents.find(b => b.id === params.contentId)
         if (content) {
