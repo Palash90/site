@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
+import 'katex/dist/katex.min.css';
 
 export default function Blog(props) {
     const [mdData, setMdData] = useState(null);
@@ -59,9 +62,9 @@ export default function Blog(props) {
         <Row>
             <Col>
                 <Markdown
-                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
                     components={components}
-                    rehypePlugins={[rehypeRaw]}
+                    rehypePlugins={[rehypeRaw, rehypeKatex]}
                 >
                     {mdData}
                 </Markdown>
