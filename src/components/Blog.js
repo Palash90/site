@@ -71,7 +71,5 @@ export default function Blog(props) {
                 </Markdown>
             </Col>
         </Row>
-        <br />
-        <SocialRow />
     </Container>
 }
