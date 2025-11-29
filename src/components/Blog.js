@@ -7,6 +7,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 import 'katex/dist/katex.min.css';
+import SocialRow from "./SocialRow";
 
 export default function Blog(props) {
     const [mdData, setMdData] = useState(null);
@@ -70,5 +71,7 @@ export default function Blog(props) {
                 </Markdown>
             </Col>
         </Row>
+        <br />
+        <SocialRow />
     </Container>
 }
