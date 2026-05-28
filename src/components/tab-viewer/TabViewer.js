@@ -28,9 +28,14 @@ export default function TabViewer(props) {
     if (error) return <p>Error: {error.message}</p>;
 
     return <div>
-        <h3>Associated Tab Server Response</h3>
-        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(data, null, 2)}</pre>
+        <h3>Associated Tab</h3>
         <GuitaleleViewer scoreData={data} />
+        <br />
+
+        {/*
+        <h3>Associated Tab 2/2</h3>
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore22, null, 2)}</pre>
+        <GuitaleleViewer scoreData={dummyScore22} />
         <br />
 
         <h3>Associated Tab 2/4</h3>
@@ -48,14 +53,11 @@ export default function TabViewer(props) {
         <GuitaleleViewer scoreData={dummyScore68} />
         <br />
 
-        <h3>Associated Tab 2/2</h3>
-        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore22, null, 2)}</pre>
-        <GuitaleleViewer scoreData={dummyScore22} />
-        <br />
-
-        <h3>Associated Tab 4/4 Single Line</h3>
+        <h3>Associated Tab 4/4 Multi Line</h3>
         <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore, null, 2)}</pre>
         <GuitaleleViewer scoreData={dummyScore} />
+        */}
+
     </div>
 }
 
