@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import GuitaleleViewer from "./GuitaleleViewer";
-import { dummyScore } from "./dummy_score";
+import { dummyScore, dummyScore24, dummyScore34, dummyScore68 } from "./dummy_score";
 
 export default function TabViewer(props) {
     const [data, setData] = useState(null);
@@ -16,7 +16,7 @@ export default function TabViewer(props) {
             })
             .then(data => {
                 //setData(JSON.parse(data));
-                setData(dummyScore);
+                setData(dummyScore24);
                 setLoading(false);
             })
             .catch(error => {

@@ -11,8 +11,8 @@ const GUITALELE_TUNING = {
 };
 
 const RHYTHM_BEAT_VALUES = {
-    'o': 4.0, '.': 2.0, ':': 1.0, '+': 0.5, '=': 0.25,
-    'x': 1.0, 'x+': 0.5, 'x=': 0.25
+    'o': 4.0, 'o.': 6.0, '.': 2.0, '..': 3.0, ':': 1.0, ':.': 1.5, '+': 0.5, '+.': 0.75, '=': 0.25,
+    'x': 1.0, 'x.': 1.5, 'x+': 0.5, 'x=': 0.25
 };
 
 const CHROMATIC_MAP = {
@@ -42,6 +42,18 @@ const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
     };
 };
 
+// Helper: Generates a mathematically perfect, filled music flag path
+const getFlagPath = (sx, sy) => {
+    // M: Start at top of stem
+    // C1: Outer swoop (curves right and down to a point)
+    // C2: Inner swoop (curves back up to attach to the stem)
+    // Z: Close path straight up the stem edge
+    return `M ${sx} ${sy} 
+            C ${sx + 11} ${sy + 1}, ${sx + 14} ${sy + 12}, ${sx + 3} ${sy + 22} 
+            C ${sx + 9} ${sy + 14}, ${sx + 8} ${sy + 7}, ${sx} ${sy + 9} 
+            Z`;
+};
+
 export default function GuitaleleViewer({ scoreData }) {
     if (!scoreData || !scoreData.notes) return null;
 
@@ -52,13 +64,17 @@ export default function GuitaleleViewer({ scoreData }) {
 
         if (!detectedRhythm && note.duration !== undefined) {
             if (note.fret === undefined && note.string === undefined) {
-                if (note.duration === 1.0) detectedRhythm = 'x';
+                if (note.duration === 1.5) detectedRhythm = 'x.';
+                else if (note.duration === 1.0) detectedRhythm = 'x';
                 else if (note.duration === 0.5) detectedRhythm = 'x+';
                 else if (note.duration === 0.25) detectedRhythm = 'x=';
             } else {
                 if (note.duration === 4.0) detectedRhythm = 'o';
+                else if (note.duration === 3.0) detectedRhythm = '..';
                 else if (note.duration === 2.0) detectedRhythm = '.';
+                else if (note.duration === 1.5) detectedRhythm = ':.';
                 else if (note.duration === 1.0) detectedRhythm = ':';
+                else if (note.duration === 0.75) detectedRhythm = '+.';
                 else if (note.duration === 0.5) detectedRhythm = '+';
                 else if (note.duration === 0.25) detectedRhythm = '=';
             }
@@ -70,7 +86,6 @@ export default function GuitaleleViewer({ scoreData }) {
         };
     });
 
-    // Widened padding space to clear area for the Time Signature numbers
     const paddingX = 140; 
     const noteSpacing = 75;
     const lineSpacing = 14;
@@ -89,40 +104,49 @@ export default function GuitaleleViewer({ scoreData }) {
     let currentRowNotes = [];
     let accumulatedBeats = 0;
     let measuresInRow = 0;
+    
+    const MAX_MEASURES_PER_ROW = 4; 
+    const MAX_NOTES_PER_ROW = 64;   
 
     notes.forEach((note) => {
-        const beatValue = RHYTHM_BEAT_VALUES[note.rhythm] || 1.0;
+        const beatValue = note.duration !== undefined ? note.duration : (RHYTHM_BEAT_VALUES[note.rhythm] || 1.0);
+        
         currentRowNotes.push({ ...note, beatValue });
         accumulatedBeats += beatValue;
 
-        if (Math.abs(accumulatedBeats - beatsPerMeasure) < 0.01) {
+        if (accumulatedBeats >= beatsPerMeasure - 0.05) {
             currentRowNotes[currentRowNotes.length - 1].endOfMeasure = true;
             measuresInRow++;
-            accumulatedBeats = 0;
+            
+            accumulatedBeats = Math.max(0, accumulatedBeats - beatsPerMeasure);
 
-            if (measuresInRow === 4) {
+            if (measuresInRow >= MAX_MEASURES_PER_ROW || currentRowNotes.length >= MAX_NOTES_PER_ROW) {
                 rows.push([...currentRowNotes]);
                 currentRowNotes = [];
                 measuresInRow = 0;
             }
+        } else if (currentRowNotes.length >= MAX_NOTES_PER_ROW) {
+            rows.push([...currentRowNotes]);
+            currentRowNotes = [];
+            measuresInRow = 0;
+            accumulatedBeats = 0;
         }
     });
+    
     if (currentRowNotes.length > 0) rows.push([...currentRowNotes]);
 
     return (
-        <div className="w-full max-h-[80vh] overflow-y-auto overflow-x-hidden bg-slate-50 p-6 flex flex-col gap-12 rounded-xl shadow-inner">
+        <div className="w-full h-[85vh] overflow-y-auto bg-stone-100/80 p-6 flex flex-col gap-10 rounded-xl shadow-inner border border-stone-200">
             {rows.map((rowNotes, rowIdx) => {
                 const totalWidth = paddingX * 2 + (rowNotes.length * noteSpacing);
                 const barlineXPositions = [];
 
-                // Track note metrics and barlines safely inside row scope
                 let rowBeatTracker = 0;
                 const renderedNotes = rowNotes.map((note, index) => {
                     const cx = paddingX + (index * noteSpacing) + (noteSpacing / 2);
                     
                     rowBeatTracker += note.beatValue;
                     
-                    // If a measure boundaries falls between notes, store it for line rendering
                     if (Math.abs(rowBeatTracker % beatsPerMeasure) < 0.01 && index !== rowNotes.length - 1) {
                         barlineXPositions.push(cx + (noteSpacing / 2));
                     }
@@ -147,8 +171,8 @@ export default function GuitaleleViewer({ scoreData }) {
                 });
 
                 return (
-                    <div key={`row-${rowIdx}`} className="w-full overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-sm">
-                        <svg width={totalWidth} height={svgHeight} className="mx-auto select-none">
+                    <div key={`row-${rowIdx}`} className="bg-white border border-stone-200 rounded-lg shadow-sm flex-none p-4 w-full overflow-x-auto">
+                        <svg width={totalWidth} height={svgHeight} className="select-none mx-auto block">
                             
                             {/* Grand Staff Connecting Brace */}
                             <path
@@ -168,19 +192,16 @@ export default function GuitaleleViewer({ scoreData }) {
                             ))}
                             <text x={paddingX - 105} y={bassTopY + (3.2 * lineSpacing)} className="text-4xl font-serif fill-slate-800">𝄢</text>
 
-                            {/* Clean Time Signature Notation Engine */}
+                            {/* Time Signature Engine */}
                             <g className="font-serif font-black text-2xl fill-slate-900 text-center" transform={`translate(${paddingX - 55}, 0)`}>
-                                {/* Treble Time Signature numbers */}
                                 <text x="0" y={trebleTopY + 16} textAnchor="middle">{timeSigTop}</text>
                                 <text x="0" y={trebleTopY + 42} textAnchor="middle">{timeSigBottom}</text>
 
-                                {/* Bass Time Signature numbers */}
                                 <text x="0" y={bassTopY + 16} textAnchor="middle">{timeSigTop}</text>
                                 <text x="0" y={bassTopY + 42} textAnchor="middle">{timeSigBottom}</text>
                                 
-                                {/* Tab Notation System Time Signature numbers */}
-                                <text x="0" y={tabTopY + 24} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-500">{timeSigTop}</text>
-                                <text x="0" y={tabTopY + 54} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-500">{timeSigBottom}</text>
+                                <text x="0" y={tabTopY + 24} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-600">{timeSigTop}</text>
+                                <text x="0" y={tabTopY + 54} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-600">{timeSigBottom}</text>
                             </g>
 
                             {/* 6-Line Guitalele Tab Grid */}
@@ -198,13 +219,11 @@ export default function GuitaleleViewer({ scoreData }) {
                             <line x1={paddingX} y1={trebleTopY} x2={paddingX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="2" />
                             <line x1={paddingX} y1={tabTopY} x2={paddingX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="2" />
 
-                            {/* Measure Vertical Lines (Spans through entire system layers cleanly) */}
+                            {/* Structural Measure Barlines */}
                             {barlineXPositions.map((barX, i) => (
                                 <g key={`barline-${i}`}>
-                                    {/* Traditional Stave Barline */}
                                     <line x1={barX} y1={trebleTopY} x2={barX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="1.6" />
-                                    {/* Instrumental TAB Barline */}
-                                    <line x1={barX} y1={tabTopY} x2={barX} y2={tabTopY + 5 * lineSpacing} stroke="#475569" strokeWidth="1.6" />
+                                    <line x1={barX} y1={tabTopY} x2={barX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="1.6" />
                                 </g>
                             ))}
 
@@ -212,7 +231,7 @@ export default function GuitaleleViewer({ scoreData }) {
                             <line x1={totalWidth - paddingX} y1={trebleTopY} x2={totalWidth - paddingX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="2" />
                             <line x1={totalWidth - paddingX} y1={tabTopY} x2={totalWidth - paddingX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="2" />
 
-                            {/* Render System Foreground Component Elements */}
+                            {/* Foreground Notation Elements */}
                             {renderedNotes.map((note, idx) => {
                                 const clefTopY = note.clef === 'treble' ? trebleTopY : bassTopY;
                                 const bottomStaffEdge = clefTopY + (4 * lineSpacing);
@@ -239,6 +258,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                             <g>
                                                 {note.isSharp && <text x={note.cx - 15} y={note.staffY + 5} className="text-sm font-bold fill-slate-900 font-serif">♯</text>}
 
+                                                {/* Ledger Lines */}
                                                 {Array.from({ length: Math.max(0, upperLedgers) }).map((_, lIdx) => (
                                                     <line key={`up-ledg-${lIdx}`} x1={note.cx - 10} y1={clefTopY - ((lIdx + 1) * lineSpacing)} x2={note.cx + 10} y2={clefTopY - ((lIdx + 1) * lineSpacing)} stroke="#475569" strokeWidth="1.2" />
                                                 ))}
@@ -246,8 +266,37 @@ export default function GuitaleleViewer({ scoreData }) {
                                                     <line key={`low-ledg-${lIdx}`} x1={note.cx - 10} y1={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} x2={note.cx + 10} y2={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} stroke="#475569" strokeWidth="1.2" />
                                                 ))}
 
-                                                <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} className="fill-slate-950" />
-                                                <line x1={note.cx + 5} y1={note.staffY} x2={note.cx + 5} y2={note.staffY - 26} stroke="#0f172a" strokeWidth="1.5" />
+                                                {/* Notehead */}
+                                                {note.beatValue >= 2.0 ? (
+                                                    <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} fill="#ffffff" stroke="#0f172a" strokeWidth="1.8" />
+                                                ) : (
+                                                    <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} className="fill-slate-950" />
+                                                )}
+
+                                                {/* Rhythm Dot */}
+                                                {[6.0, 3.0, 1.5, 0.75].includes(note.beatValue) && (
+                                                    <circle cx={note.cx + 12} cy={note.staffY - 3} r={2} className="fill-slate-950" />
+                                                )}
+
+                                                {/* Up-pointing Stem */}
+                                                {note.beatValue < 4.0 && (
+                                                    <line x1={note.cx + 5} y1={note.staffY} x2={note.cx + 5} y2={note.staffY - 28} stroke="#0f172a" strokeWidth="1.6" />
+                                                )}
+
+                                                {/* SOLID, BEAUTIFUL 8TH NOTE FLAG */}
+                                                {note.beatValue === 0.5 && (
+                                                    <path d={getFlagPath(note.cx + 5, note.staffY - 28)} fill="#0f172a" />
+                                                )}
+
+                                                {/* SOLID, BEAUTIFUL 16TH NOTE FLAGS */}
+                                                {note.beatValue <= 0.25 && (
+                                                    <g>
+                                                        {/* Top Flag */}
+                                                        <path d={getFlagPath(note.cx + 5, note.staffY - 28)} fill="#0f172a" />
+                                                        {/* Bottom Flag (Stacked seamlessly 9px down) */}
+                                                        <path d={getFlagPath(note.cx + 5, note.staffY - 19)} fill="#0f172a" />
+                                                    </g>
+                                                )}
                                             </g>
                                         )}
 
