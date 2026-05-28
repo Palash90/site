@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import Blog from "./Blog";
 import Yt from "./Yt";
 import Both from "./Both";
-import TabViewer from "./TabViewer";
+import TabViewer from "./tab-viewer/TabViewer";
 import { Row, Col } from "react-bootstrap";
 
 export default function Content() {

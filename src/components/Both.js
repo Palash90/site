@@ -2,7 +2,7 @@ import React from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import Yt from './Yt';
 import Blog from './Blog';
-import TabViewer from './TabViewer';
+import TabViewer from './tab-viewer/TabViewer';
 
 export default function Both(props) {
     return <Container fluid>
