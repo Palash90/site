@@ -68,7 +68,8 @@ export default function GuitaleleViewer({ scoreData }) {
                 else if (note.duration === 0.5) detectedRhythm = 'x+';
                 else if (note.duration === 0.25) detectedRhythm = 'x=';
             } else {
-                if (note.duration === 4.0) detectedRhythm = 'o';
+                if (note.duration === 6.0) detectedRhythm = 'o.';
+                else if (note.duration === 4.0) detectedRhythm = 'o';
                 else if (note.duration === 3.0) detectedRhythm = '..';
                 else if (note.duration === 2.0) detectedRhythm = '.';
                 else if (note.duration === 1.5) detectedRhythm = ':.';

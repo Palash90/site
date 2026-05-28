@@ -288,3 +288,37 @@ export const dummyScore68 = {
   ]
 };
 
+export const dummyScore22 = {
+  "title": "2/2 Cut Time Fanfare",
+  "description": "A brisk, driving march in Cut Time. Note that each measure sums to 4.0 beats total to ensure correct barline placement.",
+  "timeSignature": "2/2",
+  "notes": [
+    // === MEASURE 1 (4.0 total: Two half notes) ===
+    { "fret": 0, "string": 6, "duration": 2.0 },
+    { "fret": 2, "string": 5, "duration": 2.0 },
+    
+    // === MEASURE 2 (4.0 total: Four quarter notes) ===
+    { "fret": 0, "string": 4, "duration": 1.0 },
+    { "fret": 2, "string": 4, "duration": 1.0 },
+    { "fret": 0, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+    
+    // === MEASURE 3 (4.0 total: Dotted half + Quarter) ===
+    { "fret": 3, "string": 5, "duration": 3.0 },
+    { "fret": 0, "string": 4, "duration": 1.0 },
+    
+    // === MEASURE 4 (4.0 total: Whole note resonator) ===
+    { "fret": 1, "string": 2, "duration": 4.0 },
+
+    // === MEASURE 5 (4.0 total: Eighth note flourishes) ===
+    { "fret": 0, "string": 1, "duration": 0.5 },
+    { "fret": 1, "string": 1, "duration": 0.5 },
+    { "fret": 3, "string": 1, "duration": 0.5 },
+    { "fret": 5, "string": 1, "duration": 0.5 },
+    { "fret": 0, "string": 2, "duration": 2.0 },
+
+    // === MEASURE 6 (4.0 total: Final cadence) ===
+    { "fret": 3, "string": 3, "duration": 2.0 },
+    { "fret": 0, "string": 4, "duration": 2.0 }
+  ]
+};

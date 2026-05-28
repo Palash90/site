@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import GuitaleleViewer from "./GuitaleleViewer";
-import { dummyScore, dummyScore24, dummyScore34, dummyScore68 } from "./dummy_score";
+import { dummyScore, dummyScore22, dummyScore24, dummyScore34, dummyScore68 } from "./dummy_score";
 
 export default function TabViewer(props) {
     const [data, setData] = useState(null);
@@ -33,19 +33,24 @@ export default function TabViewer(props) {
         <GuitaleleViewer scoreData={data} />
         <br />
 
-        <h3>Associated Tab 2/4 Multi Line</h3>
+        <h3>Associated Tab 2/4</h3>
         <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore24, null, 2)}</pre>
         <GuitaleleViewer scoreData={dummyScore24} />
         <br />
 
-        <h3>Associated Tab 3/4 Multi Line</h3>
+        <h3>Associated Tab 3/4</h3>
         <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore34, null, 2)}</pre>
         <GuitaleleViewer scoreData={dummyScore34} />
         <br />
 
-        <h3>Associated Tab 6/8 Multi Line</h3>
+        <h3>Associated Tab 6/8</h3>
         <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore68, null, 2)}</pre>
         <GuitaleleViewer scoreData={dummyScore68} />
+        <br />
+
+        <h3>Associated Tab 2/2</h3>
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore22, null, 2)}</pre>
+        <GuitaleleViewer scoreData={dummyScore22} />
         <br />
 
         <h3>Associated Tab 4/4 Single Line</h3>
