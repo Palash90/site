@@ -3,12 +3,14 @@ import { useParams } from "react-router-dom";
 import Blog from "./Blog";
 import Yt from "./Yt";
 import Both from "./Both";
+import TabViewer from "./TabViewer";
 
 export default function Content() {
     const [type, setType] = useState(null);
     const [contentType, setContentType] = useState(null);
     const [ytId, setYtId] = useState(null);
     const [mdUrl, setMdUrl] = useState(null);
+    const [tab, setTab] = useState(null);
     const [error, setError] = useState(null);
     const [publishDate, setPublishDate] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
@@ -21,7 +23,7 @@ export default function Content() {
         const musicContents = window.findProp("contents.music")
             .map(c => { return { ...c, "contentType": "music" } })
         var allContents = sweContents.concat(musicContents).concat(window.findProp("contents.drafts"))
-        
+
         var content = allContents.find(b => b.id === params.contentId)
         if (content) {
             if (content.mdUrl && content.videoId) {
@@ -38,6 +40,7 @@ export default function Content() {
             setContentType(content.contentType);
             setMdUrl(content.mdUrl);
             setYtId(content.videoId);
+            setTab(content.tab);
         } else {
             setError({
                 message: window.findProp("labels.contentNotExists")
@@ -48,9 +51,16 @@ export default function Content() {
     if (error) return <p>Error: {error.message}</p>;
 
     switch (type) {
-        case "markdown": return <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} />
-        case "video": return <Yt ytId={ytId} />
-        case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} />
+        case "markdown": return <>
+            {tab ? <TabViewer tab={tab} /> : <></>}
+            <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} />
+        </>
+        case "video": return <>
+            <Yt ytId={ytId} tab={tab} />
+            {tab ? <TabViewer tab={tab} /> : <></>}
+        </>
+        case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} tab={tab} />
+
         default: return <div>Unknown Content Type</div>
     }
 }

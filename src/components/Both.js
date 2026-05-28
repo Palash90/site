@@ -2,6 +2,7 @@ import React from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import Yt from './Yt';
 import Blog from './Blog';
+import TabViewer from './TabViewer';
 
 export default function Both(props) {
     return <Container fluid>
@@ -11,6 +12,15 @@ export default function Both(props) {
         <Row >
             <Col><br /></Col>
         </Row>
+        {props.tab ?
+            <>
+                <Row style={{ borderTop: '1px solid' }} >
+                    <Col><br /></Col>
+                </Row>
+                <Row>
+                    <Col><TabViewer tab={props.tab} /></Col>
+                </Row>
+            </> : <></>}
         <Row style={{ borderTop: '1px solid' }}>
             <Col><br /></Col>
         </Row>
