@@ -4,6 +4,7 @@ import Blog from "./Blog";
 import Yt from "./Yt";
 import Both from "./Both";
 import TabViewer from "./TabViewer";
+import { Row, Col } from "react-bootstrap";
 
 export default function Content() {
     const [type, setType] = useState(null);
@@ -51,14 +52,34 @@ export default function Content() {
     if (error) return <p>Error: {error.message}</p>;
 
     switch (type) {
-        case "markdown": return <>
-            {tab ? <TabViewer tab={tab} /> : <></>}
-            <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} />
-        </>
-        case "video": return <>
-            <Yt ytId={ytId} tab={tab} />
-            {tab ? <TabViewer tab={tab} /> : <></>}
-        </>
+        case "markdown": return (
+            <>
+                <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} />
+                {tab ?
+                    <>
+                        <br />
+                        <Row style={{ borderTop: '1px solid' }} >
+                            <Col>
+                                <br />
+                            </Col>
+                        </Row>
+                        <TabViewer tab={tab} />
+                    </> : <></>}
+            </>)
+        case "video": return (
+            <>
+                <Yt ytId={ytId} tab={tab} />
+                {tab ? <>
+                    <br />
+                    <Row style={{ borderTop: '1px solid' }} >
+                        <Col>
+                            <br />
+                        </Col>
+                    </Row>
+                    <TabViewer tab={tab} />
+
+                </> : <></>}
+            </>)
         case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} tab={tab} />
 
         default: return <div>Unknown Content Type</div>
