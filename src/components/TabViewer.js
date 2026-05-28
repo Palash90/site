@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import GuitaleleViewer from "./GuitaleleViewer";
 
 export default function TabViewer(props) {
     const [data, setData] = useState(null);
@@ -13,7 +14,46 @@ export default function TabViewer(props) {
                 return response.text();
             })
             .then(data => {
-                setData(data);
+                //setData(JSON.parse(data));
+                let d = {
+                    "title": "Guitalele Default Tuning",
+                    "description": "The default tuning for a guitalele is A-D-G-C-E-A",
+                    "timeSignature": "4/4",
+                    "notes": [
+                        {
+                            "fret": 0,
+                            "string": 6,
+                            "duration": 1,
+                            "tie": true
+                        },
+                        {
+                            "fret": 0,
+                            "string": 5,
+                            "duration": 1
+                        },
+                        {
+                            "fret": 0,
+                            "string": 4,
+                            "duration": 1
+                        },
+                        {
+                            "fret": 0,
+                            "string": 3,
+                            "duration": 1
+                        },
+                        {
+                            "fret": 0,
+                            "string": 2,
+                            "duration": 1
+                        },
+                        {
+                            "fret": 16,
+                            "string": 1,
+                            "duration": 1
+                        }
+                    ]
+                }
+                setData(d);
                 setLoading(false);
             })
             .catch(error => {
@@ -27,6 +67,8 @@ export default function TabViewer(props) {
 
     return <div>
         <h3>Associated Tab</h3>
-        <pre style={{ whiteSpace: 'pre-wrap' }}>{data}</pre>
+        <GuitaleleViewer scoreData={data} />
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(data, null, 2)}</pre> //  Insert the guitalele tab viewer here, using the data fetched from the URL in props.tab
     </div>
 }
+
