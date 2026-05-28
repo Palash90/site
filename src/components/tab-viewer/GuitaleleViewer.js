@@ -21,9 +21,7 @@ const CHROMATIC_MAP = {
     10: [5, true], 11: [6, false]
 };
 
-// Advanced Pitch Parser supporting Grand Staff Clef splits
 const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
-    // Treble anchors to E4 (64), Bass anchors to G2 (43)
     const visualAnchorMidi = clef === 'treble' ? 64 : 43;
     const visualAnchorY = clefTopY + (4 * lineSpacing);
 
@@ -47,22 +45,17 @@ const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
 export default function GuitaleleViewer({ scoreData }) {
     if (!scoreData || !scoreData.notes) return null;
 
-    // Reverse logic to honor the existing layout render pattern
-    let rawNotes = [...scoreData.notes].reverse();
+    let rawNotes = [...scoreData.notes];
 
-    // Auto-Normalization Safeguard: Converts numeric durations or missing rhythms safely
     let notes = rawNotes.map(note => {
         let detectedRhythm = note.rhythm;
 
-        // If the incoming data uses numeric durations, map them directly to our tokens!
         if (!detectedRhythm && note.duration !== undefined) {
             if (note.fret === undefined && note.string === undefined) {
-                // It's a rest
                 if (note.duration === 1.0) detectedRhythm = 'x';
                 else if (note.duration === 0.5) detectedRhythm = 'x+';
                 else if (note.duration === 0.25) detectedRhythm = 'x=';
             } else {
-                // It's an active note
                 if (note.duration === 4.0) detectedRhythm = 'o';
                 else if (note.duration === 2.0) detectedRhythm = '.';
                 else if (note.duration === 1.0) detectedRhythm = ':';
@@ -71,15 +64,14 @@ export default function GuitaleleViewer({ scoreData }) {
             }
         }
 
-        // Final fallback if nothing matches
         return {
             ...note,
             rhythm: detectedRhythm || ':'
         };
     });
 
-    // Vertical Multi-Line Geometry
-    const paddingX = 80;
+    // Widened padding space to clear area for the Time Signature numbers
+    const paddingX = 140; 
     const noteSpacing = 75;
     const lineSpacing = 14;
 
@@ -87,11 +79,12 @@ export default function GuitaleleViewer({ scoreData }) {
     const bassTopY = 150;
     const tabTopY = 250;
     const rhythmTopY = 350;
-    const svgHeight = 390; // Expanded to ensure rhythm notation is highly visible
+    const svgHeight = 390; 
 
-    const beatsPerMeasure = parseInt(scoreData.timeSignature?.split('/')[0] || '4', 10);
+    const timeSigTop = scoreData.timeSignature?.split('/')[0] || '4';
+    const timeSigBottom = scoreData.timeSignature?.split('/')[1] || '4';
+    const beatsPerMeasure = parseInt(timeSigTop, 10);
 
-    // Structural Matrix: Chunking notes into Rows (4 measures per row max)
     let rows = [];
     let currentRowNotes = [];
     let accumulatedBeats = 0;
@@ -102,13 +95,11 @@ export default function GuitaleleViewer({ scoreData }) {
         currentRowNotes.push({ ...note, beatValue });
         accumulatedBeats += beatValue;
 
-        // Detect measure completion (using a small delta to prevent floating point errors)
         if (Math.abs(accumulatedBeats - beatsPerMeasure) < 0.01) {
             currentRowNotes[currentRowNotes.length - 1].endOfMeasure = true;
             measuresInRow++;
             accumulatedBeats = 0;
 
-            // Break the row after 4 measures
             if (measuresInRow === 4) {
                 rows.push([...currentRowNotes]);
                 currentRowNotes = [];
@@ -119,29 +110,31 @@ export default function GuitaleleViewer({ scoreData }) {
     if (currentRowNotes.length > 0) rows.push([...currentRowNotes]);
 
     return (
-        // The Scrollable Viewport allowing for infinite vertical scrolling
         <div className="w-full max-h-[80vh] overflow-y-auto overflow-x-hidden bg-slate-50 p-6 flex flex-col gap-12 rounded-xl shadow-inner">
-
             {rows.map((rowNotes, rowIdx) => {
                 const totalWidth = paddingX * 2 + (rowNotes.length * noteSpacing);
                 const barlineXPositions = [];
 
-                // Render metrics for the current row
+                // Track note metrics and barlines safely inside row scope
+                let rowBeatTracker = 0;
                 const renderedNotes = rowNotes.map((note, index) => {
                     const cx = paddingX + (index * noteSpacing) + (noteSpacing / 2);
-                    if (note.endOfMeasure && index !== rowNotes.length - 1) {
+                    
+                    rowBeatTracker += note.beatValue;
+                    
+                    // If a measure boundaries falls between notes, store it for line rendering
+                    if (Math.abs(rowBeatTracker % beatsPerMeasure) < 0.01 && index !== rowNotes.length - 1) {
                         barlineXPositions.push(cx + (noteSpacing / 2));
                     }
 
                     const isRest = note.rhythm?.startsWith('x');
-                    let tabY = 0, staffY = trebleTopY + (2 * lineSpacing); // Rests default to Treble
+                    let tabY = 0, staffY = trebleTopY + (2 * lineSpacing);
                     let isSharp = false, midi = 0, clef = 'treble';
 
                     if (!isRest && note.string && note.fret !== undefined) {
                         tabY = tabTopY + ((note.string - 1) * lineSpacing);
                         midi = GUITALELE_TUNING[note.string].baseMidi + note.fret;
 
-                        // Grand Staff Split Logic: Middle C (60) and above goes to Treble
                         clef = midi >= 60 ? 'treble' : 'bass';
                         const clefTopY = clef === 'treble' ? trebleTopY : bassTopY;
 
@@ -156,14 +149,10 @@ export default function GuitaleleViewer({ scoreData }) {
                 return (
                     <div key={`row-${rowIdx}`} className="w-full overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-sm">
                         <svg width={totalWidth} height={svgHeight} className="mx-auto select-none">
-
-                            {/* ================================================================= */}
-                            {/* GRAND STAFF & TAB MATRIX BACKGROUND                               */}
-                            {/* ================================================================= */}
-
+                            
                             {/* Grand Staff Connecting Brace */}
                             <path
-                                d={`M ${paddingX - 60} ${trebleTopY} L ${paddingX - 70} ${trebleTopY} L ${paddingX - 70} ${bassTopY + 4 * lineSpacing} L ${paddingX - 60} ${bassTopY + 4 * lineSpacing}`}
+                                d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`}
                                 fill="none" stroke="#64748b" strokeWidth="2.5"
                             />
 
@@ -171,30 +160,51 @@ export default function GuitaleleViewer({ scoreData }) {
                             {[0, 1, 2, 3, 4].map((i) => (
                                 <line key={`treble-${i}`} x1={paddingX} y1={trebleTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={trebleTopY + i * lineSpacing} stroke="#94a3b8" strokeWidth="1" />
                             ))}
-                            <text x={paddingX - 45} y={trebleTopY + (3.5 * lineSpacing)} className="text-4xl font-serif fill-slate-800">𝄞</text>
+                            <text x={paddingX - 105} y={trebleTopY + (3.5 * lineSpacing)} className="text-4xl font-serif fill-slate-800">𝄞</text>
 
                             {/* Bass Stave Grid */}
                             {[0, 1, 2, 3, 4].map((i) => (
                                 <line key={`bass-${i}`} x1={paddingX} y1={bassTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={bassTopY + i * lineSpacing} stroke="#94a3b8" strokeWidth="1" />
                             ))}
-                            <text x={paddingX - 45} y={bassTopY + (3.2 * lineSpacing)} className="text-4xl font-serif fill-slate-800">𝄢</text>
+                            <text x={paddingX - 105} y={bassTopY + (3.2 * lineSpacing)} className="text-4xl font-serif fill-slate-800">𝄢</text>
+
+                            {/* Clean Time Signature Notation Engine */}
+                            <g className="font-serif font-black text-2xl fill-slate-900 text-center" transform={`translate(${paddingX - 55}, 0)`}>
+                                {/* Treble Time Signature numbers */}
+                                <text x="0" y={trebleTopY + 16} textAnchor="middle">{timeSigTop}</text>
+                                <text x="0" y={trebleTopY + 42} textAnchor="middle">{timeSigBottom}</text>
+
+                                {/* Bass Time Signature numbers */}
+                                <text x="0" y={bassTopY + 16} textAnchor="middle">{timeSigTop}</text>
+                                <text x="0" y={bassTopY + 42} textAnchor="middle">{timeSigBottom}</text>
+                                
+                                {/* Tab Notation System Time Signature numbers */}
+                                <text x="0" y={tabTopY + 24} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-500">{timeSigTop}</text>
+                                <text x="0" y={tabTopY + 54} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-500">{timeSigBottom}</text>
+                            </g>
 
                             {/* 6-Line Guitalele Tab Grid */}
                             {[0, 1, 2, 3, 4, 5].map((i) => (
                                 <line key={`t-l-${i}`} x1={paddingX} y1={tabTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={tabTopY + i * lineSpacing} stroke="#cbd5e1" strokeWidth="1.2" />
                             ))}
-                            <g transform={`translate(${paddingX - 45}, ${tabTopY + 12})`} className="fill-slate-400 font-black tracking-tighter text-xs">
+                            <g transform={`translate(${paddingX - 105}, ${tabTopY + 12})`} className="fill-slate-400 font-black tracking-tighter text-xs">
                                 <text x="0" y="0">T</text><text x="0" y="14">A</text><text x="0" y="28">B</text>
                             </g>
                             {[0, 1, 2, 3, 4, 5].map((i) => (
                                 <text key={`string-${i}`} x={paddingX - 15} y={tabTopY + (i * lineSpacing) + 4} textAnchor="end" className="text-[9px] font-bold fill-slate-400">{i + 1}</text>
                             ))}
 
-                            {/* Grand Barlines (Spans both Staves and Tab) */}
+                            {/* Start Frame Closures */}
+                            <line x1={paddingX} y1={trebleTopY} x2={paddingX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="2" />
+                            <line x1={paddingX} y1={tabTopY} x2={paddingX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="2" />
+
+                            {/* Measure Vertical Lines (Spans through entire system layers cleanly) */}
                             {barlineXPositions.map((barX, i) => (
                                 <g key={`barline-${i}`}>
-                                    <line x1={barX} y1={trebleTopY} x2={barX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="1.5" />
-                                    <line x1={barX} y1={tabTopY} x2={barX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="1.5" />
+                                    {/* Traditional Stave Barline */}
+                                    <line x1={barX} y1={trebleTopY} x2={barX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="1.6" />
+                                    {/* Instrumental TAB Barline */}
+                                    <line x1={barX} y1={tabTopY} x2={barX} y2={tabTopY + 5 * lineSpacing} stroke="#475569" strokeWidth="1.6" />
                                 </g>
                             ))}
 
@@ -202,9 +212,7 @@ export default function GuitaleleViewer({ scoreData }) {
                             <line x1={totalWidth - paddingX} y1={trebleTopY} x2={totalWidth - paddingX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="2" />
                             <line x1={totalWidth - paddingX} y1={tabTopY} x2={totalWidth - paddingX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="2" />
 
-                            {/* ================================================================= */}
-                            {/* FOREGROUND ENGINE (NOTES, LEDGERS, RESTS & RHYTHMS)               */}
-                            {/* ================================================================= */}
+                            {/* Render System Foreground Component Elements */}
                             {renderedNotes.map((note, idx) => {
                                 const clefTopY = note.clef === 'treble' ? trebleTopY : bassTopY;
                                 const bottomStaffEdge = clefTopY + (4 * lineSpacing);
@@ -231,7 +239,6 @@ export default function GuitaleleViewer({ scoreData }) {
                                             <g>
                                                 {note.isSharp && <text x={note.cx - 15} y={note.staffY + 5} className="text-sm font-bold fill-slate-900 font-serif">♯</text>}
 
-                                                {/* Smart Ledger Lines */}
                                                 {Array.from({ length: Math.max(0, upperLedgers) }).map((_, lIdx) => (
                                                     <line key={`up-ledg-${lIdx}`} x1={note.cx - 10} y1={clefTopY - ((lIdx + 1) * lineSpacing)} x2={note.cx + 10} y2={clefTopY - ((lIdx + 1) * lineSpacing)} stroke="#475569" strokeWidth="1.2" />
                                                 ))}
@@ -239,46 +246,21 @@ export default function GuitaleleViewer({ scoreData }) {
                                                     <line key={`low-ledg-${lIdx}`} x1={note.cx - 10} y1={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} x2={note.cx + 10} y2={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} stroke="#475569" strokeWidth="1.2" />
                                                 ))}
 
-                                                {/* Note Head & Stem */}
                                                 <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} className="fill-slate-950" />
                                                 <line x1={note.cx + 5} y1={note.staffY} x2={note.cx + 5} y2={note.staffY - 26} stroke="#0f172a" strokeWidth="1.5" />
                                             </g>
                                         )}
 
-                                        {/* --- 2. TABLATURE ENGINE (UPDATED FOR RESTS) --- */}
+                                        {/* --- 2. TABLATURE ENGINE --- */}
                                         {note.isRest ? (
-                                            /* Render a clean, stylized rest indicator directly on the TAB lines */
                                             <g>
-                                                {/* White background cutout across middle TAB strings (3 and 4) */}
-                                                <rect
-                                                    x={note.cx - 6}
-                                                    y={tabTopY + (2 * lineSpacing) - 4}
-                                                    width={12}
-                                                    height={16}
-                                                    fill="#ffffff"
-                                                />
-                                                {/* Clean, recognizable 'R' or rest block inside the cutout */}
-                                                <text
-                                                    x={note.cx}
-                                                    y={tabTopY + (3 * lineSpacing) - 2}
-                                                    textAnchor="middle"
-                                                    className="text-[10px] font-mono font-bold fill-rose-500 select-none"
-                                                >
-                                                    𝄾
-                                                </text>
+                                                <rect x={note.cx - 6} y={tabTopY + (2 * lineSpacing) - 4} width={12} height={16} fill="#ffffff" />
+                                                <text x={note.cx} y={tabTopY + (3 * lineSpacing) - 2} textAnchor="middle" className="text-[10px] font-mono font-bold fill-rose-500 select-none">𝄾</text>
                                             </g>
                                         ) : (
-                                            /* Standard Active Fret Number Rendering */
                                             <g>
                                                 <rect x={note.cx - 7} y={note.tabY - 7} width={14} height={14} fill="#ffffff" />
-                                                <text
-                                                    x={note.cx}
-                                                    y={note.tabY + 4}
-                                                    textAnchor="middle"
-                                                    className="text-[11px] font-sans font-bold fill-slate-900"
-                                                >
-                                                    {note.fret}
-                                                </text>
+                                                <text x={note.cx} y={note.tabY + 4} textAnchor="middle" className="text-[11px] font-sans font-bold fill-slate-900">{note.fret}</text>
                                             </g>
                                         )}
 
@@ -288,9 +270,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                                 <line x1={note.cx + 12} y1={rhythmTopY - 4} x2={note.cx + noteSpacing - 12} y2={rhythmTopY - 4} stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="2,1" />
                                             )}
 
-                                            {/* Rhythm Notation Text clearly mapped to its own lane */}
                                             <text x={note.cx} y={rhythmTopY} textAnchor="middle" className={`font-mono font-black text-sm ${note.isRest ? 'fill-rose-500' : 'fill-indigo-600'}`}>
-                                                {note.tie && idx > 0 && renderedNotes[idx - 1].tie ? '—' : note.rhythm}
+                                                {idx > 0 && renderedNotes[idx - 1].tie ? '—' : note.rhythm}
                                             </text>
                                         </g>
 
