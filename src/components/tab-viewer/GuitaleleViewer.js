@@ -42,15 +42,14 @@ const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
     };
 };
 
-// Helper: Generates a mathematically perfect, filled music flag path
+// Helper: Generates a slimmer, more elegant music flag
 const getFlagPath = (sx, sy) => {
-    // M: Start at top of stem
-    // C1: Outer swoop (curves right and down to a point)
-    // C2: Inner swoop (curves back up to attach to the stem)
-    // Z: Close path straight up the stem edge
-    return `M ${sx} ${sy} 
-            C ${sx + 11} ${sy + 1}, ${sx + 14} ${sy + 12}, ${sx + 3} ${sy + 22} 
-            C ${sx + 9} ${sy + 14}, ${sx + 8} ${sy + 7}, ${sx} ${sy + 9} 
+    const startY = sy + 1; // Subtle drop from the absolute tip
+
+    // Adjusted curves for a thinner, more calligraphic swoop
+    return `M ${sx} ${startY} 
+            C ${sx + 9} ${startY + 2}, ${sx + 11} ${startY + 12}, ${sx + 1} ${startY + 23} 
+            C ${sx + 6} ${startY + 14}, ${sx + 5} ${startY + 7}, ${sx} ${startY + 9} 
             Z`;
 };
 
@@ -59,7 +58,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
     let rawNotes = [...scoreData.notes];
 
-    let notes = rawNotes.map(note => {
+    let processedNotes = rawNotes.map((note, index) => {
         let detectedRhythm = note.rhythm;
 
         if (!detectedRhythm && note.duration !== undefined) {
@@ -80,13 +79,26 @@ export default function GuitaleleViewer({ scoreData }) {
             }
         }
 
+        const beatValue = note.duration !== undefined ? note.duration : (RHYTHM_BEAT_VALUES[detectedRhythm || ':'] || 1.0);
+
         return {
             ...note,
-            rhythm: detectedRhythm || ':'
+            globalIndex: index, // Track true structural sequence positioning
+            rhythm: detectedRhythm || ':',
+            beatValue
         };
     });
 
-    const paddingX = 140; 
+    // Run a quick explicit forward/backward structural map pass to flag tie configurations globally
+    const notes = processedNotes.map((note, idx) => {
+        return {
+            ...note,
+            isTiedToNext: !!note.tie,
+            isTiedFromPrev: idx > 0 ? !!processedNotes[idx - 1].tie : false
+        };
+    });
+
+    const paddingX = 140;
     const noteSpacing = 75;
     const lineSpacing = 14;
 
@@ -94,7 +106,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const bassTopY = 150;
     const tabTopY = 250;
     const rhythmTopY = 350;
-    const svgHeight = 390; 
+    const svgHeight = 390;
 
     const timeSigTop = scoreData.timeSignature?.split('/')[0] || '4';
     const timeSigBottom = scoreData.timeSignature?.split('/')[1] || '4';
@@ -104,20 +116,18 @@ export default function GuitaleleViewer({ scoreData }) {
     let currentRowNotes = [];
     let accumulatedBeats = 0;
     let measuresInRow = 0;
-    
-    const MAX_MEASURES_PER_ROW = 4; 
-    const MAX_NOTES_PER_ROW = 64;   
+
+    const MAX_MEASURES_PER_ROW = 4;
+    const MAX_NOTES_PER_ROW = 64;
 
     notes.forEach((note) => {
-        const beatValue = note.duration !== undefined ? note.duration : (RHYTHM_BEAT_VALUES[note.rhythm] || 1.0);
-        
-        currentRowNotes.push({ ...note, beatValue });
-        accumulatedBeats += beatValue;
+        currentRowNotes.push({ ...note });
+        accumulatedBeats += note.beatValue;
 
         if (accumulatedBeats >= beatsPerMeasure - 0.05) {
             currentRowNotes[currentRowNotes.length - 1].endOfMeasure = true;
             measuresInRow++;
-            
+
             accumulatedBeats = Math.max(0, accumulatedBeats - beatsPerMeasure);
 
             if (measuresInRow >= MAX_MEASURES_PER_ROW || currentRowNotes.length >= MAX_NOTES_PER_ROW) {
@@ -132,7 +142,7 @@ export default function GuitaleleViewer({ scoreData }) {
             accumulatedBeats = 0;
         }
     });
-    
+
     if (currentRowNotes.length > 0) rows.push([...currentRowNotes]);
 
     return (
@@ -144,9 +154,9 @@ export default function GuitaleleViewer({ scoreData }) {
                 let rowBeatTracker = 0;
                 const renderedNotes = rowNotes.map((note, index) => {
                     const cx = paddingX + (index * noteSpacing) + (noteSpacing / 2);
-                    
+
                     rowBeatTracker += note.beatValue;
-                    
+
                     if (Math.abs(rowBeatTracker % beatsPerMeasure) < 0.01 && index !== rowNotes.length - 1) {
                         barlineXPositions.push(cx + (noteSpacing / 2));
                     }
@@ -173,7 +183,7 @@ export default function GuitaleleViewer({ scoreData }) {
                 return (
                     <div key={`row-${rowIdx}`} className="bg-white border border-stone-200 rounded-lg shadow-sm flex-none p-4 w-full overflow-x-auto">
                         <svg width={totalWidth} height={svgHeight} className="select-none mx-auto block">
-                            
+
                             {/* Grand Staff Connecting Brace */}
                             <path
                                 d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`}
@@ -199,7 +209,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                 <text x="0" y={bassTopY + 16} textAnchor="middle">{timeSigTop}</text>
                                 <text x="0" y={bassTopY + 42} textAnchor="middle">{timeSigBottom}</text>
-                                
+
                                 <text x="0" y={tabTopY + 24} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-600">{timeSigTop}</text>
                                 <text x="0" y={tabTopY + 54} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-600">{timeSigBottom}</text>
                             </g>
@@ -239,6 +249,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                 const lowerLedgers = !note.isRest && note.staffY > bottomStaffEdge ? Math.floor((note.staffY - bottomStaffEdge) / lineSpacing) : 0;
                                 const upperLedgers = !note.isRest && note.staffY < clefTopY ? Math.floor((clefTopY - note.staffY) / lineSpacing) : 0;
 
+                                const stemTopY = note.beatValue <= 0.25 ? note.staffY - 35 : note.staffY - 28;
+
                                 return (
                                     <g key={`node-${idx}`}>
 
@@ -256,7 +268,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                             </g>
                                         ) : (
                                             <g>
-                                                {note.isSharp && <text x={note.cx - 15} y={note.staffY + 5} className="text-sm font-bold fill-slate-900 font-serif">♯</text>}
+                                                {/* FIX 1: Sharp sign moved cleanly BEFORE the notehead (-22px) */}
+                                                {note.isSharp && <text x={note.cx + 18} y={note.staffY + 3} className="text-base font-normal fill-slate-950 font-serif">♯</text>}
 
                                                 {/* Ledger Lines */}
                                                 {Array.from({ length: Math.max(0, upperLedgers) }).map((_, lIdx) => (
@@ -280,21 +293,19 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                 {/* Up-pointing Stem */}
                                                 {note.beatValue < 4.0 && (
-                                                    <line x1={note.cx + 5} y1={note.staffY} x2={note.cx + 5} y2={note.staffY - 28} stroke="#0f172a" strokeWidth="1.6" />
+                                                    <line x1={note.cx + 5} y1={note.staffY} x2={note.cx + 5} y2={stemTopY} stroke="#0f172a" strokeWidth="1.6" />
                                                 )}
 
-                                                {/* SOLID, BEAUTIFUL 8TH NOTE FLAG */}
+                                                {/* 8TH NOTE FLAG */}
                                                 {note.beatValue === 0.5 && (
-                                                    <path d={getFlagPath(note.cx + 5, note.staffY - 28)} fill="#0f172a" />
+                                                    <path d={getFlagPath(note.cx + 5, stemTopY)} fill="#0f172a" />
                                                 )}
 
-                                                {/* SOLID, BEAUTIFUL 16TH NOTE FLAGS */}
+                                                {/* 16TH NOTE FLAGS */}
                                                 {note.beatValue <= 0.25 && (
                                                     <g>
-                                                        {/* Top Flag */}
-                                                        <path d={getFlagPath(note.cx + 5, note.staffY - 28)} fill="#0f172a" />
-                                                        {/* Bottom Flag (Stacked seamlessly 9px down) */}
-                                                        <path d={getFlagPath(note.cx + 5, note.staffY - 19)} fill="#0f172a" />
+                                                        <path d={getFlagPath(note.cx + 5, stemTopY)} fill="#0f172a" />
+                                                        <path d={getFlagPath(note.cx + 5, stemTopY + 10)} fill="#0f172a" />
                                                     </g>
                                                 )}
                                             </g>
@@ -308,6 +319,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                             </g>
                                         ) : (
                                             <g>
+
+
                                                 <rect x={note.cx - 7} y={note.tabY - 7} width={14} height={14} fill="#ffffff" />
                                                 <text x={note.cx} y={note.tabY + 4} textAnchor="middle" className="text-[11px] font-sans font-bold fill-slate-900">{note.fret}</text>
                                             </g>
@@ -315,12 +328,27 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                         {/* --- 3. CUSTOM RHYTHM NOTATION LANE --- */}
                                         <g>
-                                            {note.tie && renderedNotes[idx + 1] && (
-                                                <line x1={note.cx + 12} y1={rhythmTopY - 4} x2={note.cx + noteSpacing - 12} y2={rhythmTopY - 4} stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="2,1" />
+                                            {/* 1. Draw the solid bridge line if this note is tied to the next one */}
+                                            {note.isTiedToNext && renderedNotes[idx + 1] && (
+                                                <line
+                                                    x1={note.cx + 12}
+                                                    y1={rhythmTopY - 4}
+                                                    x2={renderedNotes[idx + 1].cx - 12}
+                                                    y2={rhythmTopY - 4}
+                                                    stroke="#94a3b8"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                />
                                             )}
 
-                                            <text x={note.cx} y={rhythmTopY} textAnchor="middle" className={`font-mono font-black text-sm ${note.isRest ? 'fill-rose-500' : 'fill-indigo-600'}`}>
-                                                {idx > 0 && renderedNotes[idx - 1].tie ? '—' : note.rhythm}
+                                            {/* 2. ALWAYS show the rhythm symbol, tied or not */}
+                                            <text
+                                                x={note.cx}
+                                                y={rhythmTopY}
+                                                textAnchor="middle"
+                                                className={`font-mono font-black text-sm ${note.isRest ? 'fill-rose-500' : 'fill-indigo-600'}`}
+                                            >
+                                                {note.rhythm}
                                             </text>
                                         </g>
 

@@ -15,8 +15,7 @@ export default function TabViewer(props) {
                 return response.text();
             })
             .then(data => {
-                //setData(JSON.parse(data));
-                setData(dummyScore24);
+                setData(JSON.parse(data));
                 setLoading(false);
             })
             .catch(error => {
@@ -29,9 +28,29 @@ export default function TabViewer(props) {
     if (error) return <p>Error: {error.message}</p>;
 
     return <div>
-        <h3>Associated Tab</h3>
+        <h3>Associated Tab Server Response</h3>
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(data, null, 2)}</pre>
         <GuitaleleViewer scoreData={data} />
-        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(data, null, 2)}</pre> //  Insert the guitalele tab viewer here, using the data fetched from the URL in props.tab
+        <br />
+
+        <h3>Associated Tab 2/4 Multi Line</h3>
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore24, null, 2)}</pre>
+        <GuitaleleViewer scoreData={dummyScore24} />
+        <br />
+
+        <h3>Associated Tab 3/4 Multi Line</h3>
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore34, null, 2)}</pre>
+        <GuitaleleViewer scoreData={dummyScore34} />
+        <br />
+
+        <h3>Associated Tab 6/8 Multi Line</h3>
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore68, null, 2)}</pre>
+        <GuitaleleViewer scoreData={dummyScore68} />
+        <br />
+
+        <h3>Associated Tab 4/4 Single Line</h3>
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(dummyScore, null, 2)}</pre>
+        <GuitaleleViewer scoreData={dummyScore} />
     </div>
 }
 
