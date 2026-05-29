@@ -255,6 +255,13 @@ export default function GuitaleleViewer({ scoreData }) {
                                 return (
                                     <g key={`node-${idx}`}>
 
+
+                                        <title>
+                                            {note.isRest
+                                                ? `Rest: ${note.rhythm}`
+                                                : `Fret: ${note.fret} | String: ${note.string} | Rhythm: ${note.rhythm} ${note.description ? '\n' + note.description : ''}`}
+                                        </title>
+
                                         {/* --- 1. GRAND STAFF NOTATION --- */}
                                         {note.isRest ? (
                                             <g>
