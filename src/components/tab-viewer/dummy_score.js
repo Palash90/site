@@ -446,3 +446,15 @@ export const dummyScore22 = {
     { "fret": 0, "string": 4, "duration": 2.0 }
   ]
 };
+
+export const blankScore = {
+  "title": "Untitled Composition",
+  "description": "A blank workspace to start composing.",
+  "timeSignature": "4/4",
+  "notes": [
+    { "duration": 1.0 },
+    { "duration": 1.0 },
+    { "duration": 1.0 },
+    { "duration": 1.0 }
+  ]
+};

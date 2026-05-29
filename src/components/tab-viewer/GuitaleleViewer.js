@@ -24,32 +24,40 @@ const CHROMATIC_MAP = {
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 const DURATION_OPTIONS = [
-    { value: 0.25, label: "1/16" },
-    { value: 0.5, label: "1/8" },
-    { value: 0.75, label: "Dotted 1/8" },
-    { value: 1.0, label: "1/4" },
-    { value: 1.5, label: "Dotted 1/4" },
-    { value: 2.0, label: "1/2" },
-    { value: 3.0, label: "Dotted 1/2" },
-    { value: 4.0, label: "Whole" },
-    { value: 6.0, label: "Dotted Whole" }
+    { value: 0.25, label: "Sixteenth note" },
+    { value: 0.5, label: "Eighth note" },
+    { value: 0.75, label: "Dotted eighth note" },
+    { value: 1.0, label: "Quarter note" },
+    { value: 1.5, label: "Dotted quarter note" },
+    { value: 2.0, label: "Half note" },
+    { value: 3.0, label: "Dotted half note" },
+    { value: 4.0, label: "Whole note" },
+    { value: 6.0, label: "Dotted whole note" }
 ];
+
+const TIME_SIGNATURE_TOP_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 12];
+const TIME_SIGNATURE_BOTTOM_OPTIONS = [2, 4, 8, 16];
+
+const getDurationLabel = (beatValue) => {
+    const option = DURATION_OPTIONS.find((duration) => duration.value === beatValue);
+    return option ? option.label : `${beatValue} beats`;
+};
 
 const DARK_THEME = {
     bgPage: "bg-slate-950",
     bgScore: "bg-slate-900",
     borderScore: "border-slate-800",
-    textClef: "#77abc0",
-    textTimeSig: "#6fe0d7",
-    lineStaff: "#8d6818",
-    lineBar: "#c79322",
-    lineTab: "#64748b",
-    textTabLabel: "#9ac0f5",
-    textTabString: "#64748b",
-    bgTabRect: "#142a5a96",
-    textTabNumber: "#f1f5f9",
-    lineStem: "#418cee",
-    fillNote: "#568fda",
+    textClef: "#93c5fd",
+    textTimeSig: "#fbbf24",
+    lineStaff: "#94a3b8",
+    lineBar: "#f59e0b",
+    lineTab: "#2dd4bf",
+    textTabLabel: "#5eead4",
+    textTabString: "#99f6e4",
+    bgTabRect: "#0f766e40",
+    textTabNumber: "#ecfeff",
+    lineStem: "#60a5fa",
+    fillNote: "#7dd3fc",
     fillRest: "#fb7185",
     textRhythm: "#a5b4fc",
     lineTie: "#cbd5e1",
@@ -95,7 +103,7 @@ const getFlagPath = (sx, sy, isDown = false, isDouble = false) => {
     };
 
     if (isDouble) {
-        return drawSlashSegment(0) + " " + drawSlashSegment(isDown ? -5 : 5);
+        return drawSlashSegment(0) + " " + drawSlashSegment(isDown ? -9 : 9);
     }
     return drawSlashSegment(0);
 };
@@ -103,13 +111,19 @@ const getFlagPath = (sx, sy, isDown = false, isDouble = false) => {
 const playHumanizedGuitaleleNote = (ctx, midi, startTime, duration, velocity = 1.0) => {
     const fundamental = 440 * Math.pow(2, (midi - 69) / 12);
     const mainGain = ctx.createGain();
-    mainGain.connect(ctx.destination);
+    const bodyFilter = ctx.createBiquadFilter();
+    bodyFilter.type = 'lowpass';
+    bodyFilter.frequency.setValueAtTime(Math.min(2800, fundamental * 6), startTime);
+    bodyFilter.Q.value = 0.7;
+    bodyFilter.connect(ctx.destination);
+    mainGain.connect(bodyFilter);
 
-    const attackTime = 0.012;
-    const decayTime = Math.max(duration * 1.2, 2.0);
+    const attackTime = 0.004;
+    const decayTime = Math.max(duration * 0.85, 1.4);
 
     mainGain.gain.setValueAtTime(0, startTime);
-    mainGain.gain.linearRampToValueAtTime(velocity * 0.8, startTime + attackTime);
+    mainGain.gain.linearRampToValueAtTime(velocity * 0.5, startTime + attackTime);
+    mainGain.gain.exponentialRampToValueAtTime(velocity * 0.18, startTime + 0.08);
     mainGain.gain.exponentialRampToValueAtTime(0.001, startTime + decayTime);
 
     const stringOsc = ctx.createOscillator();
@@ -120,37 +134,56 @@ const playHumanizedGuitaleleNote = (ctx, midi, startTime, duration, velocity = 1
     overtoneOsc.type = 'sine';
     overtoneOsc.frequency.value = fundamental * 2;
     const overtoneGain = ctx.createGain();
-    overtoneGain.gain.value = 0.15;
+    overtoneGain.gain.value = 0.08;
     overtoneOsc.connect(overtoneGain);
 
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(fundamental * 4, startTime);
-    filter.frequency.exponentialRampToValueAtTime(fundamental, startTime + 0.4);
+    const midResonance = ctx.createBiquadFilter();
+    midResonance.type = 'bandpass';
+    midResonance.frequency.setValueAtTime(Math.max(650, fundamental * 1.8), startTime);
+    midResonance.Q.value = 1.4;
 
     const pluckOsc = ctx.createOscillator();
-    pluckOsc.type = 'sine';
-    pluckOsc.frequency.setValueAtTime(fundamental * 2.5, startTime);
-    pluckOsc.frequency.exponentialRampToValueAtTime(fundamental, startTime + 0.03);
+    pluckOsc.type = 'triangle';
+    pluckOsc.frequency.setValueAtTime(fundamental * 1.7, startTime);
+    pluckOsc.frequency.exponentialRampToValueAtTime(fundamental * 0.98, startTime + 0.025);
 
     const pluckGain = ctx.createGain();
     pluckGain.gain.setValueAtTime(0, startTime);
-    pluckGain.gain.linearRampToValueAtTime(velocity * 0.3, startTime + 0.005);
-    pluckGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.03);
+    pluckGain.gain.linearRampToValueAtTime(velocity * 0.16, startTime + 0.003);
+    pluckGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.045);
+
+    const noiseBuffer = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * 0.025)), ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i++) {
+        noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
+    }
+    const pluckNoise = ctx.createBufferSource();
+    pluckNoise.buffer = noiseBuffer;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.value = 900;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(velocity * 0.045, startTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.028);
 
     pluckOsc.connect(pluckGain);
     pluckGain.connect(mainGain);
-    stringOsc.connect(filter);
-    overtoneGain.connect(filter);
-    filter.connect(mainGain);
+    stringOsc.connect(mainGain);
+    overtoneGain.connect(midResonance);
+    midResonance.connect(mainGain);
+    pluckNoise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(mainGain);
 
     stringOsc.start(startTime);
     overtoneOsc.start(startTime);
     pluckOsc.start(startTime);
+    pluckNoise.start(startTime);
 
     stringOsc.stop(startTime + decayTime);
     overtoneOsc.stop(startTime + decayTime);
     pluckOsc.stop(startTime + decayTime);
+    pluckNoise.stop(startTime + 0.03);
 };
 
 const getPrimaryPitch = (note) => {
@@ -164,26 +197,64 @@ const getPrimaryPitch = (note) => {
     return { string: 1, fret: 0 };
 };
 
-const updateNotePitch = (note, patch) => {
-    const nextPitch = {
-        ...getPrimaryPitch(note),
-        ...patch
-    };
+const getEditablePitches = (note) => {
+    if (!note) return [];
+    if (Array.isArray(note.pitches)) return note.pitches;
+    if (note.string !== undefined && note.fret !== undefined) return [{ string: note.string, fret: note.fret }];
+    return [];
+};
 
+const setNotePitches = (note, pitches) => {
     const next = { ...note };
     delete next.rhythm;
 
-    if (Array.isArray(note.pitches)) {
-        next.pitches = [{ string: nextPitch.string, fret: nextPitch.fret }];
-        delete next.string;
-        delete next.fret;
+    if (pitches.length === 1 && !Array.isArray(note.pitches)) {
+        next.string = pitches[0].string;
+        next.fret = pitches[0].fret;
+        delete next.pitches;
         return next;
     }
 
-    next.string = nextPitch.string;
-    next.fret = nextPitch.fret;
-    delete next.pitches;
+    next.pitches = pitches.map((pitch) => ({ string: pitch.string, fret: pitch.fret }));
+    delete next.string;
+    delete next.fret;
     return next;
+};
+
+const updateNotePitch = (note, patch) => {
+    const currentPitches = getEditablePitches(note);
+    const nextPitch = {
+        ...(currentPitches[0] || getPrimaryPitch(note)),
+        ...patch
+    };
+    return setNotePitches(note, [nextPitch]);
+};
+
+const updateNotePitchAt = (note, pitchIndex, patch) => {
+    const currentPitches = getEditablePitches(note);
+    const nextPitches = currentPitches.map((pitch, index) => (
+        index === pitchIndex ? { ...pitch, ...patch } : pitch
+    ));
+    return setNotePitches(note, nextPitches);
+};
+
+const addNotePitch = (note) => {
+    const currentPitches = getEditablePitches(note);
+    const usedStrings = new Set(currentPitches.map((pitch) => pitch.string));
+    const nextString = [1, 2, 3, 4, 5, 6].find((string) => !usedStrings.has(string)) || 1;
+    return setNotePitches(note, [...currentPitches, { string: nextString, fret: 0 }]);
+};
+
+const removeNotePitch = (note, pitchIndex) => {
+    const nextPitches = getEditablePitches(note).filter((_, index) => index !== pitchIndex);
+    return setNotePitches(note, nextPitches);
+};
+
+const selectSingleStringPitch = (note, stringNumber) => {
+    const currentPitches = getEditablePitches(note);
+    const matchingPitch = currentPitches.find((pitch) => pitch.string === stringNumber);
+    const fallbackPitch = currentPitches[0] || { fret: 0 };
+    return setNotePitches(note, [{ string: stringNumber, fret: matchingPitch?.fret ?? fallbackPitch.fret ?? 0 }]);
 };
 
 const updateNoteRestState = (note, shouldBeRest) => {
@@ -207,13 +278,19 @@ const updateNoteDuration = (note, duration) => {
     return next;
 };
 
+const createDefaultNote = (duration = 1.0) => ({
+    string: 1,
+    fret: 0,
+    duration
+});
+
 const parseBoundedInt = (value, min, max) => {
     const parsed = parseInt(value, 10);
     if (!Number.isFinite(parsed)) return null;
     return Math.min(max, Math.max(min, parsed));
 };
 
-export default function GuitaleleViewer({ scoreData, editorMode = false, onScoreChange, onDownload, onExit }) {
+export default function GuitaleleViewer({ scoreData, editorMode = false, onScoreChange, onDownload, downloadDisabled = false, measureErrors = [], onExit }) {
     const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
     const [selectedMeasure, setSelectedMeasure] = useState(1);
     const [selectedNoteIndex, setSelectedNoteIndex] = useState(0);
@@ -234,8 +311,8 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
         const trebleTopY = 70;
         const bassTopY = 150;
         const tabTopY = 250;
-        const rhythmTopY = 350;
-        const svgHeight = 390;
+        const rhythmTopY = 375;
+        const svgHeight = 430;
 
         const timeSigTop = scoreData.timeSignature?.split('/')[0] || '4';
         const timeSigBottom = scoreData.timeSignature?.split('/')[1] || '4';
@@ -371,7 +448,30 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                 };
             });
 
-            return { rowEvents: renderedEvents, totalWidth, barlineXPositions };
+            const measureGroups = renderedEvents.reduce((groups, ev) => {
+                const existingGroup = groups.find((group) => group.measureNumber === ev.measureNumber);
+                const eventStartX = ev.cx - (noteSpacing / 2);
+                const eventEndX = ev.cx + (noteSpacing / 2);
+
+                if (existingGroup) {
+                    existingGroup.startX = Math.min(existingGroup.startX, eventStartX);
+                    existingGroup.endX = Math.max(existingGroup.endX, eventEndX);
+                    existingGroup.lastGlobalIndex = ev.globalIndex;
+                    return groups;
+                }
+
+                return [
+                    ...groups,
+                    {
+                        measureNumber: ev.measureNumber,
+                        startX: eventStartX,
+                        endX: eventEndX,
+                        lastGlobalIndex: ev.globalIndex
+                    }
+                ];
+            }, []);
+
+            return { rowEvents: renderedEvents, totalWidth, barlineXPositions, measureGroups };
         });
 
         return { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, noteSpacing };
@@ -463,6 +563,84 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
         });
     };
 
+    const insertScoreNoteAfter = (noteIndex, duration = 1.0) => {
+        if (!onScoreChange || !scoreData?.notes) return;
+        const insertAt = Math.min(scoreData.notes.length, Math.max(0, noteIndex + 1));
+        const nextNotes = [
+            ...scoreData.notes.slice(0, insertAt),
+            createDefaultNote(duration),
+            ...scoreData.notes.slice(insertAt)
+        ];
+
+        onScoreChange({
+            ...scoreData,
+            notes: nextNotes
+        });
+        setSelectedNoteIndex(insertAt);
+    };
+
+    const addNewMeasure = () => {
+        if (!onScoreChange || !scoreData?.notes) return;
+        const [timeSigTop = '4'] = (scoreData.timeSignature || '4/4').split('/');
+        const beatsPerMeasure = parseInt(timeSigTop, 10);
+        const notesInNewMeasure = [];
+        
+        // Add rest notes to fill a complete measure
+        for (let i = 0; i < beatsPerMeasure; i++) {
+            notesInNewMeasure.push({ duration: 1.0 });
+        }
+
+        const nextNotes = [...scoreData.notes, ...notesInNewMeasure];
+        onScoreChange({
+            ...scoreData,
+            notes: nextNotes
+        });
+        setSelectedNoteIndex(scoreData.notes.length);
+    };
+
+    const removeMeasure = () => {
+        if (!onScoreChange || !scoreData?.notes || scoreData.notes.length === 0) return;
+        const [timeSigTop = '4'] = (scoreData.timeSignature || '4/4').split('/');
+        const beatsPerMeasure = parseInt(timeSigTop, 10);
+        
+        // Work backwards to find and remove a complete measure
+        let accumulatedBeats = 0;
+        let notesToRemove = 0;
+        
+        for (let i = scoreData.notes.length - 1; i >= 0; i--) {
+            const note = scoreData.notes[i];
+            const beatValue = note.duration !== undefined ? note.duration : 1.0;
+            accumulatedBeats += beatValue;
+            notesToRemove++;
+            
+            // If we've accumulated a full measure, stop
+            if (Math.abs(accumulatedBeats - beatsPerMeasure) < 0.01) {
+                break;
+            }
+        }
+        
+        if (notesToRemove > 0) {
+            const nextNotes = scoreData.notes.slice(0, scoreData.notes.length - notesToRemove);
+            onScoreChange({
+                ...scoreData,
+                notes: nextNotes
+            });
+            setSelectedNoteIndex(Math.max(0, nextNotes.length - 1));
+        }
+    };
+
+    const updateTimeSignature = (part, value) => {
+        if (!onScoreChange || !scoreData) return;
+        const [currentTop = '4', currentBottom = '4'] = (scoreData.timeSignature || '4/4').split('/');
+        const nextTop = part === 'top' ? value : currentTop;
+        const nextBottom = part === 'bottom' ? value : currentBottom;
+
+        onScoreChange({
+            ...scoreData,
+            timeSignature: `${nextTop}/${nextBottom}`
+        });
+    };
+
     // Extract active metrics for dynamic descriptions HUD panel
     const activeTargetIndex = isPlaying
         ? playbackIndex
@@ -478,15 +656,25 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
         return scoreLayout.computedRows.flatMap(r => r.rowEvents).find(ev => ev.globalIndex === selectedNoteIndex);
     }, [selectedNoteIndex, scoreLayout]);
     const selectedScoreNote = scoreData?.notes?.[selectedNoteIndex] || null;
-    const selectedPrimaryPitch = getPrimaryPitch(selectedScoreNote);
+    const selectedEditablePitches = getEditablePitches(selectedScoreNote);
+    const invalidMeasureNumbers = useMemo(() => new Set(
+        measureErrors
+            .map((error) => error.measureNumber)
+            .filter((measureNumber) => Number.isFinite(measureNumber))
+    ), [measureErrors]);
+    const underfilledMeasureGaps = useMemo(() => new Map(
+        measureErrors
+            .filter((error) => error.type === "underfull" && Number.isFinite(error.measureNumber))
+            .map((error) => [error.measureNumber, error.missingBeats])
+    ), [measureErrors]);
 
     const activeDescription = useMemo(() => {
         if (!activeEvent) return null;
-        if (activeEvent.isRest) return `Measure ${activeEvent.measureNumber} • Musical Rest 𝄾 [Duration: ${activeEvent.beatValue} beat(s)]`;
+        if (activeEvent.isRest) return `Measure ${activeEvent.measureNumber} • Musical Rest 𝄾 [${getDurationLabel(activeEvent.beatValue)}]`;
         const pitchDesc = activeEvent.processedPitches
             .map(p => `${p.noteName} (String ${p.string}, Fret ${p.fret})`)
             .join(" + ");
-        return `Measure ${activeEvent.measureNumber} • ${pitchDesc} [Duration: ${activeEvent.beatValue} beat(s)]`;
+        return `Measure ${activeEvent.measureNumber} • ${pitchDesc} [${getDurationLabel(activeEvent.beatValue)}]`;
     }, [activeEvent]);
 
     if (!scoreLayout) {
@@ -499,7 +687,7 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
         <div className={`w-full h-full overflow-y-auto ${DARK_THEME.bgPage} p-6 flex flex-col gap-6 rounded-xl`}>
 
             {/* Master Control Board Panel Interface */}
-            <div className="flex flex-col gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg w-full max-w-2xl mx-auto">
+            <div className="sticky top-4 z-20 flex flex-col gap-4 bg-slate-900/95 backdrop-blur border border-slate-800 p-4 rounded-xl shadow-lg w-full max-w-5xl mx-auto">
                 <div className="flex flex-wrap items-center justify-center gap-3">
                     <button
                         onClick={isPlaying ? stopPlayback : () => startPlayback(1)}
@@ -525,7 +713,8 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                         <>
                             <button
                                 onClick={onDownload}
-                                className="px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide bg-indigo-600 text-white hover:bg-indigo-500 transition-all"
+                                disabled={downloadDisabled}
+                                className="px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide bg-indigo-600 text-white hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed transition-all"
                             >
                                 💾 DOWNLOAD JSON
                             </button>
@@ -540,7 +729,33 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                 </div>
 
                 {/* Tempo Slider Control Section */}
-                <div className="flex items-center gap-6 w-full pt-2 border-t border-slate-800">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 w-full pt-2 border-t border-slate-800">
+                    {editorMode && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-slate-400 whitespace-nowrap">TIME SIG</span>
+                            <select
+                                value={timeSigTop}
+                                disabled={isPlaying}
+                                onChange={(e) => updateTimeSignature('top', e.target.value)}
+                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                            >
+                                {TIME_SIGNATURE_TOP_OPTIONS.map((value) => (
+                                    <option key={value} value={value}>{value}</option>
+                                ))}
+                            </select>
+                            <span className="text-slate-500 font-mono text-xs">/</span>
+                            <select
+                                value={timeSigBottom}
+                                disabled={isPlaying}
+                                onChange={(e) => updateTimeSignature('bottom', e.target.value)}
+                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                            >
+                                {TIME_SIGNATURE_BOTTOM_OPTIONS.map((value) => (
+                                    <option key={value} value={value}>{value}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <span className="flex h-5 items-center text-xs leading-none font-mono text-slate-400 whitespace-nowrap">
                         TEMPO: {bpm} BPM
                     </span>
@@ -569,49 +784,118 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                     )}
                 </div>
 
+                {editorMode && measureErrors.length > 0 && (
+                    <div className="rounded-lg border border-rose-800/80 bg-rose-950/40 px-3 py-2">
+                        <div className="text-[11px] font-mono font-bold text-rose-300">
+                            MEASURE VALIDATION FAILED
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-mono text-rose-200">
+                            {measureErrors.slice(0, 6).map((error) => (
+                                <span key={error.message || error}>{error.message || error}</span>
+                            ))}
+                            {measureErrors.length > 6 && <span>+{measureErrors.length - 6} more</span>}
+                        </div>
+                    </div>
+                )}
+
                 {editorMode && selectedEvent && selectedScoreNote && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-slate-800/60 pt-3">
-                        <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
-                            String
-                            <input
-                                type="number"
-                                min="1"
-                                max="6"
-                                value={selectedPrimaryPitch.string}
-                                disabled={isPlaying || selectedEvent.isRest}
-                                onChange={(e) => {
-                                    const nextString = parseBoundedInt(e.target.value, 1, 6);
-                                    if (nextString === null) return;
-                                    updateScoreNote(selectedNoteIndex, (note) => updateNotePitch(note, { string: nextString }));
-                                }}
-                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
-                            />
-                        </label>
+                    <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,2fr)_minmax(180px,1fr)_auto] gap-4 border-t border-slate-800/60 pt-3">
+                        <div className="lg:col-span-3 flex items-center justify-between gap-3">
+                            <span className="text-[11px] font-mono font-bold text-amber-300">
+                                EDITING BEAT #{selectedNoteIndex + 1} IN MEASURE {selectedEvent.measureNumber}
+                            </span>
+                        </div>
 
-                        <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
-                            Fret
-                            <input
-                                type="number"
-                                min="0"
-                                max="24"
-                                value={selectedPrimaryPitch.fret}
-                                disabled={isPlaying || selectedEvent.isRest}
-                                onChange={(e) => {
-                                    const nextFret = parseBoundedInt(e.target.value, 0, 24);
-                                    if (nextFret === null) return;
-                                    updateScoreNote(selectedNoteIndex, (note) => updateNotePitch(note, { fret: nextFret }));
-                                }}
-                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
-                            />
-                        </label>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-[10px] font-mono font-bold text-slate-500 uppercase">
+                                    Chord Notes
+                                </span>
+                                <button
+                                    type="button"
+                                    disabled={isPlaying || selectedEvent.isRest || selectedEditablePitches.length >= 6}
+                                    onClick={() => updateScoreNote(selectedNoteIndex, addNotePitch)}
+                                    className="px-3 py-1.5 rounded bg-teal-700 text-teal-50 text-[11px] font-mono font-bold hover:bg-teal-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                >
+                                    ADD NOTE
+                                </button>
+                            </div>
+                            <div className="grid gap-2">
+                                {selectedEditablePitches.length === 0 ? (
+                                    <div className="rounded border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-mono text-slate-500">
+                                        Rest beat. Disable Rest to add notes.
+                                    </div>
+                                ) : selectedEditablePitches.map((pitch, pitchIndex) => (
+                                    <div key={`pitch-edit-${pitchIndex}`} className="grid grid-cols-[96px_1fr_auto] gap-2 items-center rounded border border-slate-800 bg-slate-950/70 px-2 py-2">
+                                        <select
+                                            value={pitch.string}
+                                            disabled={isPlaying || selectedEvent.isRest}
+                                            onChange={(e) => {
+                                                const nextString = parseBoundedInt(e.target.value, 1, 6);
+                                                if (nextString === null) return;
+                                                updateScoreNote(selectedNoteIndex, (note) => updateNotePitchAt(note, pitchIndex, { string: nextString }));
+                                            }}
+                                            className="bg-slate-900 border border-slate-700 text-slate-200 text-sm font-mono px-2 py-2 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                                            aria-label={`String for chord note ${pitchIndex + 1}`}
+                                        >
+                                            {[1, 2, 3, 4, 5, 6].map((stringNumber) => (
+                                                <option key={stringNumber} value={stringNumber}>String {stringNumber}</option>
+                                            ))}
+                                        </select>
+                                        <div className="grid grid-cols-[32px_1fr_32px] gap-1">
+                                            <button
+                                                type="button"
+                                                disabled={isPlaying || selectedEvent.isRest || pitch.fret <= 0}
+                                                onClick={() => updateScoreNote(selectedNoteIndex, (note) => updateNotePitchAt(note, pitchIndex, { fret: Math.max(0, pitch.fret - 1) }))}
+                                                className="rounded bg-slate-800 text-slate-200 text-sm font-mono font-bold hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                aria-label={`Lower fret for chord note ${pitchIndex + 1}`}
+                                            >
+                                                -
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="24"
+                                                value={pitch.fret}
+                                                disabled={isPlaying || selectedEvent.isRest}
+                                                onChange={(e) => {
+                                                    const nextFret = parseBoundedInt(e.target.value, 0, 24);
+                                                    if (nextFret === null) return;
+                                                    updateScoreNote(selectedNoteIndex, (note) => updateNotePitchAt(note, pitchIndex, { fret: nextFret }));
+                                                }}
+                                                className="bg-slate-900 border border-slate-700 text-slate-200 text-sm font-mono px-2 py-2 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                                                aria-label={`Fret for chord note ${pitchIndex + 1}`}
+                                            />
+                                            <button
+                                                type="button"
+                                                disabled={isPlaying || selectedEvent.isRest || pitch.fret >= 24}
+                                                onClick={() => updateScoreNote(selectedNoteIndex, (note) => updateNotePitchAt(note, pitchIndex, { fret: Math.min(24, pitch.fret + 1) }))}
+                                                className="rounded bg-slate-800 text-slate-200 text-sm font-mono font-bold hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                aria-label={`Raise fret for chord note ${pitchIndex + 1}`}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            disabled={isPlaying || selectedEvent.isRest || selectedEditablePitches.length <= 1}
+                                            onClick={() => updateScoreNote(selectedNoteIndex, (note) => removeNotePitch(note, pitchIndex))}
+                                            className="h-[38px] px-3 rounded bg-slate-800 text-slate-300 text-[11px] font-mono font-bold hover:bg-rose-900 hover:text-rose-100 disabled:opacity-40 disabled:hover:bg-slate-800 disabled:hover:text-slate-300 disabled:cursor-not-allowed"
+                                        >
+                                            REMOVE
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-                        <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
+                        <label className="flex flex-col gap-1.5 text-[10px] font-mono font-bold text-slate-500 uppercase">
                             Duration
                             <select
                                 value={selectedScoreNote.duration ?? selectedEvent.beatValue}
                                 disabled={isPlaying}
                                 onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => updateNoteDuration(note, parseFloat(e.target.value)))}
-                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                                className="bg-slate-950 border border-slate-700 text-slate-200 text-sm font-mono px-3 py-2 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
                             >
                                 {DURATION_OPTIONS.map((option) => (
                                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -619,32 +903,60 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                             </select>
                         </label>
 
-                        <div className="flex items-end gap-3">
-                            <label className="flex h-8 items-center gap-2 text-xs font-mono font-bold text-slate-300">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedEvent.isRest}
+                        <div className="flex flex-col gap-2">
+                            <div className="grid grid-cols-2 gap-2">
+                                <label className="flex items-center justify-between gap-2 rounded border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs font-mono font-bold text-slate-300">
+                                    Rest
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedEvent.isRest}
+                                        disabled={isPlaying}
+                                        onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => updateNoteRestState(note, e.target.checked))}
+                                        className="h-4 w-4 accent-cyan-500 disabled:opacity-40"
+                                    />
+                                </label>
+                                <label className="flex items-center justify-between gap-2 rounded border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs font-mono font-bold text-slate-300">
+                                    Tie
+                                    <input
+                                        type="checkbox"
+                                        checked={!!selectedScoreNote.tie}
+                                        disabled={isPlaying || selectedEvent.isRest}
+                                        onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => {
+                                            const next = { ...note };
+                                            if (e.target.checked) next.tie = true;
+                                            else delete next.tie;
+                                            return next;
+                                        })}
+                                        className="h-4 w-4 accent-cyan-500 disabled:opacity-40"
+                                    />
+                                </label>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={isPlaying}
+                                onClick={() => insertScoreNoteAfter(selectedNoteIndex, 1.0)}
+                                className="rounded bg-amber-700 px-3 py-2 text-xs font-mono font-bold text-amber-50 hover:bg-amber-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
+                            >
+                                INSERT QUARTER AFTER
+                            </button>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
                                     disabled={isPlaying}
-                                    onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => updateNoteRestState(note, e.target.checked))}
-                                    className="h-4 w-4 accent-cyan-500 disabled:opacity-40"
-                                />
-                                Rest
-                            </label>
-                            <label className="flex h-8 items-center gap-2 text-xs font-mono font-bold text-slate-300">
-                                <input
-                                    type="checkbox"
-                                    checked={!!selectedScoreNote.tie}
-                                    disabled={isPlaying || selectedEvent.isRest}
-                                    onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => {
-                                        const next = { ...note };
-                                        if (e.target.checked) next.tie = true;
-                                        else delete next.tie;
-                                        return next;
-                                    })}
-                                    className="h-4 w-4 accent-cyan-500 disabled:opacity-40"
-                                />
-                                Tie
-                            </label>
+                                    onClick={addNewMeasure}
+                                    className="rounded bg-emerald-700 px-3 py-2 text-xs font-mono font-bold text-emerald-50 hover:bg-emerald-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                >
+                                    ➕ ADD MEASURE
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isPlaying || scoreData?.notes?.length <= 1}
+                                    onClick={removeMeasure}
+                                    className="rounded bg-rose-700 px-3 py-2 text-xs font-mono font-bold text-rose-50 hover:bg-rose-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                >
+                                    ➖ REMOVE MEASURE
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -652,7 +964,7 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
 
             {/* Score Grid Viewport */}
             <div className="flex flex-col gap-8">
-                {computedRows.map(({ rowEvents, totalWidth, barlineXPositions }, rowIdx) => {
+                {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups }, rowIdx) => {
                     return (
                         <div key={`row-${rowIdx}`} className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto`}>
                             <svg width={totalWidth} height={svgHeight} className="select-none mx-auto block">
@@ -693,6 +1005,77 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                                 ))}
                                 <line x1={totalWidth - paddingX} y1={trebleTopY} x2={totalWidth - paddingX} y2={bassTopY + 4 * lineSpacing} stroke={DARK_THEME.lineBar} strokeWidth="2" />
                                 <line x1={totalWidth - paddingX} y1={tabTopY} x2={totalWidth - paddingX} y2={tabTopY + 5 * lineSpacing} stroke={DARK_THEME.lineTab} strokeWidth="2" />
+
+                                {measureGroups.map((measure) => {
+                                    const isInvalidMeasure = invalidMeasureNumbers.has(measure.measureNumber);
+                                    const missingBeats = underfilledMeasureGaps.get(measure.measureNumber);
+                                    const measureCenterX = (measure.startX + measure.endX) / 2;
+
+                                    return (
+                                        <g key={`measure-${measure.measureNumber}`}>
+                                            {isInvalidMeasure && (
+                                                <>
+                                                    <rect
+                                                        x={measure.startX + 4}
+                                                        y={trebleTopY - 54}
+                                                        width={Math.max(0, measure.endX - measure.startX - 8)}
+                                                        height={rhythmTopY - trebleTopY + 68}
+                                                        rx={8}
+                                                        fill="rgba(244, 63, 94, 0.14)"
+                                                        stroke="#fb7185"
+                                                        strokeWidth="2"
+                                                        strokeDasharray="6 4"
+                                                    />
+                                                    <text
+                                                        x={measureCenterX}
+                                                        y={trebleTopY - 34}
+                                                        textAnchor="middle"
+                                                        className="text-[10px] font-mono font-black"
+                                                        fill="#fecdd3"
+                                                    >
+                                                        BEAT COUNT
+                                                    </text>
+                                                </>
+                                            )}
+                                            <text
+                                                x={measureCenterX}
+                                                y={tabTopY + (5 * lineSpacing) + 22}
+                                                textAnchor="middle"
+                                                className="text-[10px] font-mono font-bold"
+                                                fill={isInvalidMeasure ? "#fb7185" : DARK_THEME.textTabString}
+                                            >
+                                                M{measure.measureNumber}
+                                            </text>
+                                            {editorMode && !isPlaying && missingBeats > 0 && (
+                                                <g
+                                                    className="cursor-pointer"
+                                                    onClick={() => insertScoreNoteAfter(measure.lastGlobalIndex, Math.min(1.0, missingBeats))}
+                                                >
+                                                    <rect
+                                                        x={measure.endX - 38}
+                                                        y={tabTopY - 10}
+                                                        width={30}
+                                                        height={(5 * lineSpacing) + 20}
+                                                        rx={7}
+                                                        fill="rgba(15, 23, 42, 0.55)"
+                                                        stroke="#fbbf24"
+                                                        strokeWidth="1.4"
+                                                        strokeDasharray="4 4"
+                                                    />
+                                                    <text
+                                                        x={measure.endX - 23}
+                                                        y={tabTopY + 35}
+                                                        textAnchor="middle"
+                                                        className="text-lg font-mono font-bold"
+                                                        fill="#fbbf24"
+                                                    >
+                                                        +
+                                                    </text>
+                                                </g>
+                                            )}
+                                        </g>
+                                    );
+                                })}
 
                                 {/* Event Mapping Node Sequence */}
                                 {rowEvents.map((ev, idx) => {
@@ -764,6 +1147,25 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                                                 }}
                                             />
 
+                                            {editorMode && !isPlaying && [1, 2, 3, 4, 5, 6].map((stringNumber) => (
+                                                <rect
+                                                    key={`string-click-${stringNumber}`}
+                                                    x={ev.cx - (noteSpacing / 2) + 8}
+                                                    y={tabTopY + ((stringNumber - 1) * lineSpacing) - 6}
+                                                    width={noteSpacing - 16}
+                                                    height={12}
+                                                    fill="transparent"
+                                                    pointerEvents="all"
+                                                    className="cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedMeasure(ev.measureNumber);
+                                                        setSelectedNoteIndex(ev.globalIndex);
+                                                        updateScoreNote(ev.globalIndex, (note) => selectSingleStringPitch(note, stringNumber));
+                                                    }}
+                                                />
+                                            ))}
+
                                             {ev.isRest ? (
                                                 <g>
                                                     {ev.rhythm === 'x' && <path d={`M ${ev.cx - 4} ${trebleTopY + 28} L ${ev.cx + 4} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 40} Q ${ev.cx + 6} ${trebleTopY + 44} ${ev.cx} ${trebleTopY + 50}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" strokeLinecap="round" />}
@@ -800,7 +1202,7 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
 
                                                                 {ev.isTiedToNext && rowEvents[idx + 1] && !rowEvents[idx + 1].isRest && (
                                                                     (() => {
-                                                                        const targetPitch = rowEvents[idx + 1].processedPitches.find(np => np.string === pitch.string);
+                                                                        const targetPitch = rowEvents[idx + 1].processedPitches.find(np => np.string === pitch.string) || rowEvents[idx + 1].processedPitches[0];
                                                                         if (targetPitch) {
                                                                             return (<path d={`M ${ev.cx + 4} ${pitch.staffY + 5} Q ${(ev.cx + rowEvents[idx + 1].cx) / 2} ${Math.max(pitch.staffY, targetPitch.staffY) + 16} ${rowEvents[idx + 1].cx - 4} ${targetPitch.staffY + 5}`} fill="none" stroke={DARK_THEME.lineTie} strokeWidth="1.8" strokeLinecap="round" />);
                                                                         }

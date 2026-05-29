@@ -5,6 +5,8 @@ import About from "./About"
 import Contents from "./Contents"
 import Content from "./Content"
 import CustomComponent from "./CustomComponent"
+import TabEditor from "./tab-viewer/TabEditor"
+import { blankScore } from "./tab-viewer/dummy_score"
 import { Container } from "react-bootstrap"
 
 export default function RouteResolver() {
@@ -18,6 +20,7 @@ export default function RouteResolver() {
                     <Route path='/content/:contentId' element={<Content />} />
                     <Route path='/projects' element={<Projects />} />
                     <Route path='/component/:componentId' element={<CustomComponent />} />
+                    <Route path='/tab-editor' element={<TabEditor initialScore={blankScore} onExit={() => window.history.back()} />} />
                     <Route path='/about' element={<About />} />
                 </Routes>
             </Router>

@@ -1,38 +1,87 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import GuitaleleViewer from './GuitaleleViewer';
 import * as Dummies from './dummy_score';
 
+const RHYTHM_BEAT_VALUES = {
+    'o': 4.0, 'o.': 6.0, '.': 2.0, '..': 3.0, ':': 1.0, ':.': 1.5, '+': 0.5, '+.': 0.75, '=': 0.25,
+    'x': 1.0, 'x.': 1.5, 'x+': 0.5, 'x=': 0.25
+};
+
+const SUPPORTED_TIME_SIGNATURE_TOPS = [2, 3, 4, 5, 6, 7, 8, 9, 12];
+const SUPPORTED_TIME_SIGNATURE_BOTTOMS = [2, 4, 8, 16];
+
+const getBeatValue = (note) => {
+    if (note.duration !== undefined) return note.duration;
+    return RHYTHM_BEAT_VALUES[note.rhythm || ':'] || 1.0;
+};
+
+const formatBeatCount = (value) => Number.parseFloat(value.toFixed(3)).toString();
+
+const validateMeasures = (score) => {
+    if (!score?.notes?.length) return [];
+
+    const [rawTop = '4', rawBottom = '4'] = (score.timeSignature || '4/4').split('/');
+    const beatsPerMeasure = parseInt(rawTop, 10);
+    const beatUnit = parseInt(rawBottom, 10);
+
+    if (!Number.isFinite(beatsPerMeasure) || !Number.isFinite(beatUnit) || beatsPerMeasure <= 0 || beatUnit <= 0) {
+        return [{ measureNumber: null, message: "Time signature must start with a positive beat count." }];
+    }
+
+    const errors = [];
+    if (!SUPPORTED_TIME_SIGNATURE_TOPS.includes(beatsPerMeasure) || !SUPPORTED_TIME_SIGNATURE_BOTTOMS.includes(beatUnit)) {
+        errors.push({
+            measureNumber: null,
+            message: `Unsupported time signature ${score.timeSignature}. Use ${SUPPORTED_TIME_SIGNATURE_TOPS.join(", ")} over ${SUPPORTED_TIME_SIGNATURE_BOTTOMS.join(", ")}.`
+        });
+    }
+
+    let measureNumber = 1;
+    let accumulatedBeats = 0;
+    const epsilon = 0.001;
+
+    score.notes.forEach((note) => {
+        accumulatedBeats += getBeatValue(note);
+        if (Math.abs(accumulatedBeats - beatsPerMeasure) <= epsilon) {
+            accumulatedBeats = 0;
+            measureNumber++;
+        } else if (accumulatedBeats > beatsPerMeasure + epsilon) {
+            errors.push({
+                measureNumber,
+                type: "overfull",
+                message: `Measure ${measureNumber}: ${formatBeatCount(accumulatedBeats)} beats, expected ${beatsPerMeasure}.`
+            });
+            accumulatedBeats = 0;
+            measureNumber++;
+        }
+    });
+
+    if (accumulatedBeats > epsilon) {
+        errors.push({
+            measureNumber,
+            type: "underfull",
+            missingBeats: beatsPerMeasure - accumulatedBeats,
+            message: `Measure ${measureNumber}: ${formatBeatCount(accumulatedBeats)} beats, expected ${beatsPerMeasure}.`
+        });
+    }
+
+    return errors;
+};
+
 export default function TabEditor({ initialScore, onExit }) {
-    const [jsonText, setJsonText] = useState("");
     const [parsedScore, setParsedScore] = useState(null);
-    const [errorMsg, setErrorMsg] = useState(null);
     const [selectedTemplate, setSelectedTemplate] = useState("active");
     const [hasChanges, setHasChanges] = useState(false);
     const [isCurrentScoreDownloaded, setIsCurrentScoreDownloaded] = useState(false);
 
     useEffect(() => {
         const fallback = initialScore || Dummies.dummyScore;
-        setJsonText(JSON.stringify(fallback, null, 2));
         setParsedScore(fallback);
         setHasChanges(false);
         setIsCurrentScoreDownloaded(false);
     }, [initialScore]);
 
-    const handleTextChange = (val) => {
-        setJsonText(val);
-        setHasChanges(true);
-        setIsCurrentScoreDownloaded(false);
-        try {
-            const parsed = JSON.parse(val);
-            if (!parsed.notes || !Array.isArray(parsed.notes)) {
-                throw new Error("Score layout invalid: 'notes' parameter must be defined as an array schema.");
-            }
-            setParsedScore(parsed);
-            setErrorMsg(null);
-        } catch (err) {
-            setErrorMsg(err.message);
-        }
-    };
+    const measureErrors = useMemo(() => validateMeasures(parsedScore), [parsedScore]);
 
     const handleTemplateSelect = (e) => {
         const key = e.target.value;
@@ -44,20 +93,22 @@ export default function TabEditor({ initialScore, onExit }) {
         }
 
         if (targetedObj) {
-            setJsonText(JSON.stringify(targetedObj, null, 2));
             setParsedScore(targetedObj);
             setHasChanges(true);
             setIsCurrentScoreDownloaded(false);
-            setErrorMsg(null);
         }
     };
 
     const handleDownloadJson = () => {
-        if (errorMsg || !parsedScore) {
-            alert("Export aborted: Please fix JSON compilation syntax anomalies before exporting configuration data.");
+        if (!parsedScore) {
+            alert("Export aborted: No score is loaded.");
             return;
         }
-        const blob = new Blob([jsonText], { type: 'application/json' });
+        if (measureErrors.length > 0) {
+            alert("Export aborted: Fix measure beat counts before downloading the score.");
+            return;
+        }
+        const blob = new Blob([JSON.stringify(parsedScore, null, 2)], { type: 'application/json' });
         const nameClean = (parsedScore.title || "guitalele_composition")
             .toLowerCase()
             .replace(/[^a-z0-9]/g, "_");
@@ -73,10 +124,8 @@ export default function TabEditor({ initialScore, onExit }) {
 
     const handleViewerScoreChange = (nextScore) => {
         setParsedScore(nextScore);
-        setJsonText(JSON.stringify(nextScore, null, 2));
         setHasChanges(true);
         setIsCurrentScoreDownloaded(false);
-        setErrorMsg(null);
     };
 
     const handleExit = () => {
@@ -119,58 +168,23 @@ export default function TabEditor({ initialScore, onExit }) {
                 </div>
             </div>
 
-            {/* Split Dual Layout Configuration */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-                
-                {/* Left Deck: Structured Input Code Box */}
-                <div className="flex flex-col gap-3 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg xl:col-span-1">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">JSON Data Matrix Payload</span>
-                        {errorMsg ? (
-                            <span className="text-[10px] bg-rose-950 border border-rose-800 text-rose-400 px-2 py-0.5 rounded font-mono font-bold animate-pulse">
-                                INVALID FORMAT
-                            </span>
-                        ) : (
-                            <span className="text-[10px] bg-emerald-950 border border-emerald-800 text-emerald-400 px-2 py-0.5 rounded font-mono font-bold">
-                                COMPILED OK
-                            </span>
-                        )}
-                    </div>
-
-                    <textarea
-                        value={jsonText}
-                        onChange={(e) => handleTextChange(e.target.value)}
-                        className="w-full h-[580px] bg-slate-950 text-emerald-400 font-mono text-xs p-4 rounded-lg border border-slate-800 focus:outline-none focus:border-cyan-600 resize-none shadow-inner leading-relaxed overflow-y-auto"
-                        placeholder="Input score array configuration arrays directly here..."
+            <div className="w-full">
+                {parsedScore ? (
+                    <GuitaleleViewer
+                        scoreData={parsedScore}
+                        editorMode={true}
+                        onScoreChange={handleViewerScoreChange}
+                        onDownload={handleDownloadJson}
+                        downloadDisabled={measureErrors.length > 0}
+                        measureErrors={measureErrors}
+                        onExit={handleExit}
                     />
-
-                    {errorMsg && (
-                        <div className="p-3 bg-slate-950 border border-rose-900 rounded-lg">
-                            <p className="text-[11px] font-mono font-bold text-rose-400 leading-normal break-words">
-                                ⚠️ Syntax Exception: {errorMsg}
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Deck: Render Output Pipeline Display */}
-                <div className="xl:col-span-2 w-full">
-                    {parsedScore ? (
-                        <GuitaleleViewer 
-                            scoreData={parsedScore} 
-                            editorMode={true}
-                            onScoreChange={handleViewerScoreChange}
-                            onDownload={handleDownloadJson}
-                            onExit={handleExit}
-                        />
-                    ) : (
-                        <div className="w-full h-96 border border-dashed border-slate-800 bg-slate-900 rounded-lg flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                            <p className="text-sm font-medium">Visualization engine parsing suspended.</p>
-                            <p className="text-xs text-slate-600 mt-1 max-w-sm">Fix syntax anomalies highlighted inside the code block desk workspace area to re-initiate graphic outputs.</p>
-                        </div>
-                    )}
-                </div>
-
+                ) : (
+                    <div className="w-full h-96 border border-dashed border-slate-800 bg-slate-900 rounded-lg flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                        <p className="text-sm font-medium">Visualization engine parsing suspended.</p>
+                        <p className="text-xs text-slate-600 mt-1 max-w-sm">Fix score data to re-initiate graphic outputs.</p>
+                    </div>
+                )}
             </div>
         </div>
     );
