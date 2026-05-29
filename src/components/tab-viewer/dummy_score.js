@@ -1,4 +1,6 @@
-export const dummyScore = {
+
+const dummyScore = {
+  "id": "full_test_score",
   "title": "Guitalele Tab viewer Full Test Score",
   "description": "Comprehensive 52-measure composition covering extreme upper/lower staff boundaries, dynamic rhythms, and true horizontal layout tracking.",
   "timeSignature": "4/4",
@@ -192,7 +194,8 @@ export const dummyScore = {
   ]
 };
 
-export const dummyScore24 = {
+const dummyScore24 = {
+  "id": "marching_pattern_24",
   "title": "2/4 Marching Pattern",
   "description": "A punchy, quick-step progression to test short measures and rapid row-wrapping.",
   "timeSignature": "2/4",
@@ -239,7 +242,8 @@ export const dummyScore24 = {
   ]
 };
 
-export const maryHadALittleLamb = {
+const maryHadALittleLamb = {
+  "id": "mary_had_a_little_lamb",
   "title": "Mary Had a Little Lamb",
   "description": "A classic nursery rhyme arrangement mapped accurately to standard Guitalele tuning (ADGCEA).",
   "timeSignature": "2/4",
@@ -317,7 +321,8 @@ export const maryHadALittleLamb = {
   ]
 };
 
-export const twinkleTwinkleLittleStar = {
+const twinkleTwinkleLittleStar = {
+  "id": "twinkle_twinkle_little_star",
   "title": "Twinkle Twinkle Little Star",
   "description": "A classic nursery rhyme arrangement mapped to standard Guitalele tuning (ADGCEA).",
   "timeSignature": "4/4",
@@ -350,7 +355,8 @@ export const twinkleTwinkleLittleStar = {
   ]
 };
 
-export const dummyScore34 = {
+const dummyScore34 = {
+  "id": "34_waltz_excerpt",
   "title": "3/4 Waltz Excerpt",
   "description": "A sweeping arpeggio block focusing on 3-beat divisions and dotted notes.",
   "timeSignature": "3/4",
@@ -383,7 +389,8 @@ export const dummyScore34 = {
   ]
 };
 
-export const dummyScore68 = {
+const dummyScore68 = {
+  "id": "68_arpeggio_flow",
   "title": "6/8 Arpeggio Flow",
   "description": "Flowing 6-beat cascading notes. Demonstrates longer horizontal measure stretching.",
   "timeSignature": "6/8",
@@ -412,7 +419,8 @@ export const dummyScore68 = {
   ]
 };
 
-export const dummyScore22 = {
+const dummyScore22 = {
+  "id": "22_cut_time_fanfare",
   "title": "2/2 Cut Time Fanfare",
   "description": "A brisk, driving march in Cut Time. Note that each measure sums to 4.0 beats total to ensure correct barline placement.",
   "timeSignature": "2/2",
@@ -447,14 +455,4 @@ export const dummyScore22 = {
   ]
 };
 
-export const blankScore = {
-  "title": "Untitled Composition",
-  "description": "A blank workspace to start composing.",
-  "timeSignature": "4/4",
-  "notes": [
-    { "duration": 1.0 },
-    { "duration": 1.0 },
-    { "duration": 1.0 },
-    { "duration": 1.0 }
-  ]
-};
+export const allScores = [dummyScore, maryHadALittleLamb, twinkleTwinkleLittleStar, dummyScore34, dummyScore68, dummyScore22]
