@@ -5,99 +5,134 @@ const dummyScore = {
   "description": "Comprehensive 52-measure composition covering extreme upper/lower staff boundaries, dynamic rhythms, and true horizontal layout tracking.",
   "timeSignature": "4/4",
   "notes": [
-    // === SECTION 1: THE ORIGINAL MOTIF (Measures 1 - 4) ===
+    // === TWO-VOICE DEMONSTRATION (Measures 1 - 3) ===
+    // Measure 1: Voice 1 with whole notes, Voice 2 with quarter notes
+    // Voice 1: C whole note (4 beats)
+    { "fret": 0, "string": 3, "duration": 4.0, "voice": 1 }, // C whole note
+    
+    // Voice 2: C, D, F, A quarter notes (1 beat each = 4 beats)
+    { "fret": 0, "string": 1, "duration": 1.0, "voice": 2 },
+    { "fret": 2, "string": 1, "duration": 1.0, "voice": 2 },
+    { "fret": 3, "string": 2, "duration": 1.0, "voice": 2 },
+    { "fret": 0, "string": 3, "duration": 1.0, "voice": 2 }, // Measure 1 Done
+    
+    // Measure 2: Voice 1 with two half notes, Voice 2 with four quarter notes
+    { "fret": 2, "string": 3, "duration": 2.0, "voice": 1 }, // Half note
+    { "fret": 3, "string": 2, "duration": 2.0, "voice": 1 }, // Half note
+    
+    { "fret": 5, "string": 1, "duration": 1.0, "voice": 2 },
+    { "fret": 7, "string": 1, "duration": 1.0, "voice": 2 },
+    { "fret": 5, "string": 2, "duration": 1.0, "voice": 2 },
+    { "fret": 3, "string": 2, "duration": 1.0, "voice": 2 }, // Measure 2 Done
+    
+    // Measure 3: Voice 1 with quarter notes, Voice 2 with eighth notes
+    { "fret": 0, "string": 1, "duration": 1.0, "voice": 1 },
+    { "fret": 2, "string": 1, "duration": 1.0, "voice": 1 },
+    { "fret": 3, "string": 1, "duration": 1.0, "voice": 1 },
+    { "fret": 0, "string": 2, "duration": 1.0, "voice": 1 },
+    
+    { "fret": 0, "string": 1, "duration": 0.5, "voice": 2 },
+    { "fret": 1, "string": 1, "duration": 0.5, "voice": 2 },
+    { "fret": 2, "string": 1, "duration": 0.5, "voice": 2 },
+    { "fret": 3, "string": 1, "duration": 0.5, "voice": 2 },
+    { "fret": 0, "string": 2, "duration": 0.5, "voice": 2 },
+    { "fret": 1, "string": 2, "duration": 0.5, "voice": 2 },
+    { "fret": 2, "string": 2, "duration": 0.5, "voice": 2 },
+    { "fret": 3, "string": 2, "duration": 0.5, "voice": 2 }, // Measure 3 Done (8 eighths = 4 beats)
+    
+    // === SECTION 1: NORMAL SINGLE-VOICE MOTIF (Measures 4 - 7) ===
     { "fret": 0, "string": 6, "duration": 1.0 },
     { "fret": 2, "string": 6, "duration": 1.0 },
     { "fret": 0, "string": 5, "duration": 1.0 },
-    { "fret": 2, "string": 5, "duration": 1.0 }, // Measure 1 Done
+    { "fret": 2, "string": 5, "duration": 1.0 }, // Measure 4 Done
 
     { "fret": 0, "string": 4, "duration": 1.0 },
     { "fret": 2, "string": 4, "duration": 1.0 },
     { "fret": 0, "string": 3, "duration": 1.0 },
-    { "fret": 2, "string": 3, "duration": 1.0 }, // Measure 2 Done
+    { "fret": 2, "string": 3, "duration": 1.0 }, // Measure 5 Done
 
     { "fret": 0, "string": 2, "duration": 0.5 },
     { "fret": 1, "string": 2, "duration": 0.5 },
     { "duration": 1.0 },
     { "fret": 3, "string": 2, "duration": 1.0, "tie": true },
-    { "fret": 3, "string": 2, "duration": 1.0 }, // Measure 3 Done
+    { "fret": 3, "string": 2, "duration": 1.0 }, // Measure 6 Done
 
     { "fret": 0, "string": 1, "duration": 1.0 },
     { "duration": 0.5 },
     { "fret": 5, "string": 1, "duration": 0.5 },
     { "duration": 0.25 },
     { "fret": 7, "string": 1, "duration": 0.25 },
-    { "fret": 12, "string": 1, "duration": 1.5 }, // Measure 4 Done
+    { "fret": 12, "string": 1, "duration": 1.5 }, // Measure 7 Done
 
-    // === SECTION 2: THE MID-REGISTER SYNCOPATION (Measures 5 - 16) ===
-    // Repeatable pattern block 1 (Measures 5-8)
+    // === SECTION 2: THE MID-REGISTER SYNCOPATION (Measures 8 - 19) ===
+    // Repeatable pattern block 1 (Measures 8-11)
     { "fret": 3, "string": 3, "duration": 1.0 },
     { "fret": 2, "string": 2, "duration": 0.5 },
     { "fret": 0, "string": 1, "duration": 0.5 },
     { "duration": 1.0 },
-    { "fret": 2, "string": 2, "duration": 1.0 }, // M5
+    { "fret": 2, "string": 2, "duration": 1.0 }, // M8
     { "fret": 3, "string": 3, "duration": 1.0 },
     { "fret": 2, "string": 2, "duration": 0.5 },
     { "fret": 0, "string": 1, "duration": 0.5 },
     { "duration": 1.0 },
-    { "fret": 2, "string": 2, "duration": 1.0 }, // M6
+    { "fret": 2, "string": 2, "duration": 1.0 }, // M9
     { "fret": 0, "string": 4, "duration": 2.0 },
-    { "fret": 2, "string": 3, "duration": 2.0 }, // M7
+    { "fret": 2, "string": 3, "duration": 2.0 }, // M10
     { "fret": 3, "string": 2, "duration": 1.0 },
     { "duration": 1.0 },
-    { "fret": 0, "string": 1, "duration": 2.0 }, // M8
+    { "fret": 0, "string": 1, "duration": 2.0 }, // M11
 
-    // Repeatable pattern block 2 (Measures 9-12)
+    // Repeatable pattern block 2 (Measures 12-15)
     { "fret": 1, "string": 2, "duration": 0.5 },
     { "fret": 3, "string": 2, "duration": 0.5 },
     { "fret": 0, "string": 1, "duration": 1.0 },
     { "fret": 1, "string": 2, "duration": 0.5 },
     { "fret": 3, "string": 2, "duration": 0.5 },
-    { "fret": 0, "string": 1, "duration": 1.0 }, // M9
+    { "fret": 0, "string": 1, "duration": 1.0 }, // M12
     { "fret": 3, "string": 1, "duration": 1.0 },
     { "fret": 1, "string": 1, "duration": 1.0 },
-    { "fret": 0, "string": 1, "duration": 2.0 }, // M10
+    { "fret": 0, "string": 1, "duration": 2.0 }, // M13
     { "duration": 0.5 },
     { "fret": 2, "string": 3, "duration": 0.5 },
     { "fret": 0, "string": 2, "duration": 1.0 },
     { "duration": 0.5 },
     { "fret": 2, "string": 3, "duration": 0.5 },
-    { "fret": 0, "string": 2, "duration": 1.0 }, // M11
-    { "fret": 3, "string": 4, "duration": 4.0 }, // M12
+    { "fret": 0, "string": 2, "duration": 1.0 }, // M14
+    { "fret": 3, "string": 4, "duration": 4.0 }, // M15
 
-    // Transition block (Measures 13-16)
+    // Transition block (Measures 16-19)
     { "fret": 2, "string": 3, "duration": 1.0 },
     { "fret": 0, "string": 2, "duration": 1.0 },
     { "fret": 1, "string": 2, "duration": 1.0 },
-    { "fret": 3, "string": 2, "duration": 1.0 }, // M13
+    { "fret": 3, "string": 2, "duration": 1.0 }, // M16
     { "fret": 0, "string": 1, "duration": 1.5 },
     { "fret": 1, "string": 1, "duration": 0.5 },
-    { "fret": 3, "string": 1, "duration": 2.0 }, // M14
+    { "fret": 3, "string": 1, "duration": 2.0 }, // M17
     { "fret": 5, "string": 1, "duration": 1.0 },
     { "fret": 3, "string": 1, "duration": 1.0 },
     { "fret": 1, "string": 1, "duration": 1.0 },
-    { "fret": 0, "string": 1, "duration": 1.0 }, // M15
+    { "fret": 0, "string": 1, "duration": 1.0 }, // M18
     { "fret": 3, "string": 2, "duration": 2.0 },
-    { "duration": 2.0 }, // M16
+    { "duration": 2.0 }, // M19
 
-    // === SECTION 3: BASS REGISTRATION MOTIF (Measures 17 - 28) ===
+    // === SECTION 3: BASS REGISTRATION MOTIF (Measures 20 - 31) ===
     { "fret": 0, "string": 6, "duration": 2.0 },
-    { "fret": 3, "string": 6, "duration": 2.0 }, // M17
+    { "fret": 3, "string": 6, "duration": 2.0 }, // M20
     { "fret": 0, "string": 5, "duration": 2.0 },
-    { "fret": 3, "string": 5, "duration": 2.0 }, // M18
+    { "fret": 3, "string": 5, "duration": 2.0 }, // M21
     { "fret": 2, "string": 6, "duration": 1.0 },
     { "fret": 0, "string": 5, "duration": 1.0 },
     { "fret": 2, "string": 5, "duration": 1.0 },
-    { "fret": 0, "string": 4, "duration": 1.0 }, // M19
+    { "fret": 0, "string": 4, "duration": 1.0 }, // M22
     { "fret": 2, "string": 4, "duration": 2.0 },
-    { "duration": 2.0 }, // M20
+    { "duration": 2.0 }, // M23
 
     { "fret": 1, "string": 6, "duration": 1.0 },
     { "fret": 1, "string": 6, "duration": 1.0 },
-    { "fret": 0, "string": 5, "duration": 2.0 }, // M21
+    { "fret": 0, "string": 5, "duration": 2.0 }, // M24
     { "fret": 2, "string": 5, "duration": 1.0 },
     { "fret": 2, "string": 5, "duration": 1.0 },
-    { "fret": 0, "string": 4, "duration": 2.0 }, // M22
+    { "fret": 0, "string": 4, "duration": 2.0 }, // M25
     { "fret": 3, "string": 6, "duration": 0.5 },
     { "fret": 2, "string": 6, "duration": 0.5 },
     { "fret": 0, "string": 6, "duration": 1.0 },
