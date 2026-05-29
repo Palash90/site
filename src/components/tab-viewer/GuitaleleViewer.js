@@ -23,6 +23,18 @@ const CHROMATIC_MAP = {
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
+const DURATION_OPTIONS = [
+    { value: 0.25, label: "1/16" },
+    { value: 0.5, label: "1/8" },
+    { value: 0.75, label: "Dotted 1/8" },
+    { value: 1.0, label: "1/4" },
+    { value: 1.5, label: "Dotted 1/4" },
+    { value: 2.0, label: "1/2" },
+    { value: 3.0, label: "Dotted 1/2" },
+    { value: 4.0, label: "Whole" },
+    { value: 6.0, label: "Dotted Whole" }
+];
+
 const DARK_THEME = {
     bgPage: "bg-slate-950",
     bgScore: "bg-slate-900",
@@ -138,9 +150,70 @@ const playHumanizedGuitaleleNote = (ctx, midi, startTime, duration, velocity = 1
     pluckOsc.stop(startTime + decayTime);
 };
 
-export default function GuitaleleViewer({ scoreData, editorMode = false, onDownload, onExit }) {
+const getPrimaryPitch = (note) => {
+    if (!note) return { string: 1, fret: 0 };
+    if (Array.isArray(note.pitches) && note.pitches.length > 0) {
+        return note.pitches[0];
+    }
+    if (note.string !== undefined && note.fret !== undefined) {
+        return note;
+    }
+    return { string: 1, fret: 0 };
+};
+
+const updateNotePitch = (note, patch) => {
+    const nextPitch = {
+        ...getPrimaryPitch(note),
+        ...patch
+    };
+
+    const next = { ...note };
+    delete next.rhythm;
+
+    if (Array.isArray(note.pitches)) {
+        next.pitches = [{ string: nextPitch.string, fret: nextPitch.fret }];
+        delete next.string;
+        delete next.fret;
+        return next;
+    }
+
+    next.string = nextPitch.string;
+    next.fret = nextPitch.fret;
+    delete next.pitches;
+    return next;
+};
+
+const updateNoteRestState = (note, shouldBeRest) => {
+    const next = { ...note };
+    delete next.rhythm;
+
+    if (shouldBeRest) {
+        delete next.string;
+        delete next.fret;
+        delete next.pitches;
+        delete next.tie;
+        return next;
+    }
+
+    return updateNotePitch(next, getPrimaryPitch(note));
+};
+
+const updateNoteDuration = (note, duration) => {
+    const next = { ...note, duration };
+    delete next.rhythm;
+    return next;
+};
+
+const parseBoundedInt = (value, min, max) => {
+    const parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed)) return null;
+    return Math.min(max, Math.max(min, parsed));
+};
+
+export default function GuitaleleViewer({ scoreData, editorMode = false, onScoreChange, onDownload, onExit }) {
     const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
     const [selectedMeasure, setSelectedMeasure] = useState(1);
+    const [selectedNoteIndex, setSelectedNoteIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackIndex, setPlaybackIndex] = useState(null);
     const [bpm, setBpm] = useState(100);
@@ -368,12 +441,37 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onDownl
         return () => stopPlayback();
     }, []);
 
+    useEffect(() => {
+        if (!scoreData?.notes?.length) return;
+        setSelectedNoteIndex((currentIndex) => Math.min(currentIndex, scoreData.notes.length - 1));
+    }, [scoreData]);
+
+    const updateScoreNote = (noteIndex, updater) => {
+        if (!onScoreChange || !scoreData?.notes?.[noteIndex]) return;
+
+        const nextNotes = scoreData.notes.map((note, index) => {
+            if (index !== noteIndex) return note;
+            return updater(note);
+        });
+
+        onScoreChange({
+            ...scoreData,
+            notes: nextNotes
+        });
+    };
+
     // Extract active metrics for dynamic descriptions HUD panel
-    const activeTargetIndex = hoveredNoteIndex !== null ? hoveredNoteIndex : playbackIndex;
+    const activeTargetIndex = hoveredNoteIndex !== null ? hoveredNoteIndex : playbackIndex ?? (editorMode ? selectedNoteIndex : null);
     const activeEvent = useMemo(() => {
         if (activeTargetIndex === null || !scoreLayout) return null;
         return scoreLayout.computedRows.flatMap(r => r.rowEvents).find(ev => ev.globalIndex === activeTargetIndex);
     }, [activeTargetIndex, scoreLayout]);
+    const selectedEvent = useMemo(() => {
+        if (!scoreLayout) return null;
+        return scoreLayout.computedRows.flatMap(r => r.rowEvents).find(ev => ev.globalIndex === selectedNoteIndex);
+    }, [selectedNoteIndex, scoreLayout]);
+    const selectedScoreNote = scoreData?.notes?.[selectedNoteIndex] || null;
+    const selectedPrimaryPitch = getPrimaryPitch(selectedScoreNote);
 
     const activeDescription = useMemo(() => {
         if (!activeEvent) return null;
@@ -463,6 +561,105 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onDownl
                         </span>
                     )}
                 </div>
+
+                {editorMode && selectedEvent && selectedScoreNote && (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 border-t border-slate-800/60 pt-3">
+                        <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
+                            Event
+                            <select
+                                value={selectedNoteIndex}
+                                disabled={isPlaying}
+                                onChange={(e) => {
+                                    const nextIndex = parseInt(e.target.value, 10);
+                                    setSelectedNoteIndex(nextIndex);
+                                    const nextEvent = scoreLayout.computedRows.flatMap(r => r.rowEvents).find(ev => ev.globalIndex === nextIndex);
+                                    if (nextEvent) setSelectedMeasure(nextEvent.measureNumber);
+                                }}
+                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                            >
+                                {scoreData.notes.map((_, index) => (
+                                    <option key={index} value={index}>#{index + 1}</option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
+                            String
+                            <input
+                                type="number"
+                                min="1"
+                                max="6"
+                                value={selectedPrimaryPitch.string}
+                                disabled={isPlaying || selectedEvent.isRest}
+                                onChange={(e) => {
+                                    const nextString = parseBoundedInt(e.target.value, 1, 6);
+                                    if (nextString === null) return;
+                                    updateScoreNote(selectedNoteIndex, (note) => updateNotePitch(note, { string: nextString }));
+                                }}
+                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                            />
+                        </label>
+
+                        <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
+                            Fret
+                            <input
+                                type="number"
+                                min="0"
+                                max="24"
+                                value={selectedPrimaryPitch.fret}
+                                disabled={isPlaying || selectedEvent.isRest}
+                                onChange={(e) => {
+                                    const nextFret = parseBoundedInt(e.target.value, 0, 24);
+                                    if (nextFret === null) return;
+                                    updateScoreNote(selectedNoteIndex, (note) => updateNotePitch(note, { fret: nextFret }));
+                                }}
+                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                            />
+                        </label>
+
+                        <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
+                            Duration
+                            <select
+                                value={selectedScoreNote.duration ?? selectedEvent.beatValue}
+                                disabled={isPlaying}
+                                onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => updateNoteDuration(note, parseFloat(e.target.value)))}
+                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                            >
+                                {DURATION_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <div className="flex items-end gap-3">
+                            <label className="flex h-8 items-center gap-2 text-xs font-mono font-bold text-slate-300">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedEvent.isRest}
+                                    disabled={isPlaying}
+                                    onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => updateNoteRestState(note, e.target.checked))}
+                                    className="h-4 w-4 accent-cyan-500 disabled:opacity-40"
+                                />
+                                Rest
+                            </label>
+                            <label className="flex h-8 items-center gap-2 text-xs font-mono font-bold text-slate-300">
+                                <input
+                                    type="checkbox"
+                                    checked={!!selectedScoreNote.tie}
+                                    disabled={isPlaying || selectedEvent.isRest}
+                                    onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => {
+                                        const next = { ...note };
+                                        if (e.target.checked) next.tie = true;
+                                        else delete next.tie;
+                                        return next;
+                                    })}
+                                    className="h-4 w-4 accent-cyan-500 disabled:opacity-40"
+                                />
+                                Tie
+                            </label>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Score Grid Viewport */}
@@ -523,7 +720,13 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onDownl
                                     const currentRhythmFill = isActive ? DARK_THEME.textRhythmHover : DARK_THEME.textRhythm;
 
                                     return (
-                                        <g key={`node-${idx}`} onClick={() => setSelectedMeasure(ev.measureNumber)}>
+                                        <g
+                                            key={`node-${idx}`}
+                                            onClick={() => {
+                                                setSelectedMeasure(ev.measureNumber);
+                                                setSelectedNoteIndex(ev.globalIndex);
+                                            }}
+                                        >
                                             
                                             {/* Browser Tooltip Accessibility Hint */}
                                             <title>
@@ -656,7 +859,7 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onDownl
                                             {/* Rhythm Structural Track Base */}
                                             <g>
                                                 {ev.isTiedToNext && rowEvents[idx + 1] && (<line x1={ev.cx + 12} y1={rhythmTopY - 4} x2={rowEvents[idx + 1].cx - 12} y2={rhythmTopY - 4} stroke={DARK_THEME.lineStaff} strokeWidth="2" strokeLinecap="round" />)}
-                                                <text x={ev.cx} y={rhythmTopY} textAnchor="middle" className="font-mono font-black text-sm" fill={ev.isRest ? DARK_THEME.fillRest : currentRhythmFill}>\
+                                                <text x={ev.cx} y={rhythmTopY} textAnchor="middle" className="font-mono font-black text-sm" fill={ev.isRest ? DARK_THEME.fillRest : currentRhythmFill}>
                                                     {ev.rhythm}
                                                 </text>
                                             </g>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import GuitaleleViewer from './GuitaleleViewer';
 import * as Dummies from './dummy_score';
 
-export default function TabEditor({ initialScore, onExit }) {
+export default function TabEditor({ initialScore, onScoreChange, onExit }) {
     const [jsonText, setJsonText] = useState("");
     const [parsedScore, setParsedScore] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -60,6 +60,20 @@ export default function TabEditor({ initialScore, onExit }) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleViewerScoreChange = (nextScore) => {
+        setParsedScore(nextScore);
+        setJsonText(JSON.stringify(nextScore, null, 2));
+        setErrorMsg(null);
+        if (onScoreChange) onScoreChange(nextScore);
+    };
+
+    const handleExit = () => {
+        if (!errorMsg && parsedScore && onScoreChange) {
+            onScoreChange(parsedScore);
+        }
+        onExit();
     };
 
     return (
@@ -134,8 +148,9 @@ export default function TabEditor({ initialScore, onExit }) {
                         <GuitaleleViewer 
                             scoreData={parsedScore} 
                             editorMode={true}
+                            onScoreChange={handleViewerScoreChange}
                             onDownload={handleDownloadJson}
-                            onExit={onExit}
+                            onExit={handleExit}
                         />
                     ) : (
                         <div className="w-full h-96 border border-dashed border-slate-800 bg-slate-900 rounded-lg flex flex-col items-center justify-center text-center p-6 text-slate-500">
