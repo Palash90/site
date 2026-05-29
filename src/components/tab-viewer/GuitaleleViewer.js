@@ -191,13 +191,13 @@ export default function GuitaleleViewer({ scoreData }) {
     const [playbackIndex, setPlaybackIndex] = useState(null);
     const [bpm, setBpm] = useState(100);
     const [segmentDescriptions, setSegmentDescriptions] = useState({});
-    
+
     // --- Responsive Layout State ---
     const [measuresPerRow, setMeasuresPerRow] = useState(4);
 
     const audioCtxRef = useRef(null);
     const playbackTimeoutsRef = useRef([]);
-    
+
     // Track playback state mapping 
     const currentPlaybackEventsRef = useRef([]);
     const playbackStartBeatRef = useRef(0);
@@ -231,12 +231,12 @@ export default function GuitaleleViewer({ scoreData }) {
     const scoreLayout = useMemo(() => {
         if (!scoreData || !scoreData.notes) return null;
 
-        const paddingX = 140; 
+        const paddingX = 140;
         const lineSpacing = 14;
         const trebleTopY = 70;
         const bassTopY = 150;
         const tabTopY = 250;
-        const rhythmTopY = 390; 
+        const rhythmTopY = 390;
         const svgHeight = 490;
 
         const timeSigTop = scoreData.timeSignature?.split('/')[0] || '4';
@@ -245,8 +245,8 @@ export default function GuitaleleViewer({ scoreData }) {
         const denominator = parseInt(timeSigBottom, 10);
         const beatsPerMeasure = numerator * (4 / denominator);
 
-        const SLOT_WIDTH = 65;           
-        const MEASURE_PADDING = 35;      
+        const SLOT_WIDTH = 65;
+        const MEASURE_PADDING = 35;
 
         const voiceCursors = { 1: 0, 2: 0 };
 
@@ -288,9 +288,9 @@ export default function GuitaleleViewer({ scoreData }) {
 
             const beatValue = event.duration !== undefined ? event.duration : (RHYTHM_BEAT_VALUES[detectedRhythm || ':'] || 1.0);
             const voice = event.voice || 1;
-            const startBeat = voiceCursors[voice]; 
+            const startBeat = voiceCursors[voice];
             const measureNumber = Math.floor(startBeat / beatsPerMeasure) + 1;
-            
+
             voiceCursors[voice] += beatValue;
 
             return {
@@ -324,7 +324,7 @@ export default function GuitaleleViewer({ scoreData }) {
         });
 
         const computedRows = [];
-        
+
         for (let i = 0; i < totalMeasures; i += measuresPerRow) {
             const rowMeasuresCount = Math.min(measuresPerRow, totalMeasures - i);
             const rowStartBeat = i * beatsPerMeasure;
@@ -337,7 +337,7 @@ export default function GuitaleleViewer({ scoreData }) {
             for (let j = 0; j < rowMeasuresCount; j++) {
                 const measureNum = i + j + 1;
                 const uniqueSlotsCount = measureSortedSlots[measureNum]?.length || 1;
-                
+
                 const mWidth = (uniqueSlotsCount * SLOT_WIDTH) + (MEASURE_PADDING * 2);
                 const startX = currentXPointer;
                 const endX = startX + mWidth;
@@ -389,9 +389,9 @@ export default function GuitaleleViewer({ scoreData }) {
                         const lowestY = Math.max(...staffYs);
                         const highestY = Math.min(...staffYs);
                         const avgMidi = pitches.reduce((sum, p) => sum + p.midi, 0) / pitches.length;
-                        
+
                         let stemDown = avgMidi >= midLineMidi;
-                        if (voiceCursors[2] > 0) stemDown = ev.voice === 2; 
+                        if (voiceCursors[2] > 0) stemDown = ev.voice === 2;
 
                         return { lowestY, highestY, stemDown };
                     };
@@ -433,21 +433,21 @@ export default function GuitaleleViewer({ scoreData }) {
 
     const pausePlayback = () => {
         if (!isPlaying || isPaused) return;
-        
+
         // Clear all scheduled timeout visual updates
         playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
         playbackTimeoutsRef.current = [];
-        
+
         // Accumulate exactly how much elapsed playback time has passed
         const elapsedSec = audioCtxRef.current.currentTime - playbackStartTimeRef.current;
         pausedTimeRef.current += elapsedSec;
-        
+
         setIsPaused(true);
         if (audioCtxRef.current) {
             audioCtxRef.current.suspend();
         }
     };
-    
+
     // Pure visual state tracker cleanly separated from Audio scheduling
     const scheduleVisuals = (eventsList, startOffsetBeat, currentElapsedSec) => {
         const beatDurationSeconds = 60 / bpm;
@@ -484,7 +484,7 @@ export default function GuitaleleViewer({ scoreData }) {
         if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
             audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
+
         setIsPlaying(true);
         setIsPaused(false);
         pausedTimeRef.current = 0;
@@ -492,16 +492,16 @@ export default function GuitaleleViewer({ scoreData }) {
 
         const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
         const targetedEvents = allEvents.filter(ev => ev.measureNumber >= fromMeasure);
-        
+
         currentPlaybackEventsRef.current = targetedEvents;
         const startOffsetBeat = targetedEvents.length > 0 ? targetedEvents[0].startBeat : 0;
         playbackStartBeatRef.current = startOffsetBeat;
-        
+
         const ctx = audioCtxRef.current;
         const beatDurationSeconds = 60 / bpm;
-        
+
         // Small buffer to ensure first note doesn't clip
-        const scheduleOffsetSec = 0.05; 
+        const scheduleOffsetSec = 0.05;
 
         // Schedule all Audio once and leave it in the AudioContext queue
         targetedEvents.forEach(ev => {
@@ -514,10 +514,10 @@ export default function GuitaleleViewer({ scoreData }) {
                     const strumDelay = sortedPitches.length > 1 ? pitchIdx * 0.022 : 0.0;
                     const humanJitter = (Math.random() - 0.5) * 0.005;
                     const humanVelocity = 0.88 + Math.random() * 0.22;
-                    
+
                     // Final audio clock time calculation
                     const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + strumDelay + humanJitter;
-                    
+
                     playHumanizedGuitaleleNote(ctx, pitch.midi, finalPluckTime, noteDurationSec, humanVelocity);
                 });
             }
@@ -532,7 +532,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
         if (audioCtxRef.current) {
             audioCtxRef.current.resume();
-            
+
             // Reset the start time so we track the next 'chunk' of playing time correctly
             playbackStartTimeRef.current = audioCtxRef.current.currentTime;
             setIsPaused(false);
@@ -577,11 +577,11 @@ export default function GuitaleleViewer({ scoreData }) {
     const rhythm2TopY = rhythmTopY + 28;
 
     return (
-        /* Replaced locked screen constraint with a standard flexible outer wrapper */
-        <div className={`w-full relative flex flex-col ${DARK_THEME.bgPage}`}>
+        /* FIXED OUTER WRAPPER: Constrains height to its parent container */
+        <div className={`w-full h-full min-h-[500px] flex flex-col overflow-hidden ${DARK_THEME.bgPage}`}>
 
-            {/* STICKY TOP DASHBOARD PANEL - Will safely float on top when page scrolls */}
-            <div className="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 shadow-xl z-50 w-full">
+            {/* FIXED TOP DASHBOARD: flex-none ensures it stays exactly this size */}
+            <div className="flex-none bg-slate-900 border-b border-slate-800 p-4 shadow-xl z-20 w-full">
                 <div className="max-w-6xl mx-auto flex flex-col gap-3">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
@@ -596,9 +596,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                 <>
                                     <button
                                         onClick={isPaused ? resumePlayback : pausePlayback}
-                                        className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${
-                                            isPaused ? 'bg-amber-600 hover:bg-amber-500' : 'bg-indigo-600 hover:bg-indigo-500'
-                                        }`}
+                                        className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${isPaused ? 'bg-amber-600 hover:bg-amber-500' : 'bg-indigo-600 hover:bg-indigo-500'
+                                            }`}
                                     >
                                         {isPaused ? '▶ RESUME' : '⏸ PAUSE'}
                                     </button>
@@ -624,7 +623,7 @@ export default function GuitaleleViewer({ scoreData }) {
                         <div className="flex-1 flex items-center">
                             <input
                                 type="range" min="60" max="180" value={bpm}
-                                disabled={isPlaying} // Hard-disabled during playback so visuals/audio remain perfectly synced
+                                disabled={isPlaying}
                                 onChange={(e) => setBpm(parseInt(e.target.value))}
                                 className="w-full h-2 accent-cyan-400 bg-slate-950 rounded-lg cursor-pointer disabled:opacity-30"
                             />
@@ -645,8 +644,8 @@ export default function GuitaleleViewer({ scoreData }) {
                 </div>
             </div>
 
-            {/* MAIN SCORE DISPLAY REGION */}
-            <div className="p-6 flex flex-col gap-8 custom-scrollbar">
+            {/* SCROLLABLE INNER CONTAINER: flex-1 + min-h-0 + overflow-y-auto handles the internal scrolling */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar relative">
                 <div className="max-w-7xl mx-auto w-full flex flex-col gap-8 pb-12">
                     {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX }, rowIdx) => {
                         return (
@@ -675,7 +674,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                     <line x1={paddingX} y1={trebleTopY} x2={paddingX} y2={bassTopY + 4 * lineSpacing} stroke={DARK_THEME.lineBar} strokeWidth="2" />
                                     <line x1={paddingX} y1={tabTopY} x2={paddingX} y2={tabTopY + 5 * lineSpacing} stroke={DARK_THEME.lineTab} strokeWidth="2" />
-                                    
+
                                     {barlineXPositions.map((barX, i) => (
                                         <g key={`barline-${i}`}>
                                             <line x1={barX} y1={trebleTopY} x2={barX} y2={bassTopY + 4 * lineSpacing} stroke={DARK_THEME.lineBar} strokeWidth={i === barlineXPositions.length - 1 ? "2" : "1.6"} />
@@ -709,7 +708,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                         const currentNoteStroke = isActive ? DARK_THEME.strokeNoteHover : DARK_THEME.fillNote;
                                         const currentStemStroke = isActive ? DARK_THEME.strokeNoteHover : DARK_THEME.lineStem;
                                         const currentTabFill = isActive ? DARK_THEME.textTabNumberHover : DARK_THEME.textTabNumber;
-                                        
+
                                         const yLane = ev.voice === 2 ? rhythm2TopY : rhythm1TopY;
                                         const restTabOffset = ev.voice === 2 ? 16 : -16;
 
@@ -794,7 +793,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
                                                             const extY = stemDown ? lowestY + 28 : highestY - 28;
                                                             const numFlags = ev.beatValue <= 0.25 ? 2 : (ev.beatValue <= 0.75 ? 1 : 0);
-                                                            
+
                                                             return (
                                                                 <g>
                                                                     <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={currentStemStroke} strokeWidth="1.6" />
@@ -809,7 +808,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
                                                             const extY = stemDown ? lowestY + 28 : highestY - 28;
                                                             const numFlags = ev.beatValue <= 0.25 ? 2 : (ev.beatValue <= 0.75 ? 1 : 0);
-                                                            
+
                                                             return (
                                                                 <g>
                                                                     <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={currentStemStroke} strokeWidth="1.6" />
