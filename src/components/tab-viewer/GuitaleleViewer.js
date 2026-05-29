@@ -297,9 +297,31 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackIndex, setPlaybackIndex] = useState(null);
     const [bpm, setBpm] = useState(100);
+    const [isPreviewMode, setIsPreviewMode] = useState(false);
+    const [segmentDescriptions, setSegmentDescriptions] = useState({});
+    const [controlsHidden, setControlsHidden] = useState(false);
 
     const audioCtxRef = useRef(null);
     const playbackTimeoutsRef = useRef([]);
+    const scrollContainerRef = useRef(null);
+    const scrollHideTimer = useRef(null);
+
+    useEffect(() => {
+        if (!scoreData?.notes) return;
+        const map = {};
+        scoreData.notes.forEach((n, i) => {
+            if (n && typeof n.description === 'string' && n.description.length > 0) map[i] = n.description;
+        });
+        setSegmentDescriptions(map);
+    }, [scoreData]);
+
+    const handleScroll = () => {
+        if (scrollHideTimer.current) clearTimeout(scrollHideTimer.current);
+        if (!controlsHidden) setControlsHidden(true);
+        scrollHideTimer.current = setTimeout(() => {
+            setControlsHidden(false);
+        }, 900);
+    };
 
     // Compute layout properties structural framework
     const scoreLayout = useMemo(() => {
@@ -563,12 +585,18 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
         });
     };
 
-    const insertScoreNoteAfter = (noteIndex, duration = 1.0) => {
+    const getSmallestNoteUnit = () => {
+        const timeSigBottom = parseInt(scoreData?.timeSignature?.split('/')[1] || '4', 10);
+        return 4.0 / timeSigBottom;
+    };
+
+    const insertScoreNoteAfter = (noteIndex, duration = null) => {
         if (!onScoreChange || !scoreData?.notes) return;
+        const noteDuration = duration ?? getSmallestNoteUnit();
         const insertAt = Math.min(scoreData.notes.length, Math.max(0, noteIndex + 1));
         const nextNotes = [
             ...scoreData.notes.slice(0, insertAt),
-            createDefaultNote(duration),
+            createDefaultNote(noteDuration),
             ...scoreData.notes.slice(insertAt)
         ];
 
@@ -670,12 +698,17 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
 
     const activeDescription = useMemo(() => {
         if (!activeEvent) return null;
-        if (activeEvent.isRest) return `Measure ${activeEvent.measureNumber} • Musical Rest 𝄾 [${getDurationLabel(activeEvent.beatValue)}]`;
+        const custom = segmentDescriptions[activeEvent.globalIndex];
+        if (activeEvent.isRest) {
+            const base = `Measure ${activeEvent.measureNumber} • Musical Rest 𝄾 [${getDurationLabel(activeEvent.beatValue)}]`;
+            return custom ? `${base} | ${custom}` : base;
+        }
         const pitchDesc = activeEvent.processedPitches
             .map(p => `${p.noteName} (String ${p.string}, Fret ${p.fret})`)
             .join(" + ");
-        return `Measure ${activeEvent.measureNumber} • ${pitchDesc} [${getDurationLabel(activeEvent.beatValue)}]`;
-    }, [activeEvent]);
+        const base = `Measure ${activeEvent.measureNumber} • ${pitchDesc} [${getDurationLabel(activeEvent.beatValue)}]`;
+        return custom ? `${base} | ${custom}` : base;
+    }, [activeEvent, segmentDescriptions]);
 
     if (!scoreLayout) {
         return <div className="text-slate-500 font-mono text-xs p-4">No notation data package available.</div>;
@@ -684,11 +717,11 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
     const { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, noteSpacing } = scoreLayout;
 
     return (
-        <div className={`w-full h-full overflow-y-auto ${DARK_THEME.bgPage} p-6 flex flex-col gap-6 rounded-xl`}>
+        <div ref={scrollContainerRef} onScroll={handleScroll} className={`w-full h-screen overflow-y-auto ${DARK_THEME.bgPage} p-6 flex flex-col gap-6`}>
 
             {/* Master Control Board Panel Interface */}
-            <div className="sticky top-4 z-20 flex flex-col gap-4 bg-slate-900/95 backdrop-blur border border-slate-800 p-4 rounded-xl shadow-lg w-full max-w-5xl mx-auto">
-                <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className={`sticky top-0 z-20 flex flex-col gap-4 bg-slate-900/95 backdrop-blur border-b border-slate-800 p-4 rounded-xl shadow-lg w-full max-w-5xl mx-auto transform transition-transform duration-300 ${controlsHidden ? '-translate-y-20 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
                     <button
                         onClick={isPlaying ? stopPlayback : () => startPlayback(1)}
                         className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide transition-all ${isPlaying
@@ -889,19 +922,37 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                             </div>
                         </div>
 
-                        <label className="flex flex-col gap-1.5 text-[10px] font-mono font-bold text-slate-500 uppercase">
-                            Duration
-                            <select
-                                value={selectedScoreNote.duration ?? selectedEvent.beatValue}
-                                disabled={isPlaying}
-                                onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => updateNoteDuration(note, parseFloat(e.target.value)))}
-                                className="bg-slate-950 border border-slate-700 text-slate-200 text-sm font-mono px-3 py-2 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
-                            >
-                                {DURATION_OPTIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>{option.label}</option>
-                                ))}
-                            </select>
-                        </label>
+                        <div className="flex flex-col gap-2">
+                            <label className="flex flex-col gap-1.5 text-[10px] font-mono font-bold text-slate-500 uppercase">
+                                Duration
+                                <select
+                                    value={selectedScoreNote.duration ?? selectedEvent.beatValue}
+                                    disabled={isPlaying}
+                                    onChange={(e) => updateScoreNote(selectedNoteIndex, (note) => updateNoteDuration(note, parseFloat(e.target.value)))}
+                                    className="bg-slate-950 border border-slate-700 text-slate-200 text-sm font-mono px-3 py-2 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                                >
+                                    {DURATION_OPTIONS.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label className="flex flex-col gap-1.5 text-[10px] font-mono font-bold text-slate-500 uppercase">
+                                Description
+                                <input
+                                    type="text"
+                                    value={segmentDescriptions[selectedNoteIndex] || selectedScoreNote.description || ''}
+                                    disabled={isPlaying}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setSegmentDescriptions(prev => ({ ...prev, [selectedNoteIndex]: val }));
+                                        updateScoreNote(selectedNoteIndex, (note) => ({ ...note, description: val }));
+                                    }}
+                                    placeholder="e.g., Verse intro, Bridge riff..."
+                                    className="bg-slate-950 border border-slate-700 text-slate-200 text-sm font-mono px-3 py-2 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
+                                />
+                            </label>
+                        </div>
 
                         <div className="flex flex-col gap-2">
                             <div className="grid grid-cols-2 gap-2">
@@ -931,22 +982,22 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                                     />
                                 </label>
                             </div>
-                            <button
-                                type="button"
-                                disabled={isPlaying}
-                                onClick={() => insertScoreNoteAfter(selectedNoteIndex, 1.0)}
-                                className="rounded bg-amber-700 px-3 py-2 text-xs font-mono font-bold text-amber-50 hover:bg-amber-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
-                            >
-                                INSERT QUARTER AFTER
-                            </button>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    type="button"
+                                    disabled={isPlaying}
+                                    onClick={() => insertScoreNoteAfter(selectedNoteIndex)}
+                                    className="rounded bg-amber-700 px-3 py-2 text-xs font-mono font-bold text-amber-50 hover:bg-amber-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                >
+                                    ➕ NOTE
+                                </button>
                                 <button
                                     type="button"
                                     disabled={isPlaying}
                                     onClick={addNewMeasure}
                                     className="rounded bg-emerald-700 px-3 py-2 text-xs font-mono font-bold text-emerald-50 hover:bg-emerald-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
                                 >
-                                    ➕ ADD MEASURE
+                                    ➕ MEASURE
                                 </button>
                                 <button
                                     type="button"
@@ -954,7 +1005,7 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                                     onClick={removeMeasure}
                                     className="rounded bg-rose-700 px-3 py-2 text-xs font-mono font-bold text-rose-50 hover:bg-rose-600 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
                                 >
-                                    ➖ REMOVE MEASURE
+                                    ➖ MEASURE
                                 </button>
                             </div>
                         </div>
