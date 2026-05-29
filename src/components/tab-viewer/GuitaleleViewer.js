@@ -69,62 +69,49 @@ const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
     };
 };
 
-// Ultra-clean, modern geometric linear slash flags to entirely prevent cluster congestion
 const getFlagPath = (sx, sy, isDown = false, isDouble = false) => {
     const drawSlashSegment = (yOffset) => {
         const sY = sy + yOffset;
         if (isDown) {
-            // Stem goes down: Flag slants gracefully up-right back toward the center staff lanes
             return `M ${sx} ${sY} L ${sx + 7} ${sY - 8} L ${sx + 7} ${sY - 5} L ${sx} ${sY + 3} Z`;
         }
-        // Stem goes up: Flag slants down-right back toward the center staff lanes
         return `M ${sx} ${sY} L ${sx + 7} ${sY + 8} L ${sx + 7} ${sY + 5} L ${sx} ${sY - 3} Z`;
     };
 
     if (isDouble) {
-        // Stack secondary 16th flag beautifully along the stem axis with perfect tracking symmetry
         return drawSlashSegment(0) + " " + drawSlashSegment(isDown ? -5 : 5);
     }
     return drawSlashSegment(0);
 };
 
-// --- Advanced Guitalele Acoustic Nylon Synthesis Engine ---
 const playHumanizedGuitaleleNote = (ctx, midi, startTime, duration, velocity = 1.0) => {
     const fundamental = 440 * Math.pow(2, (midi - 69) / 12);
-
-    // Master gain for the note
     const mainGain = ctx.createGain();
     mainGain.connect(ctx.destination);
 
-    // Guitalele Nylon Decay Envelope
-    const attackTime = 0.012; // Fleshy finger attack (slower than a plastic pick)
+    const attackTime = 0.012;
     const decayTime = Math.max(duration * 1.2, 2.0);
 
     mainGain.gain.setValueAtTime(0, startTime);
     mainGain.gain.linearRampToValueAtTime(velocity * 0.8, startTime + attackTime);
     mainGain.gain.exponentialRampToValueAtTime(0.001, startTime + decayTime);
 
-    // 1. The Core String (Triangle wave provides a warm, hollow tone perfect for nylon)
     const stringOsc = ctx.createOscillator();
     stringOsc.type = 'triangle';
     stringOsc.frequency.value = fundamental;
 
-    // 2. The Overtones (Subdued sine wave for slight string resonance)
     const overtoneOsc = ctx.createOscillator();
     overtoneOsc.type = 'sine';
     overtoneOsc.frequency.value = fundamental * 2;
     const overtoneGain = ctx.createGain();
-    overtoneGain.gain.value = 0.15; // Kept low to avoid the "piano/bell" sound
+    overtoneGain.gain.value = 0.15;
     overtoneOsc.connect(overtoneGain);
 
-    // 3. Nylon Dulling Filter (Crucial for the acoustic guitar sound)
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    // The string starts bright when plucked but immediately dulls out
     filter.frequency.setValueAtTime(fundamental * 4, startTime);
     filter.frequency.exponentialRampToValueAtTime(fundamental, startTime + 0.4);
 
-    // 4. The Finger Pluck Transient (Thump/Snap)
     const pluckOsc = ctx.createOscillator();
     pluckOsc.type = 'sine';
     pluckOsc.frequency.setValueAtTime(fundamental * 2.5, startTime);
@@ -135,15 +122,12 @@ const playHumanizedGuitaleleNote = (ctx, midi, startTime, duration, velocity = 1
     pluckGain.gain.linearRampToValueAtTime(velocity * 0.3, startTime + 0.005);
     pluckGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.03);
 
-    // Routing
     pluckOsc.connect(pluckGain);
     pluckGain.connect(mainGain);
-
     stringOsc.connect(filter);
     overtoneGain.connect(filter);
     filter.connect(mainGain);
 
-    // Trigger Timeline
     stringOsc.start(startTime);
     overtoneOsc.start(startTime);
     pluckOsc.start(startTime);
@@ -162,11 +146,12 @@ export default function GuitaleleViewer({ scoreData }) {
     const audioCtxRef = useRef(null);
     const playbackTimeoutsRef = useRef([]);
 
+    // Compute structural coordinates matrices
     const scoreLayout = useMemo(() => {
         if (!scoreData || !scoreData.notes) return null;
 
         const paddingX = 140;
-        const noteSpacing = 115; // EXPANDED layout lane spacing to give dense 16th notes beautiful horizontal clearance
+        const noteSpacing = 115;
         const lineSpacing = 14;
         const trebleTopY = 70;
         const bassTopY = 150;
@@ -228,16 +213,19 @@ export default function GuitaleleViewer({ scoreData }) {
         let currentRowEvents = [];
         let accumulatedBeats = 0;
         let measuresInRow = 0;
+        let currentMeasureNumber = 1;
         const MAX_MEASURES_PER_ROW = 4;
         const MAX_NOTES_PER_ROW = 64;
 
         events.forEach((ev) => {
+            ev.measureNumber = currentMeasureNumber;
             currentRowEvents.push({ ...ev });
             accumulatedBeats += ev.beatValue;
             if (accumulatedBeats >= beatsPerMeasure - 0.05) {
                 currentRowEvents[currentRowEvents.length - 1].endOfMeasure = true;
                 measuresInRow++;
                 accumulatedBeats = Math.max(0, accumulatedBeats - beatsPerMeasure);
+                currentMeasureNumber++;
                 if (measuresInRow >= MAX_MEASURES_PER_ROW || currentRowEvents.length >= MAX_NOTES_PER_ROW) {
                     rows.push([...currentRowEvents]);
                     currentRowEvents = [];
@@ -248,6 +236,7 @@ export default function GuitaleleViewer({ scoreData }) {
                 currentRowEvents = [];
                 measuresInRow = 0;
                 accumulatedBeats = 0;
+                currentMeasureNumber++;
             }
         });
         if (currentRowEvents.length > 0) rows.push([...currentRowEvents]);
@@ -310,18 +299,22 @@ export default function GuitaleleViewer({ scoreData }) {
         return { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, noteSpacing };
     }, [scoreData]);
 
-    useEffect(() => {
-        return () => stopPlayback();
-    }, []);
+    // Define stopPlayback BEFORE any hooks call it
+    const stopPlayback = () => {
+        playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
+        playbackTimeoutsRef.current = [];
+        setIsPlaying(false);
+        setPlaybackIndex(null);
 
-    if (!scoreLayout) return null;
-
-    const { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, noteSpacing } = scoreLayout;
+        if (audioCtxRef.current) {
+            audioCtxRef.current.close();
+            audioCtxRef.current = null;
+        }
+    };
 
     const startPlayback = () => {
-        if (isPlaying) return;
+        if (isPlaying || !scoreLayout) return;
 
-        // Ensure we create a fresh audio context if it was previously closed
         if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
             audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -348,7 +341,6 @@ export default function GuitaleleViewer({ scoreData }) {
                     const humanVelocity = 0.86 + Math.random() * 0.24;
 
                     const finalPluckTime = currentScheduleTime + strumDelay + humanJitter;
-
                     playHumanizedGuitaleleNote(ctx, pitch.midi, finalPluckTime, noteDurationSec, humanVelocity);
                 });
             }
@@ -369,46 +361,70 @@ export default function GuitaleleViewer({ scoreData }) {
         playbackTimeoutsRef.current.push(endTimeout);
     };
 
-    const stopPlayback = () => {
-        // 1. Clear the visual progression state
-        playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
-        playbackTimeoutsRef.current = [];
-        setIsPlaying(false);
-        setPlaybackIndex(null);
+    useEffect(() => {
+        return () => stopPlayback();
+    }, []);
 
-        // 2. Immediately terminate all scheduled hardware audio
-        if (audioCtxRef.current) {
-            audioCtxRef.current.close();
-            audioCtxRef.current = null;
-        }
-    };
+    // Derive active selection element data for the hover/playback detail tracker HUD
+    const activeTargetIndex = hoveredNoteIndex !== null ? hoveredNoteIndex : playbackIndex;
+    const activeEvent = useMemo(() => {
+        if (activeTargetIndex === null || !scoreLayout) return null;
+        return scoreLayout.computedRows.flatMap(r => r.rowEvents).find(ev => ev.globalIndex === activeTargetIndex);
+    }, [activeTargetIndex, scoreLayout]);
+
+    const activeDescription = useMemo(() => {
+        if (!activeEvent) return null;
+        if (activeEvent.isRest) return `Measure ${activeEvent.measureNumber || 1} • Musical Rest 𝄾 [Duration: ${activeEvent.beatValue} beat(s)]`;
+        const pitchDesc = activeEvent.processedPitches
+            .map(p => `${p.noteName} (String ${p.string}, Fret ${p.fret})`)
+            .join(" + ");
+        return `Measure ${activeEvent.measureNumber || 1} • ${pitchDesc} [Duration: ${activeEvent.beatValue} beat(s)]`;
+    }, [activeEvent]);
+
+    if (!scoreLayout) return null;
+
+    const { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, noteSpacing } = scoreLayout;
 
     return (
         <div className={`w-full h-screen overflow-y-auto ${DARK_THEME.bgPage} p-6 flex flex-col gap-6 rounded-xl`}>
 
-            {/* Control Strip */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg w-full max-w-xl mx-auto">
-                <button
-                    onClick={isPlaying ? stopPlayback : startPlayback}
-                    className={`whitespace-nowrap px-6 py-2 rounded-lg text-sm font-bold tracking-wide transition-all ${isPlaying
-                            ? 'bg-rose-600 text-white hover:bg-rose-500'
-                            : 'bg-emerald-600 text-white hover:bg-emerald-500'
-                        }`}
-                >
-                    {isPlaying ? '⏹ STOP SCORE' : '▶ PLAY GUITALELE'}
-                </button>
+            {/* Control Strip HUD */}
+            <div className="flex flex-col bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg w-full max-w-xl mx-auto gap-4">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
+                    <button
+                        onClick={isPlaying ? stopPlayback : startPlayback}
+                        className={`whitespace-nowrap px-6 py-2 rounded-lg text-sm font-bold tracking-wide transition-all ${isPlaying
+                                ? 'bg-rose-600 text-white hover:bg-rose-500'
+                                : 'bg-emerald-600 text-white hover:bg-emerald-500'
+                            }`}
+                    >
+                        {isPlaying ? '⏹ STOP SCORE' : '▶ PLAY GUITALELE'}
+                    </button>
 
-                {/* BPM Wrapper with left border padding for spacing */}
-                <div className="flex items-center gap-6 flex-1 w-full pl-2 md:pl-6 md:border-l border-slate-700">
-                    <span className="text-xs font-mono text-slate-400 whitespace-nowrap">
-                        TEMPO: {bpm} BPM
-                    </span>
-                    <input
-                        type="range" min="60" max="180" value={bpm}
-                        disabled={isPlaying}
-                        onChange={(e) => setBpm(parseInt(e.target.value))}
-                        className="w-full accent-cyan-400 bg-slate-950 rounded-lg cursor-pointer disabled:opacity-30"
-                    />
+                    <div className="flex items-center gap-6 flex-1 w-full pl-2 md:pl-6 md:border-l border-slate-700">
+                        <span className="text-xs font-mono text-slate-400 whitespace-nowrap">
+                            TEMPO: {bpm} BPM
+                        </span>
+                        <input
+                            type="range" min="60" max="180" value={bpm}
+                            disabled={isPlaying}
+                            onChange={(e) => setBpm(parseInt(e.target.value))}
+                            className="w-full accent-cyan-400 bg-slate-950 rounded-lg cursor-pointer disabled:opacity-30"
+                        />
+                    </div>
+                </div>
+
+                {/* Live Dynamic Note Description Panel */}
+                <div className="h-7 flex items-center justify-center border-t border-slate-800/80 pt-2 w-full text-center transition-all">
+                    {activeDescription ? (
+                        <span className="text-xs font-mono text-cyan-400 font-semibold tracking-wide transition-all animate-pulse">
+                            🎵 {activeDescription}
+                        </span>
+                    ) : (
+                        <span className="text-xs font-mono text-slate-500 italic tracking-wide">
+                            Hover over a notation alignment lane sequence to view pitch details
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -470,6 +486,14 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                     return (
                                         <g key={`node-${idx}`}>
+                                            
+                                            {/* Native browser fallback tooltip hover tracking string */}
+                                            <title>
+                                                {ev.isRest 
+                                                    ? `Rest (${ev.rhythm})` 
+                                                    : ev.processedPitches.map(p => `${p.noteName} [Str ${p.string}, Fret ${p.fret}]`).join(", ")
+                                                }
+                                            </title>
 
                                             {/* Lane Active Track Bounds */}
                                             {isActive && (
