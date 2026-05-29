@@ -233,7 +233,7 @@ export const dummyScore24 = {
         { "fret": 0, "string": 4 }, // G3
         { "fret": 0, "string": 3 }, // C4
         { "fret": 0, "string": 2 }, // E4
-        { "fret": 3, "string": 1 }  // C5
+        { "fret": 14, "string": 1 }  // C5
       ]
     }
   ]
