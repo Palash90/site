@@ -436,15 +436,17 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onDownl
 
                 {/* Tempo Slider Control Section */}
                 <div className="flex items-center gap-6 w-full pt-2 border-t border-slate-800">
-                    <span className="text-xs font-mono text-slate-400 whitespace-nowrap">
+                    <span className="flex h-5 items-center text-xs leading-none font-mono text-slate-400 whitespace-nowrap">
                         TEMPO: {bpm} BPM
                     </span>
-                    <input
-                        type="range" min="60" max="180" value={bpm}
-                        disabled={isPlaying}
-                        onChange={(e) => setBpm(parseInt(e.target.value))}
-                        className="w-full accent-cyan-400 bg-slate-950 rounded-lg cursor-pointer disabled:opacity-30"
-                    />
+                    <div className="flex h-5 flex-1 items-center">
+                        <input
+                            type="range" min="60" max="180" value={bpm}
+                            disabled={isPlaying}
+                            onChange={(e) => setBpm(parseInt(e.target.value))}
+                            className="m-0 block w-full align-middle accent-cyan-400 bg-slate-950 rounded-lg cursor-pointer disabled:opacity-30"
+                        />
+                    </div>
                 </div>
 
                 {/* Live Description Display HUD */}

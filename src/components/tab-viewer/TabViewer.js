@@ -3,6 +3,7 @@ import GuitaleleViewer from "./GuitaleleViewer";
 import TabEditor from "./TabEditor";
 
 export default function TabViewer(props) {
+
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -38,12 +39,12 @@ export default function TabViewer(props) {
         return <TabEditor initialScore={data} onExit={() => setIsEditing(false)} />;
     }
 
-    return (
+    return props.tab && data ? (
         <div className="bg-slate-950 min-h-screen text-slate-100 p-6 flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                 <div>
-                    <h3 className="text-lg font-bold tracking-tight text-slate-300">Standard Score Performance Space</h3>
-                    <p className="text-xs text-slate-500 font-sans">Read-only interactive playback display module environment.</p>
+                    <h3 className="text-lg font-bold tracking-tight text-slate-300">Score Viewer</h3>
+                    <p className="text-xs text-slate-500 font-sans">Read-only interactive playback.</p>
                 </div>
                 <button
                     onClick={() => setIsEditing(true)}
@@ -52,10 +53,10 @@ export default function TabViewer(props) {
                     🔧 OPEN IN RUNTIME EDITOR
                 </button>
             </div>
-            
+
             <div className="mt-2">
                 <GuitaleleViewer scoreData={data} editorMode={false} />
             </div>
         </div>
-    );
+    ) : <></>;
 }
