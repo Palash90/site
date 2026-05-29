@@ -36,7 +36,7 @@ export default function TabViewer(props) {
 
     // Switch workspace boundaries smoothly based on status switches
     if (isEditing) {
-        return <TabEditor initialScore={data} onScoreChange={setData} onExit={() => setIsEditing(false)} />;
+        return <TabEditor initialScore={data} onExit={() => setIsEditing(false)} />;
     }
 
     return props.tab && data ? (

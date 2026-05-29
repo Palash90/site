@@ -2,20 +2,26 @@ import React, { useState, useEffect } from 'react';
 import GuitaleleViewer from './GuitaleleViewer';
 import * as Dummies from './dummy_score';
 
-export default function TabEditor({ initialScore, onScoreChange, onExit }) {
+export default function TabEditor({ initialScore, onExit }) {
     const [jsonText, setJsonText] = useState("");
     const [parsedScore, setParsedScore] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
     const [selectedTemplate, setSelectedTemplate] = useState("active");
+    const [hasChanges, setHasChanges] = useState(false);
+    const [isCurrentScoreDownloaded, setIsCurrentScoreDownloaded] = useState(false);
 
     useEffect(() => {
         const fallback = initialScore || Dummies.dummyScore;
         setJsonText(JSON.stringify(fallback, null, 2));
         setParsedScore(fallback);
+        setHasChanges(false);
+        setIsCurrentScoreDownloaded(false);
     }, [initialScore]);
 
     const handleTextChange = (val) => {
         setJsonText(val);
+        setHasChanges(true);
+        setIsCurrentScoreDownloaded(false);
         try {
             const parsed = JSON.parse(val);
             if (!parsed.notes || !Array.isArray(parsed.notes)) {
@@ -40,6 +46,8 @@ export default function TabEditor({ initialScore, onScoreChange, onExit }) {
         if (targetedObj) {
             setJsonText(JSON.stringify(targetedObj, null, 2));
             setParsedScore(targetedObj);
+            setHasChanges(true);
+            setIsCurrentScoreDownloaded(false);
             setErrorMsg(null);
         }
     };
@@ -60,18 +68,21 @@ export default function TabEditor({ initialScore, onScoreChange, onExit }) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        setIsCurrentScoreDownloaded(true);
     };
 
     const handleViewerScoreChange = (nextScore) => {
         setParsedScore(nextScore);
         setJsonText(JSON.stringify(nextScore, null, 2));
+        setHasChanges(true);
+        setIsCurrentScoreDownloaded(false);
         setErrorMsg(null);
-        if (onScoreChange) onScoreChange(nextScore);
     };
 
     const handleExit = () => {
-        if (!errorMsg && parsedScore && onScoreChange) {
-            onScoreChange(parsedScore);
+        if (hasChanges && !isCurrentScoreDownloaded) {
+            const shouldExit = window.confirm("The score is not downloaded. If you exit now, the data will be lost.");
+            if (!shouldExit) return;
         }
         onExit();
     };

@@ -55,6 +55,9 @@ const DARK_THEME = {
     lineTie: "#cbd5e1",
     fillHoverHighlight: "rgba(65, 77, 94, 0.45)",
     fillSelectedHighlight: "rgba(14, 116, 144, 0.25)",
+    fillEditHighlight: "rgba(245, 158, 11, 0.24)",
+    strokeEditHighlight: "#f59e0b",
+    textEditHighlight: "#fbbf24",
     fillNoteHover: "#67e8f9",
     strokeNoteHover: "#67e8f9",
     textTabNumberHover: "#a5f3fc",
@@ -461,7 +464,11 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
     };
 
     // Extract active metrics for dynamic descriptions HUD panel
-    const activeTargetIndex = hoveredNoteIndex !== null ? hoveredNoteIndex : playbackIndex ?? (editorMode ? selectedNoteIndex : null);
+    const activeTargetIndex = isPlaying
+        ? playbackIndex
+        : hoveredNoteIndex !== null
+            ? hoveredNoteIndex
+            : editorMode ? selectedNoteIndex : null;
     const activeEvent = useMemo(() => {
         if (activeTargetIndex === null || !scoreLayout) return null;
         return scoreLayout.computedRows.flatMap(r => r.rowEvents).find(ev => ev.globalIndex === activeTargetIndex);
@@ -563,26 +570,7 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                 </div>
 
                 {editorMode && selectedEvent && selectedScoreNote && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 border-t border-slate-800/60 pt-3">
-                        <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
-                            Event
-                            <select
-                                value={selectedNoteIndex}
-                                disabled={isPlaying}
-                                onChange={(e) => {
-                                    const nextIndex = parseInt(e.target.value, 10);
-                                    setSelectedNoteIndex(nextIndex);
-                                    const nextEvent = scoreLayout.computedRows.flatMap(r => r.rowEvents).find(ev => ev.globalIndex === nextIndex);
-                                    if (nextEvent) setSelectedMeasure(nextEvent.measureNumber);
-                                }}
-                                className="bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono px-2 py-1.5 rounded focus:outline-none focus:border-cyan-500 disabled:opacity-40"
-                            >
-                                {scoreData.notes.map((_, index) => (
-                                    <option key={index} value={index}>#{index + 1}</option>
-                                ))}
-                            </select>
-                        </label>
-
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-slate-800/60 pt-3">
                         <label className="flex flex-col gap-1 text-[10px] font-mono font-bold text-slate-500 uppercase">
                             String
                             <input
@@ -710,14 +698,14 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                                 {rowEvents.map((ev, idx) => {
                                     const isHovered = hoveredNoteIndex === ev.globalIndex;
                                     const isCurrentlyPlaying = playbackIndex === ev.globalIndex;
-                                    const isSelectedM = selectedMeasure === ev.measureNumber;
+                                    const isSelectedNote = editorMode && selectedNoteIndex === ev.globalIndex;
 
-                                    const isActive = isHovered || isCurrentlyPlaying;
-                                    const currentNoteFill = isActive ? DARK_THEME.fillNoteHover : DARK_THEME.fillNote;
-                                    const currentNoteStroke = isActive ? DARK_THEME.strokeNoteHover : DARK_THEME.fillNote;
-                                    const currentStemStroke = isActive ? DARK_THEME.strokeNoteHover : DARK_THEME.lineStem;
-                                    const currentTabFill = isActive ? DARK_THEME.textTabNumberHover : DARK_THEME.textTabNumber;
-                                    const currentRhythmFill = isActive ? DARK_THEME.textRhythmHover : DARK_THEME.textRhythm;
+                                    const isActive = (isHovered && !isPlaying) || isCurrentlyPlaying;
+                                    const currentNoteFill = isActive ? DARK_THEME.fillNoteHover : isSelectedNote ? DARK_THEME.textEditHighlight : DARK_THEME.fillNote;
+                                    const currentNoteStroke = isActive ? DARK_THEME.strokeNoteHover : isSelectedNote ? DARK_THEME.strokeEditHighlight : DARK_THEME.fillNote;
+                                    const currentStemStroke = isActive ? DARK_THEME.strokeNoteHover : isSelectedNote ? DARK_THEME.strokeEditHighlight : DARK_THEME.lineStem;
+                                    const currentTabFill = isActive ? DARK_THEME.textTabNumberHover : isSelectedNote ? DARK_THEME.textEditHighlight : DARK_THEME.textTabNumber;
+                                    const currentRhythmFill = isActive ? DARK_THEME.textRhythmHover : isSelectedNote ? DARK_THEME.textEditHighlight : DARK_THEME.textRhythm;
 
                                     return (
                                         <g
@@ -728,26 +716,26 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                                             }}
                                         >
                                             
-                                            {/* Browser Tooltip Accessibility Hint */}
-                                            <title>
-                                                {ev.isRest 
-                                                    ? `Rest (${ev.rhythm})` 
-                                                    : ev.processedPitches.map(p => `${p.noteName} [Str ${p.string}, Fret ${p.fret}]`).join(", ")
-                                                }
-                                            </title>
+                                            {!isPlaying && (
+                                                <title>
+                                                    {ev.isRest
+                                                        ? `Rest (${ev.rhythm})`
+                                                        : ev.processedPitches.map(p => `${p.noteName} [Str ${p.string}, Fret ${p.fret}]`).join(", ")
+                                                    }
+                                                </title>
+                                            )}
 
-                                            {/* Selection Highlight Ring */}
-                                            {isSelectedM && editorMode && (
+                                            {isSelectedNote && (
                                                 <rect
-                                                    x={ev.cx - (noteSpacing / 2) + 2}
-                                                    y={trebleTopY - 40}
-                                                    width={noteSpacing - 4}
-                                                    height={rhythmTopY - trebleTopY + 50}
-                                                    fill={DARK_THEME.fillSelectedHighlight}
-                                                    stroke="#06b6d4"
-                                                    strokeWidth="1.2"
-                                                    strokeDasharray="3 3"
-                                                    rx={6}
+                                                    x={ev.cx - (noteSpacing / 2) + 8}
+                                                    y={trebleTopY - 48}
+                                                    width={noteSpacing - 16}
+                                                    height={rhythmTopY - trebleTopY + 58}
+                                                    fill={DARK_THEME.fillEditHighlight}
+                                                    stroke={DARK_THEME.strokeEditHighlight}
+                                                    strokeWidth="1.6"
+                                                    strokeDasharray="4 3"
+                                                    rx={5}
                                                 />
                                             )}
 
@@ -768,8 +756,12 @@ export default function GuitaleleViewer({ scoreData, editorMode = false, onScore
                                                 x={ev.cx - (noteSpacing / 2)} y={trebleTopY - 15}
                                                 width={noteSpacing} height={rhythmTopY - trebleTopY + 35}
                                                 fill="transparent" pointerEvents="all" className="cursor-pointer"
-                                                onMouseEnter={() => setHoveredNoteIndex(ev.globalIndex)}
-                                                onMouseLeave={() => setHoveredNoteIndex(null)}
+                                                onMouseEnter={() => {
+                                                    if (!isPlaying) setHoveredNoteIndex(ev.globalIndex);
+                                                }}
+                                                onMouseLeave={() => {
+                                                    if (!isPlaying) setHoveredNoteIndex(null);
+                                                }}
                                             />
 
                                             {ev.isRest ? (
