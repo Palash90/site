@@ -222,7 +222,20 @@ export const dummyScore24 = {
 
     // === MEASURE 6 (2.0 Beats) ===
     { "duration": 1.0 }, // Rest
-    { "fret": 0, "string": 4, "duration": 1.0 }
+    { "fret": 0, "string": 4, "duration": 1.0 },
+
+    // === MEASURE 7 (2.0 Beats) - C MAJOR CHORD ===
+    {
+      "duration": 2.0,
+      "pitches": [
+        { "fret": 3, "string": 6 }, // C3
+        { "fret": 2, "string": 5 }, // E3
+        { "fret": 0, "string": 4 }, // G3
+        { "fret": 0, "string": 3 }, // C4
+        { "fret": 0, "string": 2 }, // E4
+        { "fret": 3, "string": 1 }  // C5
+      ]
+    }
   ]
 };
 

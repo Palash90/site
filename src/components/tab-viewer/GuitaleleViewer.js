@@ -44,10 +44,8 @@ const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
     };
 };
 
-// Helper: Generates a slimmer, more elegant music flag
 const getFlagPath = (sx, sy) => {
-    const startY = sy + 1; // Subtle drop from the absolute tip
-
+    const startY = sy + 1;
     return `M ${sx} ${startY} 
             C ${sx + 9} ${startY + 2}, ${sx + 11} ${startY + 12}, ${sx + 1} ${startY + 23} 
             C ${sx + 6} ${startY + 14}, ${sx + 5} ${startY + 7}, ${sx} ${startY + 9} 
@@ -57,45 +55,56 @@ const getFlagPath = (sx, sy) => {
 export default function GuitaleleViewer({ scoreData }) {
     if (!scoreData || !scoreData.notes) return null;
 
-    let rawNotes = [...scoreData.notes];
+    let rawEvents = [...scoreData.notes];
 
-    let processedNotes = rawNotes.map((note, index) => {
-        let detectedRhythm = note.rhythm;
+    // 1. NORMALIZATION: Convert everything into Chord "Events"
+    let processedEvents = rawEvents.map((event, index) => {
+        let detectedRhythm = event.rhythm;
+        
+        let pitches = event.pitches || [];
+        // Backwards compatibility for monophonic inputs
+        if (!event.pitches && event.fret !== undefined && event.string !== undefined) {
+            pitches = [{ fret: event.fret, string: event.string }];
+        }
 
-        if (!detectedRhythm && note.duration !== undefined) {
-            if (note.fret === undefined && note.string === undefined) {
-                if (note.duration === 1.5) detectedRhythm = 'x.';
-                else if (note.duration === 1.0) detectedRhythm = 'x';
-                else if (note.duration === 0.5) detectedRhythm = 'x+';
-                else if (note.duration === 0.25) detectedRhythm = 'x=';
+        const isRestEvent = pitches.length === 0 && !event.tie;
+
+        if (!detectedRhythm && event.duration !== undefined) {
+            if (isRestEvent) {
+                if (event.duration === 1.5) detectedRhythm = 'x.';
+                else if (event.duration === 1.0) detectedRhythm = 'x';
+                else if (event.duration === 0.5) detectedRhythm = 'x+';
+                else if (event.duration === 0.25) detectedRhythm = 'x=';
             } else {
-                if (note.duration === 6.0) detectedRhythm = 'o.';
-                else if (note.duration === 4.0) detectedRhythm = 'o';
-                else if (note.duration === 3.0) detectedRhythm = '..';
-                else if (note.duration === 2.0) detectedRhythm = '.';
-                else if (note.duration === 1.5) detectedRhythm = ':.';
-                else if (note.duration === 1.0) detectedRhythm = ':';
-                else if (note.duration === 0.75) detectedRhythm = '+.';
-                else if (note.duration === 0.5) detectedRhythm = '+';
-                else if (note.duration === 0.25) detectedRhythm = '=';
+                if (event.duration === 6.0) detectedRhythm = 'o.';
+                else if (event.duration === 4.0) detectedRhythm = 'o';
+                else if (event.duration === 3.0) detectedRhythm = '..';
+                else if (event.duration === 2.0) detectedRhythm = '.';
+                else if (event.duration === 1.5) detectedRhythm = ':.';
+                else if (event.duration === 1.0) detectedRhythm = ':';
+                else if (event.duration === 0.75) detectedRhythm = '+.';
+                else if (event.duration === 0.5) detectedRhythm = '+';
+                else if (event.duration === 0.25) detectedRhythm = '=';
             }
         }
 
-        const beatValue = note.duration !== undefined ? note.duration : (RHYTHM_BEAT_VALUES[detectedRhythm || ':'] || 1.0);
+        const beatValue = event.duration !== undefined ? event.duration : (RHYTHM_BEAT_VALUES[detectedRhythm || ':'] || 1.0);
 
         return {
-            ...note,
+            ...event,
+            pitches, // Guaranteed array of pitches
             globalIndex: index,
-            rhythm: detectedRhythm || ':',
-            beatValue
+            rhythm: detectedRhythm || (isRestEvent ? 'x' : ':'),
+            beatValue,
+            isRest: isRestEvent || (detectedRhythm && detectedRhythm.startsWith('x'))
         };
     });
 
-    const notes = processedNotes.map((note, idx) => {
+    const events = processedEvents.map((ev, idx) => {
         return {
-            ...note,
-            isTiedToNext: !!note.tie,
-            isTiedFromPrev: idx > 0 ? !!processedNotes[idx - 1].tie : false
+            ...ev,
+            isTiedToNext: !!ev.tie,
+            isTiedFromPrev: idx > 0 ? !!processedEvents[idx - 1].tie : false
         };
     });
 
@@ -114,277 +123,229 @@ export default function GuitaleleViewer({ scoreData }) {
     const beatsPerMeasure = parseInt(timeSigTop, 10);
 
     let rows = [];
-    let currentRowNotes = [];
+    let currentRowEvents = [];
     let accumulatedBeats = 0;
     let measuresInRow = 0;
 
     const MAX_MEASURES_PER_ROW = 4;
     const MAX_NOTES_PER_ROW = 64;
 
-    notes.forEach((note) => {
-        currentRowNotes.push({ ...note });
-        accumulatedBeats += note.beatValue;
+    // 2. TIMING AND WRAPPING
+    events.forEach((ev) => {
+        currentRowEvents.push({ ...ev });
+        accumulatedBeats += ev.beatValue;
 
         if (accumulatedBeats >= beatsPerMeasure - 0.05) {
-            currentRowNotes[currentRowNotes.length - 1].endOfMeasure = true;
+            currentRowEvents[currentRowEvents.length - 1].endOfMeasure = true;
             measuresInRow++;
-
             accumulatedBeats = Math.max(0, accumulatedBeats - beatsPerMeasure);
 
-            if (measuresInRow >= MAX_MEASURES_PER_ROW || currentRowNotes.length >= MAX_NOTES_PER_ROW) {
-                rows.push([...currentRowNotes]);
-                currentRowNotes = [];
+            if (measuresInRow >= MAX_MEASURES_PER_ROW || currentRowEvents.length >= MAX_NOTES_PER_ROW) {
+                rows.push([...currentRowEvents]);
+                currentRowEvents = [];
                 measuresInRow = 0;
             }
-        } else if (currentRowNotes.length >= MAX_NOTES_PER_ROW) {
-            rows.push([...currentRowNotes]);
-            currentRowNotes = [];
+        } else if (currentRowEvents.length >= MAX_NOTES_PER_ROW) {
+            rows.push([...currentRowEvents]);
+            currentRowEvents = [];
             measuresInRow = 0;
             accumulatedBeats = 0;
         }
     });
 
-    if (currentRowNotes.length > 0) rows.push([...currentRowNotes]);
+    if (currentRowEvents.length > 0) rows.push([...currentRowEvents]);
 
     return (
         <div className="w-full h-[85vh] overflow-y-auto bg-stone-100/80 p-6 flex flex-col gap-10 rounded-xl shadow-inner border border-stone-200">
-            {rows.map((rowNotes, rowIdx) => {
-                const totalWidth = paddingX * 2 + (rowNotes.length * noteSpacing);
+            {rows.map((rowEvents, rowIdx) => {
+                const totalWidth = paddingX * 2 + (rowEvents.length * noteSpacing);
                 const barlineXPositions = [];
-
                 let rowBeatTracker = 0;
-                const renderedNotes = rowNotes.map((note, index) => {
+
+                // 3. PRE-PROCESS RENDER DATA
+                const renderedEvents = rowEvents.map((ev, index) => {
                     const cx = paddingX + (index * noteSpacing) + (noteSpacing / 2);
+                    rowBeatTracker += ev.beatValue;
 
-                    rowBeatTracker += note.beatValue;
-
-                    if (Math.abs(rowBeatTracker % beatsPerMeasure) < 0.01 && index !== rowNotes.length - 1) {
+                    if (Math.abs(rowBeatTracker % beatsPerMeasure) < 0.01 && index !== rowEvents.length - 1) {
                         barlineXPositions.push(cx + (noteSpacing / 2));
                     }
 
-                    const isRest = note.rhythm?.startsWith('x');
-                    let tabY = 0, staffY = trebleTopY + (2 * lineSpacing);
-                    let isSharp = false, midi = 0, clef = 'treble', noteName = '';
-
-                    if (!isRest && note.string && note.fret !== undefined) {
-                        tabY = tabTopY + ((note.string - 1) * lineSpacing);
-                        midi = GUITALELE_TUNING[note.string].baseMidi + note.fret;
-
-                        clef = midi >= 60 ? 'treble' : 'bass';
+                    const processedPitches = ev.pitches.map(p => {
+                        const tabY = tabTopY + ((p.string - 1) * lineSpacing);
+                        const midi = GUITALELE_TUNING[p.string].baseMidi + p.fret;
+                        const clef = midi >= 60 ? 'treble' : 'bass';
                         const clefTopY = clef === 'treble' ? trebleTopY : bassTopY;
-
+                        
                         const pitchProps = parsePitchProperties(midi, clef, clefTopY, lineSpacing);
-                        staffY = pitchProps.y;
-                        isSharp = pitchProps.isSharp;
+                        
+                        return {
+                            ...p,
+                            tabY,
+                            staffY: pitchProps.y,
+                            isSharp: pitchProps.isSharp,
+                            midi,
+                            clef,
+                            noteName: `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`
+                        };
+                    });
 
-                        // Calculate literal scientific pitch string
-                        const pitchClass = midi % 12;
-                        const octave = Math.floor(midi / 12) - 1;
-                        noteName = `${NOTE_NAMES[pitchClass]}${octave}`;
-                    }
-
-                    return { ...note, midi, clef, cx, tabY, staffY, isSharp, isRest, noteName };
+                    return { ...ev, cx, processedPitches };
                 });
 
                 return (
                     <div key={`row-${rowIdx}`} className="bg-white border border-stone-200 rounded-lg shadow-sm flex-none p-4 w-full overflow-x-auto">
                         <svg width={totalWidth} height={svgHeight} className="select-none mx-auto block">
-
-                            {/* Grand Staff Connecting Brace */}
-                            <path
-                                d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`}
-                                fill="none" stroke="#64748b" strokeWidth="2.5"
-                            />
-
-                            {/* Treble Stave Grid */}
-                            {[0, 1, 2, 3, 4].map((i) => (
-                                <line key={`treble-${i}`} x1={paddingX} y1={trebleTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={trebleTopY + i * lineSpacing} stroke="#94a3b8" strokeWidth="1" />
-                            ))}
+                            
+                            {/* Staff Background Lines (Same as before) */}
+                            <path d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`} fill="none" stroke="#64748b" strokeWidth="2.5" />
+                            {[0, 1, 2, 3, 4].map((i) => (<line key={`treble-${i}`} x1={paddingX} y1={trebleTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={trebleTopY + i * lineSpacing} stroke="#94a3b8" strokeWidth="1" />))}
                             <text x={paddingX - 105} y={trebleTopY + (3.5 * lineSpacing)} className="text-4xl font-serif fill-slate-800">𝄞</text>
-
-                            {/* Bass Stave Grid */}
-                            {[0, 1, 2, 3, 4].map((i) => (
-                                <line key={`bass-${i}`} x1={paddingX} y1={bassTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={bassTopY + i * lineSpacing} stroke="#94a3b8" strokeWidth="1" />
-                            ))}
+                            {[0, 1, 2, 3, 4].map((i) => (<line key={`bass-${i}`} x1={paddingX} y1={bassTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={bassTopY + i * lineSpacing} stroke="#94a3b8" strokeWidth="1" />))}
                             <text x={paddingX - 105} y={bassTopY + (3.2 * lineSpacing)} className="text-4xl font-serif fill-slate-800">𝄢</text>
 
                             {/* Time Signature Engine */}
                             <g className="font-serif font-black text-2xl fill-slate-900 text-center" transform={`translate(${paddingX - 55}, 0)`}>
                                 <text x="0" y={trebleTopY + 16} textAnchor="middle">{timeSigTop}</text>
                                 <text x="0" y={trebleTopY + 42} textAnchor="middle">{timeSigBottom}</text>
-
                                 <text x="0" y={bassTopY + 16} textAnchor="middle">{timeSigTop}</text>
                                 <text x="0" y={bassTopY + 42} textAnchor="middle">{timeSigBottom}</text>
-
                                 <text x="0" y={tabTopY + 24} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-600">{timeSigTop}</text>
                                 <text x="0" y={tabTopY + 54} textAnchor="middle" className="text-xl font-sans font-bold fill-slate-600">{timeSigBottom}</text>
                             </g>
 
-                            {/* 6-Line Guitalele Tab Grid */}
-                            {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <line key={`t-l-${i}`} x1={paddingX} y1={tabTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={tabTopY + i * lineSpacing} stroke="#cbd5e1" strokeWidth="1.2" />
-                            ))}
+                            {/* Tab Grid */}
+                            {[0, 1, 2, 3, 4, 5].map((i) => (<line key={`t-l-${i}`} x1={paddingX} y1={tabTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={tabTopY + i * lineSpacing} stroke="#cbd5e1" strokeWidth="1.2" />))}
                             <g transform={`translate(${paddingX - 105}, ${tabTopY + 12})`} className="fill-slate-400 font-black tracking-tighter text-xs">
                                 <text x="0" y="0">T</text><text x="0" y="14">A</text><text x="0" y="28">B</text>
                             </g>
-                            {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <text key={`string-${i}`} x={paddingX - 15} y={tabTopY + (i * lineSpacing) + 4} textAnchor="end" className="text-[9px] font-bold fill-slate-400">{i + 1}</text>
-                            ))}
+                            {[0, 1, 2, 3, 4, 5].map((i) => (<text key={`string-${i}`} x={paddingX - 15} y={tabTopY + (i * lineSpacing) + 4} textAnchor="end" className="text-[9px] font-bold fill-slate-400">{i + 1}</text>))}
 
-                            {/* Start Frame Closures */}
+                            {/* Frames & Barlines */}
                             <line x1={paddingX} y1={trebleTopY} x2={paddingX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="2" />
                             <line x1={paddingX} y1={tabTopY} x2={paddingX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="2" />
-
-                            {/* Structural Measure Barlines */}
                             {barlineXPositions.map((barX, i) => (
                                 <g key={`barline-${i}`}>
                                     <line x1={barX} y1={trebleTopY} x2={barX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="1.6" />
                                     <line x1={barX} y1={tabTopY} x2={barX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="1.6" />
                                 </g>
                             ))}
-
-                            {/* End Frame Closures */}
                             <line x1={totalWidth - paddingX} y1={trebleTopY} x2={totalWidth - paddingX} y2={bassTopY + 4 * lineSpacing} stroke="#475569" strokeWidth="2" />
                             <line x1={totalWidth - paddingX} y1={tabTopY} x2={totalWidth - paddingX} y2={tabTopY + 5 * lineSpacing} stroke="#64748b" strokeWidth="2" />
 
-                            {/* Foreground Notation Elements */}
-                            {renderedNotes.map((note, idx) => {
-                                const clefTopY = note.clef === 'treble' ? trebleTopY : bassTopY;
-                                const bottomStaffEdge = clefTopY + (4 * lineSpacing);
-
-                                const lowerLedgers = !note.isRest && note.staffY > bottomStaffEdge ? Math.floor((note.staffY - bottomStaffEdge) / lineSpacing) : 0;
-                                const upperLedgers = !note.isRest && note.staffY < clefTopY ? Math.floor((clefTopY - note.staffY) / lineSpacing) : 0;
-
-                                const stemTopY = note.beatValue <= 0.25 ? note.staffY - 35 : note.staffY - 28;
+                            {/* 4. DYNAMIC CHORD FOREGROUND */}
+                            {renderedEvents.map((ev, idx) => {
+                                // Calculate stem limits based on highest and lowest notes in the chord
+                                const staffYs = ev.processedPitches.map(p => p.staffY);
+                                const lowestVisualNoteY = staffYs.length > 0 ? Math.max(...staffYs) : 0;
+                                const highestVisualNoteY = staffYs.length > 0 ? Math.min(...staffYs) : 0;
+                                const stemTopY = ev.beatValue <= 0.25 ? highestVisualNoteY - 35 : highestVisualNoteY - 28;
 
                                 return (
                                     <g key={`node-${idx}`}>
-                                        
-                                        {/* OPTION 3 FIX: Broad Transparent Rectangular Interaction Hitbox Corridor */}
+                                        {/* Hitbox */}
                                         <rect 
-                                            x={note.cx - (noteSpacing / 2)} 
-                                            y={trebleTopY - 15} 
-                                            width={noteSpacing} 
-                                            height={rhythmTopY - trebleTopY + 35} 
-                                            fill="transparent" 
-                                            pointerEvents="all" 
-                                            className="cursor-help"
+                                            x={ev.cx - (noteSpacing / 2)} y={trebleTopY - 15} 
+                                            width={noteSpacing} height={rhythmTopY - trebleTopY + 35} 
+                                            fill="transparent" pointerEvents="all" className="cursor-help"
                                         />
-
-                                        {/* OPTION 2 FIX: Tooltip augmented with calculated absolute Note Name */}
                                         <title>
-                                            {note.isRest
-                                                ? `Rest: ${note.rhythm}`
-                                                : `Note: ${note.noteName} | Fret: ${note.fret} | String: ${note.string} | Rhythm: ${note.rhythm} `}
-                                            {note.description ? '\n' + note.description : ''}
+                                            {ev.isRest ? `Rest: ${ev.rhythm}` : `Chord/Note | Rhythm: ${ev.rhythm}\n` + 
+                                                ev.processedPitches.map(p => `- ${p.noteName} (Fret: ${p.fret}, Str: ${p.string})`).join('\n')}
                                         </title>
 
-                                        {/* --- 1. GRAND STAFF NOTATION --- */}
-                                        {note.isRest ? (
+                                        {/* Grand Staff Generation */}
+                                        {ev.isRest ? (
                                             <g>
-                                                {note.rhythm === 'x' && <path d={`M ${note.cx - 4} ${note.staffY - 10} L ${note.cx + 4} ${note.staffY - 4} L ${note.cx - 4} ${note.staffY + 2} Q ${note.cx + 6} ${note.staffY + 6} ${note.cx} ${note.staffY + 12}`} fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />}
-                                                {note.rhythm === 'x+' && <path d={`M ${note.cx - 3} ${note.staffY - 6} A 3.5 3.5 0 1 1 ${note.cx + 2} ${note.staffY - 4} Q ${note.cx - 2} ${note.staffY} ${note.cx + 4} ${note.staffY - 8} L ${note.cx - 3} ${note.staffY + 12}`} fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
-                                                {note.rhythm === 'x=' && (
+                                                {ev.rhythm === 'x' && <path d={`M ${ev.cx - 4} ${trebleTopY + 28} L ${ev.cx + 4} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 40} Q ${ev.cx + 6} ${trebleTopY + 44} ${ev.cx} ${trebleTopY + 50}`} fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />}
+                                                {ev.rhythm === 'x+' && <path d={`M ${ev.cx - 3} ${trebleTopY + 32} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${trebleTopY + 34} Q ${ev.cx - 2} ${trebleTopY + 38} ${ev.cx + 4} ${trebleTopY + 30} L ${ev.cx - 3} ${trebleTopY + 50}`} fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+                                                {ev.rhythm === 'x=' && (
                                                     <g>
-                                                        <path d={`M ${note.cx - 2} ${note.staffY - 11} A 3 3 0 1 1 ${note.cx + 3} ${note.staffY - 9} Q ${note.cx - 1} ${note.staffY - 5} ${note.cx + 5} ${note.staffY - 13}`} fill="none" stroke="#0f172a" strokeWidth="2" />
-                                                        <path d={`M ${note.cx - 4} ${note.staffY - 2} A 3 3 0 1 1 ${note.cx + 1} ${note.staffY} Q ${note.cx - 3} ${note.staffY + 4} ${note.cx + 3} ${note.staffY - 4} L ${note.cx - 4} ${note.staffY + 14}`} fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
+                                                        <path d={`M ${ev.cx - 2} ${trebleTopY + 27} A 3 3 0 1 1 ${ev.cx + 3} ${trebleTopY + 29} Q ${ev.cx - 1} ${trebleTopY + 33} ${ev.cx + 5} ${trebleTopY + 25}`} fill="none" stroke="#0f172a" strokeWidth="2" />
+                                                        <path d={`M ${ev.cx - 4} ${trebleTopY + 36} A 3 3 0 1 1 ${ev.cx + 1} ${trebleTopY + 38} Q ${ev.cx - 3} ${trebleTopY + 42} ${ev.cx + 3} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 52}`} fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
                                                     </g>
                                                 )}
+                                                <rect x={ev.cx - 6} y={tabTopY + (2 * lineSpacing) - 4} width={12} height={16} fill="#ffffff" />
+                                                <text x={ev.cx} y={tabTopY + (3 * lineSpacing) - 2} textAnchor="middle" className="text-[10px] font-mono font-bold fill-rose-500 select-none">𝄾</text>
                                             </g>
                                         ) : (
                                             <g>
-                                                {note.isSharp && <text x={note.cx + 8} y={note.staffY + 5} className="text-base font-normal fill-slate-950 font-serif">♯</text>}
+                                                {/* Iterating over every pitch in the chord */}
+                                                {ev.processedPitches.map((pitch, pIdx) => {
+                                                    const clefTopY = pitch.clef === 'treble' ? trebleTopY : bassTopY;
+                                                    const bottomStaffEdge = clefTopY + (4 * lineSpacing);
+                                                    const lowerLedgers = pitch.staffY > bottomStaffEdge ? Math.floor((pitch.staffY - bottomStaffEdge) / lineSpacing) : 0;
+                                                    const upperLedgers = pitch.staffY < clefTopY ? Math.floor((clefTopY - pitch.staffY) / lineSpacing) : 0;
 
-                                                {/* Ledger Lines */}
-                                                {Array.from({ length: Math.max(0, upperLedgers) }).map((_, lIdx) => (
-                                                    <line key={`up-ledg-${lIdx}`} x1={note.cx - 10} y1={clefTopY - ((lIdx + 1) * lineSpacing)} x2={note.cx + 10} y2={clefTopY - ((lIdx + 1) * lineSpacing)} stroke="#475569" strokeWidth="1.2" />
-                                                ))}
-                                                {Array.from({ length: Math.max(0, lowerLedgers) }).map((_, lIdx) => (
-                                                    <line key={`low-ledg-${lIdx}`} x1={note.cx - 10} y1={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} x2={note.cx + 10} y2={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} stroke="#475569" strokeWidth="1.2" />
-                                                ))}
+                                                    return (
+                                                        <g key={`p-${pIdx}`}>
+                                                            {pitch.isSharp && <text x={ev.cx + 8} y={pitch.staffY + 5} className="text-base font-normal fill-slate-950 font-serif">♯</text>}
 
-                                                {/* Notehead */}
-                                                {note.beatValue >= 2.0 ? (
-                                                    <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} fill="#ffffff" stroke="#0f172a" strokeWidth="1.8" className='note-element' />
-                                                ) : (
-                                                    <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} className="note-element fill-slate-950" />
+                                                            {/* Ledgers */}
+                                                            {Array.from({ length: Math.max(0, upperLedgers) }).map((_, lIdx) => (
+                                                                <line key={`up-ledg-${lIdx}`} x1={ev.cx - 10} y1={clefTopY - ((lIdx + 1) * lineSpacing)} x2={ev.cx + 10} y2={clefTopY - ((lIdx + 1) * lineSpacing)} stroke="#475569" strokeWidth="1.2" />
+                                                            ))}
+                                                            {Array.from({ length: Math.max(0, lowerLedgers) }).map((_, lIdx) => (
+                                                                <line key={`low-ledg-${lIdx}`} x1={ev.cx - 10} y1={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} x2={ev.cx + 10} y2={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} stroke="#475569" strokeWidth="1.2" />
+                                                            ))}
+
+                                                            {/* Notehead */}
+                                                            {ev.beatValue >= 2.0 ? (
+                                                                <ellipse cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`} fill="#ffffff" stroke="#0f172a" strokeWidth="1.8" />
+                                                            ) : (
+                                                                <ellipse cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`} className="fill-slate-950" />
+                                                            )}
+
+                                                            {/* Multi-Tie Logic (Draws ties matching specific strings to the next chord) */}
+                                                            {ev.isTiedToNext && renderedEvents[idx + 1] && !renderedEvents[idx + 1].isRest && (
+                                                                (() => {
+                                                                    const targetPitch = renderedEvents[idx + 1].processedPitches.find(np => np.string === pitch.string);
+                                                                    if (targetPitch) {
+                                                                        return (
+                                                                            <path 
+                                                                                d={`M ${ev.cx + 4} ${pitch.staffY + 5} Q ${(ev.cx + renderedEvents[idx + 1].cx) / 2} ${Math.max(pitch.staffY, targetPitch.staffY) + 16} ${renderedEvents[idx + 1].cx - 4} ${targetPitch.staffY + 5}`}
+                                                                                fill="none" stroke="#1e293b" strokeWidth="1.8" strokeLinecap="round"
+                                                                            />
+                                                                        );
+                                                                    }
+                                                                })()
+                                                            )}
+
+                                                            {/* Tablature Numbers */}
+                                                            <rect x={ev.cx - 7} y={pitch.tabY - 7} width={14} height={14} fill="#ffffff" />
+                                                            <text x={ev.cx} y={pitch.tabY + 4} textAnchor="middle" className="text-[11px] font-sans font-bold fill-slate-900">{pitch.fret}</text>
+                                                        </g>
+                                                    );
+                                                })}
+
+                                                {/* Unified Stem & Flag (Drawn ONCE per chord) */}
+                                                {ev.beatValue < 4.0 && (
+                                                    <line x1={ev.cx + 5} y1={lowestVisualNoteY} x2={ev.cx + 5} y2={stemTopY} stroke="#0f172a" strokeWidth="1.6" />
                                                 )}
-
-                                                {/* OPTION 1 FIX: Staff Tie Notation Layer */}
-                                                {note.isTiedToNext && renderedNotes[idx + 1] && !renderedNotes[idx + 1].isRest && (
-                                                    <path 
-                                                        d={`M ${note.cx + 4} ${note.staffY + 5} Q ${(note.cx + renderedNotes[idx + 1].cx) / 2} ${Math.max(note.staffY, renderedNotes[idx + 1].staffY) + 16} ${renderedNotes[idx + 1].cx - 4} ${renderedNotes[idx + 1].staffY + 5}`}
-                                                        fill="none"
-                                                        stroke="#1e293b"
-                                                        strokeWidth="1.8"
-                                                        strokeLinecap="round"
-                                                    />
+                                                {[6.0, 3.0, 1.5, 0.75].includes(ev.beatValue) && (
+                                                    <circle cx={ev.cx + 12} cy={highestVisualNoteY - 3} r={2} className="fill-slate-950" />
                                                 )}
-
-                                                {/* Rhythm Dot */}
-                                                {[6.0, 3.0, 1.5, 0.75].includes(note.beatValue) && (
-                                                    <circle cx={note.cx + 12} cy={note.staffY - 3} r={2} className="note-element fill-slate-950" />
+                                                {ev.beatValue === 0.5 && (
+                                                    <path d={getFlagPath(ev.cx + 5, stemTopY)} fill="#0f172a" />
                                                 )}
-
-                                                {/* Up-pointing Stem */}
-                                                {note.beatValue < 4.0 && (
-                                                    <line x1={note.cx + 5} y1={note.staffY} x2={note.cx + 5} y2={stemTopY} stroke="#0f172a" strokeWidth="1.6" className='note-element' />
-                                                )}
-
-                                                {/* 8TH NOTE FLAG */}
-                                                {note.beatValue === 0.5 && (
-                                                    <path d={getFlagPath(note.cx + 5, stemTopY)} fill="#0f172a" className='note-element' />
-                                                )}
-
-                                                {/* 16TH NOTE FLAGS */}
-                                                {note.beatValue <= 0.25 && (
+                                                {ev.beatValue <= 0.25 && (
                                                     <g>
-                                                        <path d={getFlagPath(note.cx + 5, stemTopY)} fill="#0f172a" className='note-element' />
-                                                        <path d={getFlagPath(note.cx + 5, stemTopY + 10)} fill="#0f172a" className='note-element' />
+                                                        <path d={getFlagPath(ev.cx + 5, stemTopY)} fill="#0f172a" />
+                                                        <path d={getFlagPath(ev.cx + 5, stemTopY + 10)} fill="#0f172a" />
                                                     </g>
                                                 )}
                                             </g>
                                         )}
 
-                                        {/* --- 2. TABLATURE ENGINE --- */}
-                                        {note.isRest ? (
-                                            <g>
-                                                <rect x={note.cx - 6} y={tabTopY + (2 * lineSpacing) - 4} width={12} height={16} fill="#ffffff" />
-                                                <text x={note.cx} y={tabTopY + (3 * lineSpacing) - 2} textAnchor="middle" className="text-[10px] font-mono font-bold fill-rose-500 select-none">𝄾</text>
-                                            </g>
-                                        ) : (
-                                            <g>
-                                                <rect x={note.cx - 7} y={note.tabY - 7} width={14} height={14} fill="#ffffff" />
-                                                <text x={note.cx} y={note.tabY + 4} textAnchor="middle" className="text-[11px] font-sans font-bold fill-slate-900">{note.fret}</text>
-                                            </g>
-                                        )}
-
-                                        {/* --- 3. CUSTOM RHYTHM NOTATION LANE --- */}
+                                        {/* Rhythm Lane */}
                                         <g>
-                                            {/* 1. Draw the solid bridge line if this note is tied to the next one */}
-                                            {note.isTiedToNext && renderedNotes[idx + 1] && (
-                                                <line
-                                                    x1={note.cx + 12}
-                                                    y1={rhythmTopY - 4}
-                                                    x2={renderedNotes[idx + 1].cx - 12}
-                                                    y2={rhythmTopY - 4}
-                                                    stroke="#94a3b8"
-                                                    strokeWidth="2"
-                                                    strokeLinecap="round"
-                                                />
+                                            {ev.isTiedToNext && renderedEvents[idx + 1] && (
+                                                <line x1={ev.cx + 12} y1={rhythmTopY - 4} x2={renderedEvents[idx + 1].cx - 12} y2={rhythmTopY - 4} stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
                                             )}
-
-                                            {/* 2. ALWAYS show the rhythm symbol, tied or not */}
-                                            <text
-                                                x={note.cx}
-                                                y={rhythmTopY}
-                                                textAnchor="middle"
-                                                className={`font-mono font-black text-sm ${note.isRest ? 'fill-rose-500' : 'fill-indigo-600'}`}
-                                            >
-                                                {note.rhythm}
+                                            <text x={ev.cx} y={rhythmTopY} textAnchor="middle" className={`font-mono font-black text-sm ${ev.isRest ? 'fill-rose-500' : 'fill-indigo-600'}`}>
+                                                {ev.rhythm}
                                             </text>
                                         </g>
-
                                     </g>
                                 );
                             })}
