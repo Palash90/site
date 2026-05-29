@@ -90,7 +90,7 @@ const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
     };
 };
 
-const getFlagPath = (sx, sy, isDown = false, isDouble = false) => {
+const getFlagPath = (sx, sy, isDown = false, flags = 1) => {
     const drawSlashSegment = (yOffset) => {
         const sY = sy + yOffset;
         if (isDown) {
@@ -99,10 +99,11 @@ const getFlagPath = (sx, sy, isDown = false, isDouble = false) => {
         return `M ${sx} ${sY} L ${sx + 7} ${sY + 8} L ${sx + 7} ${sY + 5} L ${sx} ${sY - 3} Z`;
     };
 
-    if (isDouble) {
-        return drawSlashSegment(0) + " " + drawSlashSegment(isDown ? -9 : 9);
+    let path = "";
+    for (let i = 0; i < flags; i++) {
+        path += drawSlashSegment(isDown ? -(i * 9) : (i * 9)) + " ";
     }
-    return drawSlashSegment(0);
+    return path.trim();
 };
 
 const playHumanizedGuitaleleNote = (ctx, midi, startTime, duration, velocity = 1.0) => {
@@ -213,33 +214,46 @@ export default function GuitaleleViewer({ scoreData }) {
         }, 900);
     };
 
-    // Compute layout properties structural framework
     const scoreLayout = useMemo(() => {
         if (!scoreData || !scoreData.notes) return null;
 
-        const paddingX = 140;
-        const noteSpacing = 115;
+        const paddingX = 140; 
         const lineSpacing = 14;
         const trebleTopY = 70;
         const bassTopY = 150;
         const tabTopY = 250;
-        const rhythmTopY = 375;
-        const svgHeight = 430;
+        const rhythmTopY = 390; 
+        const svgHeight = 490;
 
         const timeSigTop = scoreData.timeSignature?.split('/')[0] || '4';
         const timeSigBottom = scoreData.timeSignature?.split('/')[1] || '4';
-        // Convert time signature to beats per measure in quarter-note units
-        // e.g., 4/4 = 4, 6/8 = 3 (six eighths = 3 quarters), 3/4 = 3, etc.
         const numerator = parseInt(timeSigTop, 10);
         const denominator = parseInt(timeSigBottom, 10);
         const beatsPerMeasure = numerator * (4 / denominator);
 
-        let processedEvents = scoreData.notes.map((event, index) => {
+        // --- EQUAL-SPACED GRID DEFINITIONS ---
+        const SLOT_WIDTH = 65;           // Fixed spacing allocation per unique rhythm slot
+        const MEASURE_PADDING = 35;      // Buffer room near barlines
+        const MEASURES_PER_ROW = 2; 
+
+        const voiceCursors = { 1: 0, 2: 0 };
+
+        // 1. First Pass: Compute time boundaries and sanitize data packet strings
+        const processedEvents = scoreData.notes.map((event, index) => {
             let detectedRhythm = event.rhythm;
             let pitches = event.pitches || [];
             if (!event.pitches && event.fret !== undefined && event.string !== undefined) {
                 pitches = [{ fret: event.fret, string: event.string }];
             }
+
+            // ENFORCE UNIQUE STRING -> HIGHEST FRET RULE
+            const uniqueStringsMap = {};
+            pitches.forEach(p => {
+                if (uniqueStringsMap[p.string] === undefined || p.fret > uniqueStringsMap[p.string].fret) {
+                    uniqueStringsMap[p.string] = p;
+                }
+            });
+            pitches = Object.values(uniqueStringsMap);
 
             const isRestEvent = pitches.length === 0 && !event.tie;
 
@@ -263,6 +277,11 @@ export default function GuitaleleViewer({ scoreData }) {
             }
 
             const beatValue = event.duration !== undefined ? event.duration : (RHYTHM_BEAT_VALUES[detectedRhythm || ':'] || 1.0);
+            const voice = event.voice || 1;
+            const startBeat = voiceCursors[voice]; 
+            const measureNumber = Math.floor(startBeat / beatsPerMeasure) + 1;
+            
+            voiceCursors[voice] += beatValue;
 
             return {
                 ...event,
@@ -270,208 +289,128 @@ export default function GuitaleleViewer({ scoreData }) {
                 globalIndex: index,
                 rhythm: detectedRhythm || (isRestEvent ? 'x' : ':'),
                 beatValue,
-                isRest: isRestEvent || (detectedRhythm && detectedRhythm.startsWith('x'))
+                isRest: isRestEvent || (detectedRhythm && detectedRhythm.startsWith('x')),
+                voice,
+                startBeat,
+                measureNumber,
+                isTiedToNext: !!event.tie
             };
         });
 
-        const events = processedEvents.map((ev, idx) => ({
-            ...ev,
-            isTiedToNext: !!ev.tie,
-            isTiedFromPrev: idx > 0 ? !!processedEvents[idx - 1].tie : false,
-            voice: ev.voice || 1  // Default to voice 1 if not specified
-        }));
+        const maxTotalBeats = Math.max(voiceCursors[1], voiceCursors[2]);
+        const totalMeasures = Math.ceil(maxTotalBeats / beatsPerMeasure) || 1;
 
-        // Group events by measure and voice to validate beats
-        const measureMap = new Map(); // measureNumber -> { voice1Beats, voice2Beats, events }
-        let currentMeasureNumber = 1;
-        let currentVoice1Beats = 0;
-        let currentVoice2Beats = 0;
-        const MAX_MEASURES_PER_ROW = 4;
-        const MAX_NOTES_PER_ROW = 64;
-
-        events.forEach((ev, eventIdx) => {
-            const voice = ev.voice || 1;
-            
-            // Check if adding this event would overflow the measure for its voice
-            const voiceBeats = voice === 1 ? currentVoice1Beats : currentVoice2Beats;
-            const wouldOverflow = (voiceBeats + ev.beatValue) > beatsPerMeasure + 0.05;
-            
-            ev.isMismatched = wouldOverflow;
-            ev.measureNumber = currentMeasureNumber;
-            
-            // Add to measure map
-            if (!measureMap.has(currentMeasureNumber)) {
-                measureMap.set(currentMeasureNumber, { voice1Beats: 0, voice2Beats: 0, events: [], voices: new Set() });
+        // 2. Second Pass: Group events inside measures and analyze time slot sequences
+        const measureTimeSlotsMap = {};
+        processedEvents.forEach(ev => {
+            if (!measureTimeSlotsMap[ev.measureNumber]) {
+                measureTimeSlotsMap[ev.measureNumber] = new Set();
             }
-            const measureData = measureMap.get(currentMeasureNumber);
-            measureData.events.push(ev);
-            measureData.voices.add(voice);
-            
-            if (voice === 1) {
-                currentVoice1Beats += ev.beatValue;
-                measureData.voice1Beats = currentVoice1Beats;
-            } else {
-                currentVoice2Beats += ev.beatValue;
-                measureData.voice2Beats = currentVoice2Beats;
-            }
-            
-            // Determine if measure is complete
-            const v1Complete = currentVoice1Beats >= beatsPerMeasure - 0.05;
-            const v2Complete = currentVoice2Beats >= beatsPerMeasure - 0.05;
-            const hasVoice2 = measureData.voices.has(2);
-            
-            // Move to next measure if current voice is complete
-            const shouldAdvance = (voice === 1 && v1Complete && (!hasVoice2 || v2Complete)) || 
-                                   (voice === 2 && v2Complete);
-            
-            if (shouldAdvance && eventIdx < events.length - 1) {
-                // Validate measure before moving
-                const v1Exact = Math.abs(currentVoice1Beats - beatsPerMeasure) < 0.05 || currentVoice1Beats === 0;
-                const v2Exact = Math.abs(currentVoice2Beats - beatsPerMeasure) < 0.05 || currentVoice2Beats === 0;
-                const isVoice2Present = measureData.voices.has(2);
-                
-                measureData.isValid = v1Exact && (isVoice2Present ? v2Exact : true);
-                
-                currentMeasureNumber++;
-                currentVoice1Beats = 0;
-                currentVoice2Beats = 0;
-            }
+            measureTimeSlotsMap[ev.measureNumber].add(ev.startBeat);
         });
+
+        // Convert sets to sorted arrays to compute sequential indices
+        const measureSortedSlots = {};
+        Object.keys(measureTimeSlotsMap).forEach(mNum => {
+            measureSortedSlots[mNum] = Array.from(measureTimeSlotsMap[mNum]).sort((a, b) => a - b);
+        });
+
+        // Compute total measure width dynamic maximum based on highest slot counts inside them
+        const computedRows = [];
         
-        // Final measure validation
-        if (measureMap.size > 0) {
-            const lastMeasure = measureMap.get(currentMeasureNumber);
-            if (lastMeasure) {
-                const v1Exact = Math.abs(currentVoice1Beats - beatsPerMeasure) < 0.05 || currentVoice1Beats === 0;
-                const v2Exact = Math.abs(currentVoice2Beats - beatsPerMeasure) < 0.05 || currentVoice2Beats === 0;
-                const isVoice2Present = lastMeasure.voices.has(2);
-                lastMeasure.isValid = v1Exact && (isVoice2Present ? v2Exact : true);
-            }
-        }
+        for (let i = 0; i < totalMeasures; i += MEASURES_PER_ROW) {
+            const rowMeasuresCount = Math.min(MEASURES_PER_ROW, totalMeasures - i);
+            const rowStartBeat = i * beatsPerMeasure;
+            const rowEndBeat = (i + rowMeasuresCount) * beatsPerMeasure;
 
-        // Build rows from measure map
-        let rows = [];
-        let currentRowEvents = [];
-        let measuresInRow = 0;
-
-        Array.from(measureMap.entries()).forEach(([mNum, measureData]) => {
-            currentRowEvents.push(...measureData.events);
-            measuresInRow++;
-            
-            if (measuresInRow >= MAX_MEASURES_PER_ROW || currentRowEvents.length >= MAX_NOTES_PER_ROW) {
-                rows.push([...currentRowEvents]);
-                currentRowEvents = [];
-                measuresInRow = 0;
-            }
-        });
-        if (currentRowEvents.length > 0) rows.push([...currentRowEvents]);
-        
-        // Store measure validation data in events
-        events.forEach(ev => {
-            const measureData = measureMap.get(ev.measureNumber);
-            if (measureData) {
-                ev.measureIsValid = measureData.isValid;
-                ev.measureBeatInfo = {
-                    voice1Beats: measureData.voice1Beats.toFixed(2),
-                    voice2Beats: measureData.voice2Beats.toFixed(2),
-                    hasVoice2: measureData.voices.has(2)
-                };
-            }
-        });
-
-        const computedRows = rows.map((rowEvents) => {
-            const totalWidth = paddingX * 2 + (rowEvents.length * noteSpacing);
             const barlineXPositions = [];
-            const measureBoundaries = []; // Track measure boundaries with validation info
-            let rowBeatTracker = 0;
-            let lastMeasureNum = null;
+            const measureGroups = [];
+            let currentXPointer = paddingX;
 
-            const renderedEvents = rowEvents.map((ev, index) => {
-                const cx = paddingX + (index * noteSpacing) + (noteSpacing / 2);
-                rowBeatTracker += ev.beatValue;
+            // Generate measure containers with dynamically accumulated layout coordinate pointers
+            for (let j = 0; j < rowMeasuresCount; j++) {
+                const measureNum = i + j + 1;
+                const uniqueSlotsCount = measureSortedSlots[measureNum]?.length || 1;
                 
-                if (ev.measureNumber !== lastMeasureNum) {
-                    lastMeasureNum = ev.measureNumber;
-                    measureBoundaries.push({
-                        measureNumber: ev.measureNumber,
-                        xPos: cx - (noteSpacing / 2),
-                        isValid: ev.measureIsValid,
-                        beatInfo: ev.measureBeatInfo
+                const mWidth = (uniqueSlotsCount * SLOT_WIDTH) + (MEASURE_PADDING * 2);
+                const startX = currentXPointer;
+                const endX = startX + mWidth;
+
+                measureGroups.push({
+                    measureNumber: measureNum,
+                    startX: startX,
+                    endX: endX,
+                    slotsArray: measureSortedSlots[measureNum] || []
+                });
+
+                currentXPointer = endX;
+                barlineXPositions.push(endX);
+            }
+
+            const rowEndX = currentXPointer;
+            const TOTAL_SVG_WIDTH = rowEndX + 40;
+
+            const rowEvents = processedEvents
+                .filter(ev => ev.startBeat >= rowStartBeat && ev.startBeat < rowEndBeat)
+                .map(ev => {
+                    const mGroup = measureGroups.find(g => g.measureNumber === ev.measureNumber);
+                    
+                    // Standard Notation Slot Engine: find sequential position order index
+                    const slotIndex = mGroup.slotsArray.indexOf(ev.startBeat);
+                    const cx = mGroup.startX + MEASURE_PADDING + (slotIndex * SLOT_WIDTH) + (SLOT_WIDTH / 2);
+
+                    const processedPitches = ev.pitches.map(p => {
+                        const tabY = tabTopY + ((p.string - 1) * lineSpacing);
+                        const midi = GUITALELE_TUNING[p.string].baseMidi + p.fret;
+                        const clef = midi >= 60 ? 'treble' : 'bass';
+                        const clefTopY = clef === 'treble' ? trebleTopY : bassTopY;
+                        const pitchProps = parsePitchProperties(midi, clef, clefTopY, lineSpacing);
+                        return {
+                            ...p,
+                            tabY,
+                            staffY: pitchProps.y,
+                            isSharp: pitchProps.isSharp,
+                            midi,
+                            clef,
+                            noteName: `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`
+                        };
                     });
-                }
-                
-                if (Math.abs(rowBeatTracker % beatsPerMeasure) < 0.01 && index !== rowEvents.length - 1) {
-                    barlineXPositions.push(cx + (noteSpacing / 2));
-                }
 
-                const processedPitches = ev.pitches.map(p => {
-                    const tabY = tabTopY + ((p.string - 1) * lineSpacing);
-                    const midi = GUITALELE_TUNING[p.string].baseMidi + p.fret;
-                    const clef = midi >= 60 ? 'treble' : 'bass';
-                    const clefTopY = clef === 'treble' ? trebleTopY : bassTopY;
-                    const pitchProps = parsePitchProperties(midi, clef, clefTopY, lineSpacing);
+                    const treblePitches = processedPitches.filter(p => p.clef === 'treble');
+                    const bassPitches = processedPitches.filter(p => p.clef === 'bass');
+
+                    const computeStaffStemData = (pitches, midLineMidi) => {
+                        if (pitches.length === 0) return null;
+                        const staffYs = pitches.map(p => p.staffY);
+                        const lowestY = Math.max(...staffYs);
+                        const highestY = Math.min(...staffYs);
+                        const avgMidi = pitches.reduce((sum, p) => sum + p.midi, 0) / pitches.length;
+                        
+                        let stemDown = avgMidi >= midLineMidi;
+                        if (voiceCursors[2] > 0) stemDown = ev.voice === 2; 
+
+                        return { lowestY, highestY, stemDown };
+                    };
+
                     return {
-                        ...p,
-                        tabY,
-                        staffY: pitchProps.y,
-                        isSharp: pitchProps.isSharp,
-                        midi,
-                        clef,
-                        noteName: `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`
+                        ...ev,
+                        cx,
+                        processedPitches,
+                        trebleStem: computeStaffStemData(treblePitches, 71),
+                        bassStem: computeStaffStemData(bassPitches, 50)
                     };
                 });
 
-                const treblePitches = processedPitches.filter(p => p.clef === 'treble');
-                const bassPitches = processedPitches.filter(p => p.clef === 'bass');
-
-                const computeStaffStemData = (pitches, midLineMidi) => {
-                    if (pitches.length === 0) return null;
-                    const staffYs = pitches.map(p => p.staffY);
-                    const lowestY = Math.max(...staffYs);
-                    const highestY = Math.min(...staffYs);
-                    const avgMidi = pitches.reduce((sum, p) => sum + p.midi, 0) / pitches.length;
-                    const stemDown = avgMidi >= midLineMidi;
-
-                    return { lowestY, highestY, stemDown };
-                };
-
-                return {
-                    ...ev,
-                    cx,
-                    processedPitches,
-                    trebleStem: computeStaffStemData(treblePitches, 71),
-                    bassStem: computeStaffStemData(bassPitches, 50)
-                };
+            computedRows.push({
+                rowEvents,
+                totalWidth: TOTAL_SVG_WIDTH,
+                barlineXPositions,
+                measureGroups,
+                rowEndX
             });
+        }
 
-            const measureGroups = renderedEvents.reduce((groups, ev) => {
-                const existingGroup = groups.find((group) => group.measureNumber === ev.measureNumber);
-                const eventStartX = ev.cx - (noteSpacing / 2);
-                const eventEndX = ev.cx + (noteSpacing / 2);
-
-                if (existingGroup) {
-                    existingGroup.startX = Math.min(existingGroup.startX, eventStartX);
-                    existingGroup.endX = Math.max(existingGroup.endX, eventEndX);
-                    existingGroup.isValid = existingGroup.isValid && ev.measureIsValid;
-                    return groups;
-                }
-
-                return [
-                    ...groups,
-                    {
-                        measureNumber: ev.measureNumber,
-                        startX: eventStartX,
-                        endX: eventEndX,
-                        isValid: ev.measureIsValid,
-                        beatInfo: ev.measureBeatInfo
-                    }
-                ];
-            }, []);
-
-            return { rowEvents: renderedEvents, totalWidth, barlineXPositions, measureGroups };
-        });
-
-        return { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, noteSpacing, beatsPerMeasure };
+        return { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, SLOT_WIDTH };
     }, [scoreData]);
 
     const stopPlayback = () => {
@@ -500,39 +439,52 @@ export default function GuitaleleViewer({ scoreData }) {
         const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
         const targetedEvents = allEvents.filter(ev => ev.measureNumber >= fromMeasure);
         const beatDurationSeconds = 60 / bpm;
+        
         let currentScheduleTime = ctx.currentTime + 0.1;
+        
+        const timeOffsetMap = new Map();
+        targetedEvents.forEach(ev => {
+            if (!timeOffsetMap.has(ev.startBeat)) timeOffsetMap.set(ev.startBeat, []);
+            timeOffsetMap.get(ev.startBeat).push(ev);
+        });
+
+        const sortedAbsoluteTimes = Array.from(timeOffsetMap.keys()).sort((a, b) => a - b);
         let currentElapsedTimeMs = 100;
 
-        targetedEvents.forEach((ev) => {
-            const noteDurationSec = ev.beatValue * beatDurationSeconds;
-            const targetIndex = ev.globalIndex;
+        sortedAbsoluteTimes.forEach((absTime, index) => {
+            const eventsAtTime = timeOffsetMap.get(absTime);
+            const timeDiffSec = index === 0 ? 0 : (absTime - sortedAbsoluteTimes[index - 1]) * beatDurationSeconds;
+            
+            currentScheduleTime += timeDiffSec;
+            currentElapsedTimeMs += timeDiffSec * 1000;
 
-            if (!ev.isRest) {
-                const sortedPitches = [...ev.processedPitches].sort((a, b) => b.string - a.string);
+            eventsAtTime.forEach((ev) => {
+                const noteDurationSec = ev.beatValue * beatDurationSeconds;
 
-                sortedPitches.forEach((pitch, pitchIdx) => {
-                    const strumDelay = sortedPitches.length > 1 ? pitchIdx * 0.022 : 0.0;
-                    const humanJitter = (Math.random() - 0.5) * 0.006;
-                    const humanVelocity = 0.86 + Math.random() * 0.24;
+                if (!ev.isRest) {
+                    const sortedPitches = [...ev.processedPitches].sort((a, b) => b.string - a.string);
 
-                    const finalPluckTime = currentScheduleTime + strumDelay + humanJitter;
-                    playHumanizedGuitaleleNote(ctx, pitch.midi, finalPluckTime, noteDurationSec, humanVelocity);
-                });
-            }
+                    sortedPitches.forEach((pitch, pitchIdx) => {
+                        const strumDelay = sortedPitches.length > 1 ? pitchIdx * 0.022 : 0.0;
+                        const humanJitter = (Math.random() - 0.5) * 0.006;
+                        const humanVelocity = 0.86 + Math.random() * 0.24;
 
-            const visualTimeout = setTimeout(() => {
-                setPlaybackIndex(targetIndex);
-            }, currentElapsedTimeMs);
+                        const finalPluckTime = currentScheduleTime + strumDelay + humanJitter;
+                        playHumanizedGuitaleleNote(ctx, pitch.midi, finalPluckTime, noteDurationSec, humanVelocity);
+                    });
+                }
 
-            playbackTimeoutsRef.current.push(visualTimeout);
-            currentScheduleTime += noteDurationSec;
-            currentElapsedTimeMs += noteDurationSec * 1000;
+                const visualTimeout = setTimeout(() => {
+                    setPlaybackIndex(ev.globalIndex);
+                }, currentElapsedTimeMs);
+                playbackTimeoutsRef.current.push(visualTimeout);
+            });
         });
 
         const endTimeout = setTimeout(() => {
             setIsPlaying(false);
             setPlaybackIndex(null);
-        }, currentElapsedTimeMs);
+        }, currentElapsedTimeMs + (sortedAbsoluteTimes.length > 0 ? beatDurationSeconds * 1000 : 0));
         playbackTimeoutsRef.current.push(endTimeout);
     };
 
@@ -551,13 +503,13 @@ export default function GuitaleleViewer({ scoreData }) {
         if (!activeEvent) return null;
         const custom = segmentDescriptions[activeEvent.globalIndex];
         if (activeEvent.isRest) {
-            const base = `Measure ${activeEvent.measureNumber} • Musical Rest 𝄾 [${getDurationLabel(activeEvent.beatValue)}]`;
+            const base = `Measure ${activeEvent.measureNumber} • Musical Rest 𝄾 [${getDurationLabel(activeEvent.beatValue)}] (Voice ${activeEvent.voice})`;
             return custom ? `${base} | ${custom}` : base;
         }
         const pitchDesc = activeEvent.processedPitches
             .map(p => `${p.noteName} (String ${p.string}, Fret ${p.fret})`)
             .join(" + ");
-        const base = `Measure ${activeEvent.measureNumber} • ${pitchDesc} [${getDurationLabel(activeEvent.beatValue)}]`;
+        const base = `Measure ${activeEvent.measureNumber} • ${pitchDesc} [${getDurationLabel(activeEvent.beatValue)}] (Voice ${activeEvent.voice})`;
         return custom ? `${base} | ${custom}` : base;
     }, [activeEvent, segmentDescriptions]);
 
@@ -565,12 +517,14 @@ export default function GuitaleleViewer({ scoreData }) {
         return <div className="text-slate-500 font-mono text-xs p-4">No notation data package available.</div>;
     }
 
-    const { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, noteSpacing, beatsPerMeasure } = scoreLayout;
+    const { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, SLOT_WIDTH } = scoreLayout;
+
+    const rhythm1TopY = rhythmTopY;
+    const rhythm2TopY = rhythmTopY + 28;
 
     return (
         <div ref={scrollContainerRef} onScroll={handleScroll} className={`w-full h-screen overflow-y-auto ${DARK_THEME.bgPage} p-6 flex flex-col gap-6`}>
 
-            {/* Master Control Board Panel Interface */}
             <div className={`sticky top-0 z-20 flex flex-col gap-4 bg-slate-900/95 backdrop-blur border-b border-slate-800 p-4 rounded-xl shadow-lg w-full max-w-5xl mx-auto transform transition-transform duration-300 ${controlsHidden ? '-translate-y-20 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <button
@@ -584,7 +538,6 @@ export default function GuitaleleViewer({ scoreData }) {
                     </button>
                 </div>
 
-                {/* Tempo Slider Control Section */}
                 <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 w-full pt-2 border-t border-slate-800">
                     <span className="flex h-5 items-center text-xs leading-none font-mono text-slate-400 whitespace-nowrap">
                         TEMPO: {bpm} BPM
@@ -599,7 +552,6 @@ export default function GuitaleleViewer({ scoreData }) {
                     </div>
                 </div>
 
-                {/* Live Description Display HUD */}
                 <div className="h-6 flex items-center justify-center border-t border-slate-800/60 pt-2 w-full text-center">
                     {activeDescription ? (
                         <span className="text-[11px] font-mono text-cyan-400 font-semibold tracking-wide animate-pulse">
@@ -613,98 +565,59 @@ export default function GuitaleleViewer({ scoreData }) {
                 </div>
             </div>
 
-            {/* Score Grid Viewport */}
             <div className="flex flex-col gap-8">
-                {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups }, rowIdx) => {
+                {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX }, rowIdx) => {
                     return (
                         <div key={`row-${rowIdx}`} className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto`}>
                             <svg width={totalWidth} height={svgHeight} className="select-none mx-auto block">
 
-                                {/* Clef System Brace */}
                                 <path d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`} fill="none" stroke={DARK_THEME.lineStaff} strokeWidth="2.5" />
 
-                                {/* Treble Staff */}
-                                {[0, 1, 2, 3, 4].map((i) => (<line key={`treble-${i}`} x1={paddingX} y1={trebleTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={trebleTopY + i * lineSpacing} stroke={DARK_THEME.lineStaff} strokeWidth="1" />))}
+                                {[0, 1, 2, 3, 4].map((i) => (<line key={`treble-${i}`} x1={paddingX} y1={trebleTopY + i * lineSpacing} x2={rowEndX} y2={trebleTopY + i * lineSpacing} stroke={DARK_THEME.lineStaff} strokeWidth="1" />))}
                                 <text x={paddingX - 105} y={trebleTopY + (3.5 * lineSpacing)} className="text-4xl font-serif" fill={DARK_THEME.textClef}>𝄞</text>
 
-                                {/* Bass Staff */}
-                                {[0, 1, 2, 3, 4].map((i) => (<line key={`bass-${i}`} x1={paddingX} y1={bassTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={bassTopY + i * lineSpacing} stroke={DARK_THEME.lineStaff} strokeWidth="1" />))}
+                                {[0, 1, 2, 3, 4].map((i) => (<line key={`bass-${i}`} x1={paddingX} y1={bassTopY + i * lineSpacing} x2={rowEndX} y2={bassTopY + i * lineSpacing} stroke={DARK_THEME.lineStaff} strokeWidth="1" />))}
                                 <text x={paddingX - 105} y={bassTopY + (3.2 * lineSpacing)} className="text-4xl font-serif" fill={DARK_THEME.textClef}>𝄢</text>
 
-                                {/* Time Signatures */}
                                 <g className="font-serif font-black text-2xl text-center" fill={DARK_THEME.textTimeSig} transform={`translate(${paddingX - 55}, 0)`}>
                                     <text x="0" y={trebleTopY + 16} textAnchor="middle">{timeSigTop}</text><text x="0" y={trebleTopY + 42} textAnchor="middle">{timeSigBottom}</text>
                                     <text x="0" y={bassTopY + 16} textAnchor="middle">{timeSigTop}</text><text x="0" y={bassTopY + 42} textAnchor="middle">{timeSigBottom}</text>
                                     <text x="0" y={tabTopY + 24} textAnchor="middle" className="text-xl font-sans font-bold" fill={DARK_THEME.textTabLabel}>{timeSigTop}</text><text x="0" y={tabTopY + 54} textAnchor="middle" className="text-xl font-sans font-bold" fill={DARK_THEME.textTabLabel}>{timeSigBottom}</text>
                                 </g>
 
-                                {/* Guitar Tablature Lines */}
-                                {[0, 1, 2, 3, 4, 5].map((i) => (<line key={`t-l-${i}`} x1={paddingX} y1={tabTopY + i * lineSpacing} x2={totalWidth - paddingX} y2={tabTopY + i * lineSpacing} stroke={DARK_THEME.lineTab} strokeWidth="1.2" />))}
+                                {[0, 1, 2, 3, 4, 5].map((i) => (<line key={`t-l-${i}`} x1={paddingX} y1={tabTopY + i * lineSpacing} x2={rowEndX} y2={tabTopY + i * lineSpacing} stroke={DARK_THEME.lineTab} strokeWidth="1.2" />))}
                                 <g transform={`translate(${paddingX - 105}, ${tabTopY + 12})`} fill={DARK_THEME.textTabLabel} className="font-black tracking-tighter text-xs">
                                     <text x="0" y="0">T</text><text x="0" y="14">A</text><text x="0" y="28">B</text>
                                 </g>
                                 {[0, 1, 2, 3, 4, 5].map((i) => (<text key={`string-${i}`} x={paddingX - 15} y={tabTopY + (i * lineSpacing) + 4} textAnchor="end" className="text-[9px] font-bold" fill={DARK_THEME.textTabString}>{i + 1}</text>))}
 
-                                {/* Boundary Frames & Barlines */}
                                 <line x1={paddingX} y1={trebleTopY} x2={paddingX} y2={bassTopY + 4 * lineSpacing} stroke={DARK_THEME.lineBar} strokeWidth="2" />
                                 <line x1={paddingX} y1={tabTopY} x2={paddingX} y2={tabTopY + 5 * lineSpacing} stroke={DARK_THEME.lineTab} strokeWidth="2" />
+                                
                                 {barlineXPositions.map((barX, i) => (
                                     <g key={`barline-${i}`}>
-                                        <line x1={barX} y1={trebleTopY} x2={barX} y2={bassTopY + 4 * lineSpacing} stroke={DARK_THEME.lineBar} strokeWidth="1.6" />
-                                        <line x1={barX} y1={tabTopY} x2={barX} y2={tabTopY + 5 * lineSpacing} stroke={DARK_THEME.lineTab} strokeWidth="1.6" />
+                                        <line x1={barX} y1={trebleTopY} x2={barX} y2={bassTopY + 4 * lineSpacing} stroke={DARK_THEME.lineBar} strokeWidth={i === barlineXPositions.length - 1 ? "2" : "1.6"} />
+                                        <line x1={barX} y1={tabTopY} x2={barX} y2={tabTopY + 5 * lineSpacing} stroke={DARK_THEME.lineTab} strokeWidth={i === barlineXPositions.length - 1 ? "2" : "1.6"} />
                                     </g>
                                 ))}
-                                <line x1={totalWidth - paddingX} y1={trebleTopY} x2={totalWidth - paddingX} y2={bassTopY + 4 * lineSpacing} stroke={DARK_THEME.lineBar} strokeWidth="2" />
-                                <line x1={totalWidth - paddingX} y1={tabTopY} x2={totalWidth - paddingX} y2={tabTopY + 5 * lineSpacing} stroke={DARK_THEME.lineTab} strokeWidth="2" />
 
                                 {measureGroups.map((measure) => {
                                     const measureCenterX = (measure.startX + measure.endX) / 2;
-                                    const isInvalid = !measure.isValid;
-                                    const bgColor = isInvalid ? "rgba(239, 68, 68, 0.15)" : "transparent";
-                                    const borderColor = isInvalid ? "#ef4444" : "transparent";
-                                    
                                     return (
                                         <g key={`measure-${measure.measureNumber}`}>
-                                            {/* Measure background highlight for validation errors */}
-                                            {isInvalid && (
-                                                <rect
-                                                    x={measure.startX}
-                                                    y={trebleTopY - 15}
-                                                    width={measure.endX - measure.startX}
-                                                    height={rhythmTopY - trebleTopY + 80}
-                                                    fill={bgColor}
-                                                    stroke={borderColor}
-                                                    strokeWidth="2"
-                                                    rx="2"
-                                                />
-                                            )}
-                                            
                                             <text
                                                 x={measureCenterX}
                                                 y={tabTopY + (5 * lineSpacing) + 22}
                                                 textAnchor="middle"
                                                 className="text-[10px] font-mono font-bold"
-                                                fill={isInvalid ? "#ef4444" : DARK_THEME.textTabString}
+                                                fill={DARK_THEME.textTabString}
                                             >
                                                 M{measure.measureNumber}
-                                                {isInvalid && measure.beatInfo && (
-                                                    <>
-                                                        <tspan x={measureCenterX} dy="12" className="text-[8px]" fill="#fb923c">
-                                                            V1: {measure.beatInfo.voice1Beats}/{beatsPerMeasure}
-                                                        </tspan>
-                                                        {measure.beatInfo.hasVoice2 && (
-                                                            <tspan x={measureCenterX} dy="10" className="text-[8px]" fill="#fb923c">
-                                                                V2: {measure.beatInfo.voice2Beats}/{beatsPerMeasure}
-                                                            </tspan>
-                                                        )}
-                                                    </>
-                                                )}
                                             </text>
                                         </g>
                                     );
                                 })}
 
-                                {/* Event Mapping Node Sequence */}
                                 {rowEvents.map((ev, idx) => {
                                     const isHovered = hoveredNoteIndex === ev.globalIndex;
                                     const isCurrentlyPlaying = playbackIndex === ev.globalIndex;
@@ -715,8 +628,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                     const currentStemStroke = isActive ? DARK_THEME.strokeNoteHover : DARK_THEME.lineStem;
                                     const currentTabFill = isActive ? DARK_THEME.textTabNumberHover : DARK_THEME.textTabNumber;
                                     
-                                    // Voice positioning offset
-                                    const voiceOffset = ev.voice === 2 ? 12 : -12;
+                                    const yLane = ev.voice === 2 ? rhythm2TopY : rhythm1TopY;
+                                    const restTabOffset = ev.voice === 2 ? 16 : -16;
 
                                     return (
                                         <g key={`node-${idx}`}>
@@ -737,22 +650,20 @@ export default function GuitaleleViewer({ scoreData }) {
                                                 </title>
                                             )}
 
-                                            {/* Lane Active Hover Track Highlights */}
                                             {isActive && (
                                                 <rect
-                                                    x={ev.cx - (noteSpacing / 2) + 5}
+                                                    x={ev.cx - (SLOT_WIDTH / 2) + 2}
                                                     y={trebleTopY - 50}
-                                                    width={noteSpacing - 10}
-                                                    height={rhythmTopY - trebleTopY + 60}
+                                                    width={SLOT_WIDTH - 4}
+                                                    height={rhythmTopY - trebleTopY + 95}
                                                     fill={DARK_THEME.fillHoverHighlight}
                                                     rx={4}
                                                 />
                                             )}
 
-                                            {/* Mask Overlay Trigger Area */}
                                             <rect
-                                                x={ev.cx - (noteSpacing / 2)} y={trebleTopY - 15}
-                                                width={noteSpacing} height={rhythmTopY - trebleTopY + 35}
+                                                x={ev.cx - (SLOT_WIDTH / 2)} y={trebleTopY - 15}
+                                                width={SLOT_WIDTH} height={rhythmTopY - trebleTopY + 65}
                                                 fill="transparent" pointerEvents="all"
                                                 onMouseEnter={() => {
                                                     if (!isPlaying) setHoveredNoteIndex(ev.globalIndex);
@@ -772,8 +683,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             <path d={`M ${ev.cx - 4} ${trebleTopY + 36} A 3 3 0 1 1 ${ev.cx + 1} ${trebleTopY + 38} Q ${ev.cx - 3} ${trebleTopY + 42} ${ev.cx + 3} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 52}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                         </g>
                                                     )}
-                                                    <rect x={ev.cx - 6} y={tabTopY + (2 * lineSpacing) - 4 + voiceOffset} width={12} height={16} fill={DARK_THEME.bgTabRect} />
-                                                    <text x={ev.cx} y={tabTopY + (3 * lineSpacing) - 2 + voiceOffset} textAnchor="middle" className="text-[10px] font-mono font-bold" fill={DARK_THEME.fillRest}>𝄾</text>
+                                                    <rect x={ev.cx - 6} y={tabTopY + (2 * lineSpacing) - 4 + restTabOffset} width={12} height={16} fill={DARK_THEME.bgTabRect} />
+                                                    <text x={ev.cx} y={tabTopY + (3 * lineSpacing) - 2 + restTabOffset} textAnchor="middle" className="text-[10px] font-mono font-bold" fill={DARK_THEME.fillRest}>𝄾</text>
                                                 </g>
                                             ) : (
                                                 <g>
@@ -796,17 +707,18 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                     <ellipse cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`} fill={currentNoteFill} />
                                                                 )}
 
-                                                                {ev.isTiedToNext && rowEvents[idx + 1] && !rowEvents[idx + 1].isRest && (
-                                                                    (() => {
-                                                                        const targetPitch = rowEvents[idx + 1].processedPitches.find(np => np.string === pitch.string) || rowEvents[idx + 1].processedPitches[0];
-                                                                        if (targetPitch) {
-                                                                            return (<path d={`M ${ev.cx + 4} ${pitch.staffY + 5} Q ${(ev.cx + rowEvents[idx + 1].cx) / 2} ${Math.max(pitch.staffY, targetPitch.staffY) + 16} ${rowEvents[idx + 1].cx - 4} ${targetPitch.staffY + 5}`} fill="none" stroke={DARK_THEME.lineTie} strokeWidth="1.8" strokeLinecap="round" />);
-                                                                        }
-                                                                    })()
-                                                                )}
+                                                                {ev.isTiedToNext && (() => {
+                                                                    const nextEv = rowEvents.slice(idx + 1).find(e => e.voice === ev.voice && !e.isRest);
+                                                                    if (!nextEv) return null;
+                                                                    const targetPitch = nextEv.processedPitches.find(np => np.string === pitch.string) || nextEv.processedPitches[0];
+                                                                    if (targetPitch) {
+                                                                        return (<path d={`M ${ev.cx + 4} ${pitch.staffY + 5} Q ${(ev.cx + nextEv.cx) / 2} ${Math.max(pitch.staffY, targetPitch.staffY) + 16} ${nextEv.cx - 4} ${targetPitch.staffY + 5}`} fill="none" stroke={DARK_THEME.lineTie} strokeWidth="1.8" strokeLinecap="round" />);
+                                                                    }
+                                                                    return null;
+                                                                })()}
 
-                                                                <rect x={ev.cx - 7} y={pitch.tabY - 7 + voiceOffset} width={14} height={14} fill={DARK_THEME.bgTabRect} />
-                                                                <text x={ev.cx} y={pitch.tabY + 4 + voiceOffset} textAnchor="middle" className="text-[11px] font-sans font-bold" fill={currentTabFill}>{pitch.fret}</text>
+                                                                <rect x={ev.cx - 7} y={pitch.tabY - 7} width={14} height={14} fill={DARK_THEME.bgTabRect} />
+                                                                <text x={ev.cx} y={pitch.tabY + 4} textAnchor="middle" className="text-[11px] font-sans font-bold" fill={currentTabFill}>{pitch.fret}</text>
                                                             </g>
                                                         );
                                                     })}
@@ -816,11 +728,12 @@ export default function GuitaleleViewer({ scoreData }) {
                                                         const { lowestY, highestY, stemDown } = ev.trebleStem;
                                                         const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
                                                         const extY = stemDown ? lowestY + 28 : highestY - 28;
+                                                        const numFlags = ev.beatValue <= 0.25 ? 2 : (ev.beatValue <= 0.75 ? 1 : 0);
+                                                        
                                                         return (
                                                             <g>
                                                                 <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={currentStemStroke} strokeWidth="1.6" />
-                                                                {ev.beatValue === 0.5 && <path d={getFlagPath(xPos, extY, stemDown, false)} fill={currentNoteFill} />}
-                                                                {ev.beatValue <= 0.25 && <path d={getFlagPath(xPos, extY, stemDown, true)} fill={currentNoteFill} />}
+                                                                {numFlags > 0 && <path d={getFlagPath(xPos, extY, stemDown, numFlags)} fill={currentNoteFill} />}
                                                             </g>
                                                         );
                                                     })()}
@@ -830,11 +743,12 @@ export default function GuitaleleViewer({ scoreData }) {
                                                         const { lowestY, highestY, stemDown } = ev.bassStem;
                                                         const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
                                                         const extY = stemDown ? lowestY + 28 : highestY - 28;
+                                                        const numFlags = ev.beatValue <= 0.25 ? 2 : (ev.beatValue <= 0.75 ? 1 : 0);
+                                                        
                                                         return (
                                                             <g>
                                                                 <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={currentStemStroke} strokeWidth="1.6" />
-                                                                {ev.beatValue === 0.5 && <path d={getFlagPath(xPos, extY, stemDown, false)} fill={currentNoteFill} />}
-                                                                {ev.beatValue <= 0.25 && <path d={getFlagPath(xPos, extY, stemDown, true)} fill={currentNoteFill} />}
+                                                                {numFlags > 0 && <path d={getFlagPath(xPos, extY, stemDown, numFlags)} fill={currentNoteFill} />}
                                                             </g>
                                                         );
                                                     })()}
@@ -846,19 +760,22 @@ export default function GuitaleleViewer({ scoreData }) {
                                                 </g>
                                             )}
 
-                                            {/* Rhythm Structural Track Base - Colored by Voice */}
+                                            {/* Polyphonic Rhythm Lane */}
                                             <g>
-                                                {/* Voice background lane */}
                                                 <rect
-                                                    x={ev.cx - (noteSpacing / 2)}
-                                                    y={rhythmTopY - 18}
-                                                    width={noteSpacing}
+                                                    x={ev.cx - (SLOT_WIDTH / 2) + 4}
+                                                    y={yLane - 18}
+                                                    width={SLOT_WIDTH - 8}
                                                     height={24}
                                                     fill={ev.voice === 2 ? "rgba(236, 72, 153, 0.08)" : "rgba(96, 165, 250, 0.08)"}
                                                     rx="2"
                                                 />
-                                                {ev.isTiedToNext && rowEvents[idx + 1] && (<line x1={ev.cx + 12} y1={rhythmTopY - 4} x2={rowEvents[idx + 1].cx - 12} y2={rhythmTopY - 4} stroke={DARK_THEME.lineStaff} strokeWidth="2" strokeLinecap="round" />)}
-                                                <text x={ev.cx} y={rhythmTopY} textAnchor="middle" className="font-mono font-black text-sm" fill={ev.isRest ? DARK_THEME.fillRest : (ev.voice === 2 ? DARK_THEME.voice2Rhythm : DARK_THEME.voice1Rhythm)}>
+                                                {ev.isTiedToNext && (() => {
+                                                    const nextEv = rowEvents.slice(idx + 1).find(e => e.voice === ev.voice);
+                                                    if (nextEv) return <line x1={ev.cx + 12} y1={yLane - 4} x2={nextEv.cx - 12} y2={yLane - 4} stroke={DARK_THEME.lineStaff} strokeWidth="2" strokeLinecap="round" />;
+                                                    return null;
+                                                })()}
+                                                <text x={ev.cx} y={yLane} textAnchor="middle" className="font-mono font-black text-sm" fill={ev.isRest ? DARK_THEME.fillRest : (ev.voice === 2 ? DARK_THEME.voice2Rhythm : DARK_THEME.voice1Rhythm)}>
                                                     {ev.rhythm}
                                                 </text>
                                             </g>

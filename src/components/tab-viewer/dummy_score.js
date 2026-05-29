@@ -1,3 +1,40 @@
+const two_voice_test = {
+  "id": "two_voice_test",
+  "title": "Two Voice Separation Demo",
+  "timeSignature": "4/4",
+  "notes": [
+    // === MEASURE 1 ===
+    {
+      "duration": 4.0,
+      "pitches": [
+        { "fret": 3, "string": 6 }, // C3
+        { "fret": 2, "string": 5 }, // E3
+        { "fret": 0, "string": 4 }, // G3
+        { "fret": 0, "string": 3 }, // C4
+        { "fret": 0, "string": 2 }, // E4
+        { "fret": 14, "string": 1 }  // C5
+      ]
+    },
+
+    // Voice 2: Plays an intricate melody over those 4 beats
+    { "fret": 0, "string": 1, "duration": 1.0, "voice": 2 },
+    { "fret": 2, "string": 1, "duration": 1.0, "voice": 2 },
+    { "fret": 3, "string": 2, "duration": 0.5, "voice": 2 },
+    { "fret": 1, "string": 2, "duration": 0.5, "voice": 2 },
+    { "fret": 0, "string": 3, "duration": 1.0, "voice": 2 },
+    // Measure 1 totals: Voice 1 (4.0 beats), Voice 2 (1 + 1 + 0.5 + 0.5 + 1 = 4.0 beats)
+
+    // === MEASURE 2 ===
+    // Voice 1: Bass line using two half notes
+    { "fret": 2, "string": 6, "duration": 2.0, "voice": 1 },
+    { "fret": 0, "string": 5, "duration": 2.0, "voice": 1 },
+
+    // Voice 2: Melody resting for 2 beats, then playing 2 beats
+    { "duration": 2.0, "voice": 2 }, // This acts as a rest
+    { "fret": 5, "string": 1, "duration": 1.0, "voice": 2 },
+    { "fret": 7, "string": 1, "duration": 1.0, "voice": 2 }
+  ]
+}
 
 const dummyScore = {
   "id": "full_test_score",
@@ -9,28 +46,28 @@ const dummyScore = {
     // Measure 1: Voice 1 with whole notes, Voice 2 with quarter notes
     // Voice 1: C whole note (4 beats)
     { "fret": 0, "string": 3, "duration": 4.0, "voice": 1 }, // C whole note
-    
+
     // Voice 2: C, D, F, A quarter notes (1 beat each = 4 beats)
     { "fret": 0, "string": 1, "duration": 1.0, "voice": 2 },
     { "fret": 2, "string": 1, "duration": 1.0, "voice": 2 },
     { "fret": 3, "string": 2, "duration": 1.0, "voice": 2 },
     { "fret": 0, "string": 3, "duration": 1.0, "voice": 2 }, // Measure 1 Done
-    
+
     // Measure 2: Voice 1 with two half notes, Voice 2 with four quarter notes
     { "fret": 2, "string": 3, "duration": 2.0, "voice": 1 }, // Half note
     { "fret": 3, "string": 2, "duration": 2.0, "voice": 1 }, // Half note
-    
+
     { "fret": 5, "string": 1, "duration": 1.0, "voice": 2 },
     { "fret": 7, "string": 1, "duration": 1.0, "voice": 2 },
     { "fret": 5, "string": 2, "duration": 1.0, "voice": 2 },
     { "fret": 3, "string": 2, "duration": 1.0, "voice": 2 }, // Measure 2 Done
-    
+
     // Measure 3: Voice 1 with quarter notes, Voice 2 with eighth notes
     { "fret": 0, "string": 1, "duration": 1.0, "voice": 1 },
     { "fret": 2, "string": 1, "duration": 1.0, "voice": 1 },
     { "fret": 3, "string": 1, "duration": 1.0, "voice": 1 },
     { "fret": 0, "string": 2, "duration": 1.0, "voice": 1 },
-    
+
     { "fret": 0, "string": 1, "duration": 0.5, "voice": 2 },
     { "fret": 1, "string": 1, "duration": 0.5, "voice": 2 },
     { "fret": 2, "string": 1, "duration": 0.5, "voice": 2 },
@@ -39,7 +76,7 @@ const dummyScore = {
     { "fret": 1, "string": 2, "duration": 0.5, "voice": 2 },
     { "fret": 2, "string": 2, "duration": 0.5, "voice": 2 },
     { "fret": 3, "string": 2, "duration": 0.5, "voice": 2 }, // Measure 3 Done (8 eighths = 4 beats)
-    
+
     // === SECTION 1: NORMAL SINGLE-VOICE MOTIF (Measures 4 - 7) ===
     { "fret": 0, "string": 6, "duration": 1.0 },
     { "fret": 2, "string": 6, "duration": 1.0 },
@@ -238,19 +275,19 @@ const dummyScore24 = {
     // === MEASURE 1 (2.0 Beats) ===
     { "fret": 0, "string": 6, "duration": 1.0 },
     { "fret": 2, "string": 5, "duration": 1.0 },
-    
+
     // === MEASURE 2 (2.0 Beats) ===
     { "fret": 0, "string": 4, "duration": 0.5 },
     { "fret": 2, "string": 4, "duration": 0.5 },
     { "fret": 0, "string": 3, "duration": 1.0 },
-    
+
     // === MEASURE 3 (2.0 Beats) ===
     { "fret": 2, "string": 3, "duration": 1.5 },
     { "fret": 0, "string": 2, "duration": 0.5 },
-    
+
     // === MEASURE 4 (2.0 Beats) ===
     { "fret": 1, "string": 2, "duration": 2.0 },
-    
+
     // === MEASURE 5 (2.0 Beats) ===
     { "fret": 0, "string": 1, "duration": 0.25 },
     { "fret": 1, "string": 1, "duration": 0.25 },
@@ -400,18 +437,18 @@ const dummyScore34 = {
     { "fret": 0, "string": 5, "duration": 1.0 },
     { "fret": 2, "string": 4, "duration": 1.0 },
     { "fret": 2, "string": 3, "duration": 1.0 },
-    
+
     // === MEASURE 2 (3.0 Beats) ===
     { "fret": 3, "string": 5, "duration": 1.5 },
     { "fret": 0, "string": 4, "duration": 0.5 },
     { "fret": 0, "string": 3, "duration": 1.0 },
-    
+
     // === MEASURE 3 (3.0 Beats) ===
     { "duration": 1.0 }, // Rest
     { "fret": 0, "string": 2, "duration": 0.5 },
     { "fret": 1, "string": 2, "duration": 0.5 },
     { "fret": 3, "string": 2, "duration": 1.0 },
-    
+
     // === MEASURE 4 (3.0 Beats) ===
     { "fret": 0, "string": 1, "duration": 3.0 },
 
@@ -431,26 +468,26 @@ const dummyScore68 = {
   "timeSignature": "6/8",
   "notes": [
     // === MEASURE 1 (6.0 Beats) ===
-    { "fret": 0, "string": 6, "duration": 1.0 },
-    { "fret": 2, "string": 5, "duration": 1.0 },
-    { "fret": 0, "string": 4, "duration": 1.0 },
-    { "fret": 2, "string": 4, "duration": 1.0 },
-    { "fret": 0, "string": 3, "duration": 1.0 },
-    { "fret": 2, "string": 3, "duration": 1.0 },
-    
+    { "fret": 0, "string": 6, "duration": 0.5 },
+    { "fret": 2, "string": 5, "duration": 0.5 },
+    { "fret": 0, "string": 4, "duration": 0.5 },
+    { "fret": 2, "string": 4, "duration": 0.5 },
+    { "fret": 0, "string": 3, "duration": 0.5 },
+    { "fret": 2, "string": 3, "duration": 0.5 },
+
     // === MEASURE 2 (6.0 Beats) ===
-    { "fret": 0, "string": 5, "duration": 2.0 },
-    { "fret": 2, "string": 4, "duration": 1.0 },
-    { "fret": 0, "string": 3, "duration": 3.0 },
-    
+    { "fret": 0, "string": 5, "duration": 1.0 },
+    { "fret": 2, "string": 4, "duration": 0.5 },
+    { "fret": 0, "string": 3, "duration": 1.5 },
+
     // === MEASURE 3 (6.0 Beats) ===
-    { "fret": 1, "string": 2, "duration": 1.5 },
-    { "fret": 3, "string": 2, "duration": 1.5 },
-    { "duration": 1.0 }, // Rest
-    { "fret": 0, "string": 1, "duration": 2.0 },
-    
+    { "fret": 1, "string": 2, "duration": 0.75 },
+    { "fret": 3, "string": 2, "duration": 0.75 },
+    { "duration": 0.5 }, // Rest
+    { "fret": 0, "string": 1, "duration": 1.0 },
+
     // === MEASURE 4 (6.0 Beats) ===
-    { "fret": 5, "string": 1, "duration": 6.0 }
+    { "fret": 5, "string": 1, "duration": 3.0 }
   ]
 };
 
@@ -463,17 +500,17 @@ const dummyScore22 = {
     // === MEASURE 1 (4.0 total: Two half notes) ===
     { "fret": 0, "string": 6, "duration": 2.0 },
     { "fret": 2, "string": 5, "duration": 2.0 },
-    
+
     // === MEASURE 2 (4.0 total: Four quarter notes) ===
     { "fret": 0, "string": 4, "duration": 1.0 },
     { "fret": 2, "string": 4, "duration": 1.0 },
     { "fret": 0, "string": 3, "duration": 1.0 },
     { "fret": 2, "string": 3, "duration": 1.0 },
-    
+
     // === MEASURE 3 (4.0 total: Dotted half + Quarter) ===
     { "fret": 3, "string": 5, "duration": 3.0 },
     { "fret": 0, "string": 4, "duration": 1.0 },
-    
+
     // === MEASURE 4 (4.0 total: Whole note resonator) ===
     { "fret": 1, "string": 2, "duration": 4.0 },
 
@@ -490,4 +527,4 @@ const dummyScore22 = {
   ]
 };
 
-export const allScores = [dummyScore, maryHadALittleLamb, twinkleTwinkleLittleStar, dummyScore34, dummyScore68, dummyScore22]
+export const allScores = [dummyScore, maryHadALittleLamb, twinkleTwinkleLittleStar, dummyScore34, dummyScore68, dummyScore22, two_voice_test]
