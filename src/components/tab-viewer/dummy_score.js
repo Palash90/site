@@ -239,6 +239,117 @@ export const dummyScore24 = {
   ]
 };
 
+export const maryHadALittleLamb = {
+  "title": "Mary Had a Little Lamb",
+  "description": "A classic nursery rhyme arrangement mapped accurately to standard Guitalele tuning (ADGCEA).",
+  "timeSignature": "2/4",
+  "notes": [
+    // === MEASURE 1 (2.0 Beats) ===
+    // Ma- ry (E4, D4)
+    { "fret": 4, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 2 (2.0 Beats) ===
+    // had a (C4, D4)
+    { "fret": 0, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 3 (2.0 Beats) ===
+    // lit- tle (E4, E4)
+    { "fret": 4, "string": 3, "duration": 1.0 },
+    { "fret": 4, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 4 (2.0 Beats) ===
+    // lamb (E4)
+    { "fret": 4, "string": 3, "duration": 2.0 },
+
+    // === MEASURE 5 (2.0 Beats) ===
+    // lit- tle (D4, D4)
+    { "fret": 2, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 6 (2.0 Beats) ===
+    // lamb (D4)
+    { "fret": 2, "string": 3, "duration": 2.0 },
+
+    // === MEASURE 7 (2.0 Beats) ===
+    // lit- tle (E4, G4)
+    { "fret": 4, "string": 3, "duration": 1.0 },
+    { "fret": 3, "string": 2, "duration": 1.0 },
+
+    // === MEASURE 8 (2.0 Beats) ===
+    // lamb (G4)
+    { "fret": 3, "string": 2, "duration": 2.0 },
+
+    // === MEASURE 9 (2.0 Beats) ===
+    // Ma- ry (E4, D4)
+    { "fret": 4, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 10 (2.0 Beats) ===
+    // had a (C4, D4)
+    { "fret": 0, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 11 (2.0 Beats) ===
+    // lit- tle (E4, E4)
+    { "fret": 4, "string": 3, "duration": 1.0 },
+    { "fret": 4, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 12 (2.0 Beats) ===
+    // lamb, its (E4, E4)
+    { "fret": 4, "string": 3, "duration": 1.0 },
+    { "fret": 4, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 13 (2.0 Beats) ===
+    // fleece was (D4, D4)
+    { "fret": 2, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 14 (2.0 Beats) ===
+    // white as (E4, D4)
+    { "fret": 4, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+
+    // === MEASURE 15 (2.0 Beats) ===
+    // snow (C4)
+    { "fret": 0, "string": 3, "duration": 2.0 }
+  ]
+};
+
+export const twinkleTwinkleLittleStar = {
+  "title": "Twinkle Twinkle Little Star",
+  "description": "A classic nursery rhyme arrangement mapped to standard Guitalele tuning (ADGCEA).",
+  "timeSignature": "4/4",
+  "notes": [
+    // === MEASURE 1 ===
+    // Twin- kle, Twin- kle (C4, C4, G4, G4)
+    { "fret": 0, "string": 3, "duration": 1.0 },
+    { "fret": 0, "string": 3, "duration": 1.0 },
+    { "fret": 3, "string": 2, "duration": 1.0 },
+    { "fret": 3, "string": 2, "duration": 1.0 },
+
+    // === MEASURE 2 ===
+    // Lit- tle, Star (A4, A4, G4)
+    { "fret": 5, "string": 2, "duration": 1.0 },
+    { "fret": 5, "string": 2, "duration": 1.0 },
+    { "fret": 3, "string": 2, "duration": 2.0 },
+
+    // === MEASURE 3 ===
+    // How I, won- der (F4, F4, E4, E4)
+    { "fret": 1, "string": 2, "duration": 1.0 },
+    { "fret": 1, "string": 2, "duration": 1.0 },
+    { "fret": 0, "string": 2, "duration": 1.0 },
+    { "fret": 0, "string": 2, "duration": 1.0 },
+
+    // === MEASURE 4 ===
+    // what you, are (D4, D4, C4)
+    { "fret": 2, "string": 3, "duration": 1.0 },
+    { "fret": 2, "string": 3, "duration": 1.0 },
+    { "fret": 0, "string": 3, "duration": 2.0 }
+  ]
+};
+
 export const dummyScore34 = {
   "title": "3/4 Waltz Excerpt",
   "description": "A sweeping arpeggio block focusing on 3-beat divisions and dotted notes.",
