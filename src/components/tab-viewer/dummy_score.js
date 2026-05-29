@@ -1,5 +1,5 @@
 export const dummyScore = {
-  "title": "Guitalele Masterpiece Exhibition",
+  "title": "Guitalele Tab viewer Full Test Score",
   "description": "Comprehensive 52-measure composition covering extreme upper/lower staff boundaries, dynamic rhythms, and true horizontal layout tracking.",
   "timeSignature": "4/4",
   "notes": [
