@@ -21,6 +21,8 @@ const CHROMATIC_MAP = {
     10: [5, true], 11: [6, false]
 };
 
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
 const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
     const visualAnchorMidi = clef === 'treble' ? 64 : 43;
     const visualAnchorY = clefTopY + (4 * lineSpacing);
@@ -46,7 +48,6 @@ const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
 const getFlagPath = (sx, sy) => {
     const startY = sy + 1; // Subtle drop from the absolute tip
 
-    // Adjusted curves for a thinner, more calligraphic swoop
     return `M ${sx} ${startY} 
             C ${sx + 9} ${startY + 2}, ${sx + 11} ${startY + 12}, ${sx + 1} ${startY + 23} 
             C ${sx + 6} ${startY + 14}, ${sx + 5} ${startY + 7}, ${sx} ${startY + 9} 
@@ -84,13 +85,12 @@ export default function GuitaleleViewer({ scoreData }) {
 
         return {
             ...note,
-            globalIndex: index, // Track true structural sequence positioning
+            globalIndex: index,
             rhythm: detectedRhythm || ':',
             beatValue
         };
     });
 
-    // Run a quick explicit forward/backward structural map pass to flag tie configurations globally
     const notes = processedNotes.map((note, idx) => {
         return {
             ...note,
@@ -164,7 +164,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                     const isRest = note.rhythm?.startsWith('x');
                     let tabY = 0, staffY = trebleTopY + (2 * lineSpacing);
-                    let isSharp = false, midi = 0, clef = 'treble';
+                    let isSharp = false, midi = 0, clef = 'treble', noteName = '';
 
                     if (!isRest && note.string && note.fret !== undefined) {
                         tabY = tabTopY + ((note.string - 1) * lineSpacing);
@@ -176,9 +176,14 @@ export default function GuitaleleViewer({ scoreData }) {
                         const pitchProps = parsePitchProperties(midi, clef, clefTopY, lineSpacing);
                         staffY = pitchProps.y;
                         isSharp = pitchProps.isSharp;
+
+                        // Calculate literal scientific pitch string
+                        const pitchClass = midi % 12;
+                        const octave = Math.floor(midi / 12) - 1;
+                        noteName = `${NOTE_NAMES[pitchClass]}${octave}`;
                     }
 
-                    return { ...note, midi, clef, cx, tabY, staffY, isSharp, isRest };
+                    return { ...note, midi, clef, cx, tabY, staffY, isSharp, isRest, noteName };
                 });
 
                 return (
@@ -254,12 +259,23 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                 return (
                                     <g key={`node-${idx}`}>
+                                        
+                                        {/* OPTION 3 FIX: Broad Transparent Rectangular Interaction Hitbox Corridor */}
+                                        <rect 
+                                            x={note.cx - (noteSpacing / 2)} 
+                                            y={trebleTopY - 15} 
+                                            width={noteSpacing} 
+                                            height={rhythmTopY - trebleTopY + 35} 
+                                            fill="transparent" 
+                                            pointerEvents="all" 
+                                            className="cursor-help"
+                                        />
 
-
+                                        {/* OPTION 2 FIX: Tooltip augmented with calculated absolute Note Name */}
                                         <title>
                                             {note.isRest
                                                 ? `Rest: ${note.rhythm}`
-                                                : `Fret: ${note.fret} | String: ${note.string} | Rhythm: ${note.rhythm} `}
+                                                : `Note: ${note.noteName} | Fret: ${note.fret} | String: ${note.string} | Rhythm: ${note.rhythm} `}
                                             {note.description ? '\n' + note.description : ''}
                                         </title>
 
@@ -277,8 +293,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                             </g>
                                         ) : (
                                             <g>
-                                                {/* FIX 1: Sharp sign moved cleanly BEFORE the notehead (-22px) */}
-                                                {note.isSharp && <text x={note.cx + 18} y={note.staffY + 3} className="text-base font-normal fill-slate-950 font-serif">♯</text>}
+                                                {note.isSharp && <text x={note.cx + 8} y={note.staffY + 5} className="text-base font-normal fill-slate-950 font-serif">♯</text>}
 
                                                 {/* Ledger Lines */}
                                                 {Array.from({ length: Math.max(0, upperLedgers) }).map((_, lIdx) => (
@@ -290,31 +305,42 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                 {/* Notehead */}
                                                 {note.beatValue >= 2.0 ? (
-                                                    <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} fill="#ffffff" stroke="#0f172a" strokeWidth="1.8" />
+                                                    <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} fill="#ffffff" stroke="#0f172a" strokeWidth="1.8" className='note-element' />
                                                 ) : (
-                                                    <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} className="fill-slate-950" />
+                                                    <ellipse cx={note.cx} cy={note.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${note.cx} ${note.staffY})`} className="note-element fill-slate-950" />
+                                                )}
+
+                                                {/* OPTION 1 FIX: Staff Tie Notation Layer */}
+                                                {note.isTiedToNext && renderedNotes[idx + 1] && !renderedNotes[idx + 1].isRest && (
+                                                    <path 
+                                                        d={`M ${note.cx + 4} ${note.staffY + 5} Q ${(note.cx + renderedNotes[idx + 1].cx) / 2} ${Math.max(note.staffY, renderedNotes[idx + 1].staffY) + 16} ${renderedNotes[idx + 1].cx - 4} ${renderedNotes[idx + 1].staffY + 5}`}
+                                                        fill="none"
+                                                        stroke="#1e293b"
+                                                        strokeWidth="1.8"
+                                                        strokeLinecap="round"
+                                                    />
                                                 )}
 
                                                 {/* Rhythm Dot */}
                                                 {[6.0, 3.0, 1.5, 0.75].includes(note.beatValue) && (
-                                                    <circle cx={note.cx + 12} cy={note.staffY - 3} r={2} className="fill-slate-950" />
+                                                    <circle cx={note.cx + 12} cy={note.staffY - 3} r={2} className="note-element fill-slate-950" />
                                                 )}
 
                                                 {/* Up-pointing Stem */}
                                                 {note.beatValue < 4.0 && (
-                                                    <line x1={note.cx + 5} y1={note.staffY} x2={note.cx + 5} y2={stemTopY} stroke="#0f172a" strokeWidth="1.6" />
+                                                    <line x1={note.cx + 5} y1={note.staffY} x2={note.cx + 5} y2={stemTopY} stroke="#0f172a" strokeWidth="1.6" className='note-element' />
                                                 )}
 
                                                 {/* 8TH NOTE FLAG */}
                                                 {note.beatValue === 0.5 && (
-                                                    <path d={getFlagPath(note.cx + 5, stemTopY)} fill="#0f172a" />
+                                                    <path d={getFlagPath(note.cx + 5, stemTopY)} fill="#0f172a" className='note-element' />
                                                 )}
 
                                                 {/* 16TH NOTE FLAGS */}
                                                 {note.beatValue <= 0.25 && (
                                                     <g>
-                                                        <path d={getFlagPath(note.cx + 5, stemTopY)} fill="#0f172a" />
-                                                        <path d={getFlagPath(note.cx + 5, stemTopY + 10)} fill="#0f172a" />
+                                                        <path d={getFlagPath(note.cx + 5, stemTopY)} fill="#0f172a" className='note-element' />
+                                                        <path d={getFlagPath(note.cx + 5, stemTopY + 10)} fill="#0f172a" className='note-element' />
                                                     </g>
                                                 )}
                                             </g>
@@ -328,8 +354,6 @@ export default function GuitaleleViewer({ scoreData }) {
                                             </g>
                                         ) : (
                                             <g>
-
-
                                                 <rect x={note.cx - 7} y={note.tabY - 7} width={14} height={14} fill="#ffffff" />
                                                 <text x={note.cx} y={note.tabY + 4} textAnchor="middle" className="text-[11px] font-sans font-bold fill-slate-900">{note.fret}</text>
                                             </g>
