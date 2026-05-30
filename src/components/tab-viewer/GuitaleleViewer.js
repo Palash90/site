@@ -226,17 +226,9 @@ export default function GuitaleleViewer({ scoreData }) {
         return () => window.removeEventListener('resize', updateLayoutBoundaries);
     }, []);
 
-    useEffect(() => {
-        if (!scoreData?.notes) return;
-        const map = {};
-        scoreData.notes.forEach((n, i) => {
-            if (n && typeof n.description === 'string' && n.description.length > 0) map[i] = n.description;
-        });
-        setSegmentDescriptions(map);
-    }, [scoreData]);
-
     const scoreLayout = useMemo(() => {
-        if (!scoreData || !scoreData.notes) return null;
+        // 1. Updated guard clause to check for the 'measures' array
+        if (!scoreData || !scoreData.measures) return null;
 
         const paddingX = 140;
         const lineSpacing = 20;
@@ -255,67 +247,148 @@ export default function GuitaleleViewer({ scoreData }) {
         const SLOT_WIDTH = slotWidth;
         const MEASURE_PADDING = 35;
 
-        const voiceCursors = { 1: 0, 2: 0 };
+        let processedEvents = [];
+        let absoluteMeasureStartBeat = 0;
+        let globalEventIndex = 0; // Tracks the ID for playback/hover highlighting across measures
 
-        const processedEvents = scoreData.notes.map((event, index) => {
-            let detectedRhythm = event.rhythm;
-            let pitches = event.pitches || [];
-            if (!event.pitches && event.fret !== undefined && event.string !== undefined) {
-                pitches = [{ fret: event.fret, string: event.string }];
-            }
+        // Loop through isolated measure containers
+        scoreData.measures.forEach((measure) => {
+            const mNum = measure.measureNumber;
+            let localCursors = { 1: 0, 2: 0 };
 
-            const uniqueStringsMap = {};
-            pitches.forEach(p => {
-                if (uniqueStringsMap[p.string] === undefined || p.fret > uniqueStringsMap[p.string].fret) {
-                    uniqueStringsMap[p.string] = p;
+            // We'll use a temporary map for this measure to merge notes sharing the same startBeat and voice
+            const beatMergeMap = {};
+
+            measure.notes.forEach((event) => {
+                let detectedRhythm = event.rhythm;
+                let pitches = event.pitches || [];
+
+                if (!event.pitches && event.fret !== undefined && event.string !== undefined) {
+                    pitches = [{ fret: event.fret, string: event.string }];
+                }
+
+                const uniqueStringsMap = {};
+                pitches.forEach(p => {
+                    if (uniqueStringsMap[p.string] === undefined || p.fret > uniqueStringsMap[p.string].fret) {
+                        uniqueStringsMap[p.string] = p;
+                    }
+                });
+                pitches = Object.values(uniqueStringsMap);
+
+                const isRestEvent = pitches.length === 0 && !event.tie;
+
+                if (!detectedRhythm && event.duration !== undefined) {
+                    if (isRestEvent) {
+                        if (event.duration === 1.5) detectedRhythm = 'x.';
+                        else if (event.duration === 1.0) detectedRhythm = 'x';
+                        else if (event.duration === 0.5) detectedRhythm = 'x+';
+                        else if (event.duration === 0.25) detectedRhythm = 'x=';
+                    } else {
+                        if (event.duration === 6.0) detectedRhythm = 'o.';
+                        else if (event.duration === 4.0) detectedRhythm = 'o';
+                        else if (event.duration === 3.0) detectedRhythm = '..';
+                        else if (event.duration === 2.0) detectedRhythm = '.';
+                        else if (event.duration === 1.5) detectedRhythm = ':.';
+                        else if (event.duration === 1.0) detectedRhythm = ':';
+                        else if (event.duration === 0.75) detectedRhythm = '+.';
+                        else if (event.duration === 0.5) detectedRhythm = '+';
+                        else if (event.duration === 0.25) detectedRhythm = '=';
+                    }
+                }
+
+                const beatValue = event.duration !== undefined ? event.duration : (RHYTHM_BEAT_VALUES[detectedRhythm || ':'] || 1.0);
+                const voice = event.voice || 1;
+                const startBeat = absoluteMeasureStartBeat + localCursors[voice];
+
+                localCursors[voice] += beatValue;
+
+                // Create a unique key for this specific beat location per voice
+                const mergeKey = `${voice}_${startBeat}`;
+
+                if (!beatMergeMap[mergeKey]) {
+                    // Initialize the unique entry for this beat
+                    beatMergeMap[mergeKey] = {
+                        ...event,
+                        pitches: [...pitches],
+                        descriptions: event.description ? [event.description] : [],
+                        rhythm: detectedRhythm || (isRestEvent ? 'x' : ':'),
+                        beatValue,
+                        isRest: isRestEvent || (detectedRhythm && detectedRhythm.startsWith('x')),
+                        voice,
+                        startBeat,
+                        measureNumber: mNum,
+                        isTiedToNext: !!event.tie
+                    };
+                } else {
+                    // If a note already exists on this exact beat, combine its properties!
+                    // 1. Merge pitches arrays seamlessly
+                    beatMergeMap[mergeKey].pitches = [...beatMergeMap[mergeKey].pitches, ...pitches];
+
+                    // 2. Accumulate descriptions instead of overwriting
+                    if (event.description) {
+                        beatMergeMap[mergeKey].descriptions.push(event.description);
+                    }
+
+                    // 3. Ensure tie states carry over
+                    if (event.tie) {
+                        beatMergeMap[mergeKey].isTiedToNext = true;
+                    }
                 }
             });
-            pitches = Object.values(uniqueStringsMap);
 
-            const isRestEvent = pitches.length === 0 && !event.tie;
-
-            if (!detectedRhythm && event.duration !== undefined) {
-                if (isRestEvent) {
-                    if (event.duration === 1.5) detectedRhythm = 'x.';
-                    else if (event.duration === 1.0) detectedRhythm = 'x';
-                    else if (event.duration === 0.5) detectedRhythm = 'x+';
-                    else if (event.duration === 0.25) detectedRhythm = 'x=';
-                } else {
-                    if (event.duration === 6.0) detectedRhythm = 'o.';
-                    else if (event.duration === 4.0) detectedRhythm = 'o';
-                    else if (event.duration === 3.0) detectedRhythm = '..';
-                    else if (event.duration === 2.0) detectedRhythm = '.';
-                    else if (event.duration === 1.5) detectedRhythm = ':.';
-                    else if (event.duration === 1.0) detectedRhythm = ':';
-                    else if (event.duration === 0.75) detectedRhythm = '+.';
-                    else if (event.duration === 0.5) detectedRhythm = '+';
-                    else if (event.duration === 0.25) detectedRhythm = '=';
+            // Push the merged beats into our processedEvents array
+            Object.values(beatMergeMap).forEach((mergedEvent) => {
+                // Join descriptions array into a clean single string for your UI display components
+                if (mergedEvent.descriptions && mergedEvent.descriptions.length > 0) {
+                    mergedEvent.description = mergedEvent.descriptions.join(" | ");
+                } else if (!mergedEvent.description) {
+                    mergedEvent.description = "";
                 }
-            }
 
-            const beatValue = event.duration !== undefined ? event.duration : (RHYTHM_BEAT_VALUES[detectedRhythm || ':'] || 1.0);
-            const voice = event.voice || 1;
-            const startBeat = voiceCursors[voice];
-            const measureNumber = Math.floor(startBeat / beatsPerMeasure) + 1;
+                // De-duplicate any pitch collisions on identical strings if multiple notes collided
+                const finalPitchesMap = {};
+                mergedEvent.pitches.forEach(p => {
+                    if (finalPitchesMap[p.string] === undefined || p.fret > finalPitchesMap[p.string].fret) {
+                        finalPitchesMap[p.string] = p;
+                    }
+                });
+                mergedEvent.pitches = Object.values(finalPitchesMap);
 
-            voiceCursors[voice] += beatValue;
+                processedEvents.push({
+                    ...mergedEvent,
+                    globalIndex: globalEventIndex++
+                });
+            });
 
-            return {
-                ...event,
-                pitches,
-                globalIndex: index,
-                rhythm: detectedRhythm || (isRestEvent ? 'x' : ':'),
-                beatValue,
-                isRest: isRestEvent || (detectedRhythm && detectedRhythm.startsWith('x')),
-                voice,
-                startBeat,
-                measureNumber,
-                isTiedToNext: !!event.tie
-            };
+            absoluteMeasureStartBeat += beatsPerMeasure;
         });
 
-        const maxTotalBeats = Math.max(voiceCursors[1], voiceCursors[2]);
-        const totalMeasures = Math.ceil(maxTotalBeats / beatsPerMeasure) || 1;
+        // Calculate total measures based directly on the JSON structure
+        const totalMeasures = scoreData.measures.length > 0
+            ? Math.max(...scoreData.measures.map(m => m.measureNumber))
+            : 1;
+
+        // 3. Build validity and polyphony checks early
+        const measureValidityMap = {};
+        for (let m = 1; m <= totalMeasures; m++) {
+            const evs1 = processedEvents.filter(ev => ev.measureNumber === m && ev.voice === 1);
+            const evs2 = processedEvents.filter(ev => ev.measureNumber === m && ev.voice === 2);
+
+            const sum1 = evs1.reduce((s, e) => s + (e.beatValue || 0), 0);
+            const sum2 = evs2.reduce((s, e) => s + (e.beatValue || 0), 0);
+
+            const present1 = evs1.length > 0;
+            const present2 = evs2.length > 0;
+
+            const valid1 = present1 ? Math.abs(sum1 - beatsPerMeasure) < 1e-6 : true;
+            const valid2 = present2 ? Math.abs(sum2 - beatsPerMeasure) < 1e-6 : true;
+
+            measureValidityMap[m] = {
+                sum1, sum2, present1, present2, valid1, valid2,
+                valid: valid1 && valid2,
+                isPolyphonic: present1 && present2 // Tracks if this specific measure needs dual-voice formatting
+            };
+        }
 
         const measureTimeSlotsMap = {};
         processedEvents.forEach(ev => {
@@ -331,13 +404,9 @@ export default function GuitaleleViewer({ scoreData }) {
         });
 
         const computedRows = [];
-        // Validate measures per voice: ensure each voice sums to beatsPerMeasure
-        const measureValidityMap = {};
 
         for (let i = 0; i < totalMeasures; i += measuresPerRow) {
             const rowMeasuresCount = Math.min(measuresPerRow, totalMeasures - i);
-            const rowStartBeat = i * beatsPerMeasure;
-            const rowEndBeat = (i + rowMeasuresCount) * beatsPerMeasure;
 
             const barlineXPositions = [];
             const measureGroups = [];
@@ -366,7 +435,8 @@ export default function GuitaleleViewer({ scoreData }) {
             const TOTAL_SVG_WIDTH = rowEndX + 40;
 
             const rowEvents = processedEvents
-                .filter(ev => ev.startBeat >= rowStartBeat && ev.startBeat < rowEndBeat)
+                // 4. Safely filter notes into rows using measure number, not float beats
+                .filter(ev => ev.measureNumber > i && ev.measureNumber <= i + rowMeasuresCount)
                 .map(ev => {
                     const mGroup = measureGroups.find(g => g.measureNumber === ev.measureNumber);
                     const slotIndex = mGroup.slotsArray.indexOf(ev.startBeat);
@@ -392,6 +462,8 @@ export default function GuitaleleViewer({ scoreData }) {
                     const treblePitches = processedPitches.filter(p => p.clef === 'treble');
                     const bassPitches = processedPitches.filter(p => p.clef === 'bass');
 
+                    const isPolyphonicMeasure = measureValidityMap[ev.measureNumber]?.isPolyphonic;
+
                     const computeStaffStemData = (pitches, midLineMidi) => {
                         if (pitches.length === 0) return null;
                         const staffYs = pitches.map(p => p.staffY);
@@ -399,8 +471,9 @@ export default function GuitaleleViewer({ scoreData }) {
                         const highestY = Math.min(...staffYs);
                         const avgMidi = pitches.reduce((sum, p) => sum + p.midi, 0) / pitches.length;
 
+                        // 5. Stem direction correctly flips only if the local measure has two voices
                         let stemDown = avgMidi >= midLineMidi;
-                        if (voiceCursors[2] > 0) stemDown = ev.voice === 2;
+                        if (isPolyphonicMeasure) stemDown = ev.voice === 2;
 
                         return { lowestY, highestY, stemDown };
                     };
@@ -421,22 +494,6 @@ export default function GuitaleleViewer({ scoreData }) {
                 measureGroups,
                 rowEndX
             });
-        }
-
-        // Build per-measure per-voice sums and validity
-        for (let m = 1; m <= totalMeasures; m++) {
-            const evs1 = processedEvents.filter(ev => ev.measureNumber === m && ev.voice === 1);
-            const evs2 = processedEvents.filter(ev => ev.measureNumber === m && ev.voice === 2);
-            const sum1 = evs1.reduce((s, e) => s + (e.beatValue || 0), 0);
-            const sum2 = evs2.reduce((s, e) => s + (e.beatValue || 0), 0);
-            const present1 = evs1.length > 0;
-            const present2 = evs2.length > 0;
-
-            // If a voice is completely absent from the measure, treat it as valid (ignore it)
-            const valid1 = present1 ? Math.abs(sum1 - beatsPerMeasure) < 1e-6 : true;
-            const valid2 = present2 ? Math.abs(sum2 - beatsPerMeasure) < 1e-6 : true;
-
-            measureValidityMap[m] = { sum1, sum2, present1, present2, valid1, valid2, valid: valid1 && valid2 };
         }
 
         return { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, SLOT_WIDTH, measureValidityMap, beatsPerMeasure };
@@ -573,25 +630,59 @@ export default function GuitaleleViewer({ scoreData }) {
 
     const activeTargetIndex = isPlaying ? playbackIndex : hoveredNoteIndex;
 
-    const activeEvent = useMemo(() => {
-        if (activeTargetIndex === null || !scoreLayout) return null;
-        return scoreLayout.computedRows.flatMap(r => r.rowEvents).find(ev => ev.globalIndex === activeTargetIndex);
+    // Replace `activeEvent` with `activeEvents` and `activeIndices`
+    const activeEvents = useMemo(() => {
+        if (activeTargetIndex === null || !scoreLayout) return [];
+
+        const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
+        const targetEvent = allEvents.find(ev => ev.globalIndex === activeTargetIndex);
+
+        if (!targetEvent) return [];
+
+        // Fetch ALL events occurring at this exact measure and beat slice across all voices
+        return allEvents.filter(ev =>
+            ev.measureNumber === targetEvent.measureNumber &&
+            ev.startBeat === targetEvent.startBeat
+        );
     }, [activeTargetIndex, scoreLayout]);
 
-    const activeDescription = useMemo(() => {
-        if (!activeEvent) return null;
-        const custom = segmentDescriptions[activeEvent.globalIndex];
-        if (activeEvent.isRest) {
-            const base = `Measure ${activeEvent.measureNumber} • Musical Rest 𝄾 [${getDurationLabel(activeEvent.beatValue)}] (Voice ${activeEvent.voice})`;
-            return custom ? `${base} | ${custom}` : base;
-        }
-        const pitchDesc = activeEvent.processedPitches
-            .map(p => `${p.noteName} (String ${p.string}, Fret ${p.fret})`)
-            .join(" + ");
-        const base = `Measure ${activeEvent.measureNumber} • ${pitchDesc} [${getDurationLabel(activeEvent.beatValue)}] (Voice ${activeEvent.voice})`;
-        return custom ? `${base} | ${custom}` : base;
-    }, [activeEvent, segmentDescriptions]);
+    const activeIndices = useMemo(() => activeEvents.map(e => e.globalIndex), [activeEvents]);
 
+    const activeDescription = useMemo(() => {
+        if (!activeEvents || activeEvents.length === 0) return null;
+
+        // 1. Extract and combine any custom input descriptions from the JSON first
+        const customDescriptions = activeEvents
+            .map(ev => ev.description)
+            .filter(desc => typeof desc === 'string' && desc.trim().length > 0);
+
+        // De-duplicate custom messages if multiple voices shared the same reference string
+        const uniqueCustomText = Array.from(new Set(customDescriptions)).join(" | ");
+
+        // 2. Build the calculated voice pitch and rhythm data
+        const voiceDetails = activeEvents.map(ev => {
+            if (ev.isRest) {
+                return `Voice ${ev.voice}: Rest 𝄾 [${getDurationLabel(ev.beatValue)}]`;
+            }
+
+            const pitchDesc = ev.processedPitches
+                .map(p => `${p.noteName} (Str ${p.string}, Fr ${p.fret})`)
+                .join(" + ");
+
+            return `Voice ${ev.voice}: ${pitchDesc} [${getDurationLabel(ev.beatValue)}]`;
+        }).join("  ‖  ");
+
+        // 3. Assemble components: Measure prefix + Input custom text (if any) + Generated technical values
+        const measureNum = activeEvents[0].measureNumber;
+        const baseHeader = `Measure ${measureNum}`;
+
+        if (uniqueCustomText) {
+            return `${baseHeader} • [${uniqueCustomText}] • ${voiceDetails}`;
+        }
+
+        return `${baseHeader} • ${voiceDetails}`;
+    }, [activeEvents]);
+    
     if (!scoreLayout) {
         return <div className="text-slate-500 font-mono text-xs p-4">No notation data package available.</div>;
     }
@@ -766,10 +857,9 @@ export default function GuitaleleViewer({ scoreData }) {
                                     })}
 
                                     {rowEvents.map((ev, idx) => {
-                                        const isHovered = hoveredNoteIndex === ev.globalIndex;
-                                        const isCurrentlyPlaying = playbackIndex === ev.globalIndex;
-
-                                        const isActive = (isHovered && !isPlaying) || isCurrentlyPlaying;
+                                        const isActive = activeIndices.includes(ev.globalIndex);
+                                        // Ensures the background highlight box is only drawn once per time column
+                                        const isPrimaryHighlightNode = isActive && activeIndices[0] === ev.globalIndex;
                                         const currentNoteFill = isActive ? DARK_THEME.fillNoteHover : DARK_THEME.fillNote;
                                         const currentNoteStroke = isActive ? DARK_THEME.strokeNoteHover : DARK_THEME.fillNote;
                                         const currentStemStroke = isActive ? DARK_THEME.strokeNoteHover : DARK_THEME.lineStem;
@@ -780,7 +870,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                         return (
                                             <g key={`node-${idx}`}>
-                                                {isActive && (
+                                                {isPrimaryHighlightNode && (
                                                     <rect
                                                         x={ev.cx - (SLOT_WIDTH / 2) + 2}
                                                         y={trebleTopY - 50}
