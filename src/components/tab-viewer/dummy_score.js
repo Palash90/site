@@ -1,11 +1,13 @@
 const two_voice_test = {
   "id": "two_voice_test",
   "title": "Two Voice Separation Demo",
+  "instrument": "Guitalele",
   "timeSignature": "4/4",
   "notes": [
     // === MEASURE 1 ===
     {
       "duration": 4.0,
+      "description": "Voice 1: Sustained C major chord (C3, E3, G3, C4, E4, C5) held for a whole note duration.",
       "pitches": [
         { "fret": 3, "string": 6 }, // C3
         { "fret": 2, "string": 5 }, // E3
@@ -39,6 +41,7 @@ const two_voice_test = {
 const dummyScore = {
   "id": "full_test_score",
   "title": "Guitalele Tab viewer Full Test Score",
+  "instrument": "Guitalele",
   "description": "Comprehensive 52-measure composition covering extreme upper/lower staff boundaries, dynamic rhythms, and true horizontal layout tracking.",
   "timeSignature": "4/4",
   "notes": [
@@ -268,6 +271,7 @@ const dummyScore = {
 
 const dummyScore24 = {
   "id": "marching_pattern_24",
+  "instrument": "Guitalele",
   "title": "2/4 Marching Pattern",
   "description": "A punchy, quick-step progression to test short measures and rapid row-wrapping.",
   "timeSignature": "2/4",
@@ -318,6 +322,7 @@ const maryHadALittleLamb = {
   "id": "mary_had_a_little_lamb",
   "title": "Mary Had a Little Lamb",
   "description": "A classic nursery rhyme arrangement mapped accurately to standard Guitalele tuning (ADGCEA).",
+  "instrument": "Guitalele",
   "timeSignature": "2/4",
   "notes": [
     // === MEASURE 1 (2.0 Beats) ===
@@ -397,14 +402,33 @@ const twinkleTwinkleLittleStar = {
   "id": "twinkle_twinkle_little_star",
   "title": "Twinkle Twinkle Little Star",
   "description": "A classic nursery rhyme arrangement mapped to standard Guitalele tuning (ADGCEA).",
+  "instrument": "Guitalele",
   "timeSignature": "4/4",
   "notes": [
     // === MEASURE 1 ===
+    {
+      "duration": 2.0,
+      "voice": 1,
+      "pitches": [
+        { "fret": 3, "string": 6 }, // C3
+        { "fret": 2, "string": 5 }, // E3
+        { "fret": 0, "string": 4 }, // G3
+      ]
+    },
+    {
+      "duration": 2.0,
+      "voice": 1,
+      "pitches": [
+        { "fret": 3, "string": 6 }, // C3
+        { "fret": 0, "string": 4 }, // G3
+      ]
+    },
+
     // Twin- kle, Twin- kle (C4, C4, G4, G4)
-    { "fret": 0, "string": 3, "duration": 1.0 },
-    { "fret": 0, "string": 3, "duration": 1.0 },
-    { "fret": 3, "string": 2, "duration": 1.0 },
-    { "fret": 3, "string": 2, "duration": 1.0 },
+    { "fret": 0, "string": 3, "duration": 1.0, voice: 2 },
+    { "fret": 0, "string": 3, "duration": 1.0, voice: 2 },
+    { "fret": 3, "string": 2, "duration": 1.0, voice: 2 },
+    { "fret": 3, "string": 2, "duration": 1.0, voice: 2 },
 
     // === MEASURE 2 ===
     // Lit- tle, Star (A4, A4, G4)
