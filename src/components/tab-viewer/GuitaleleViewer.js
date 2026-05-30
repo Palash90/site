@@ -67,6 +67,7 @@ const DARK_THEME = {
     voice1Rhythm: "#f56ccc",
     voice2Color: "#fb923c",
     voice2Rhythm: "#48ec9f",
+    bgInvalidMeasure: "rgba(239, 68, 68, 0.15)",
 };
 
 const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
@@ -238,12 +239,12 @@ export default function GuitaleleViewer({ scoreData }) {
         if (!scoreData || !scoreData.notes) return null;
 
         const paddingX = 140;
-        const lineSpacing = 24;
-        const trebleTopY = 70;
-        const bassTopY = 210;
-        const tabTopY = 360;
-        const rhythmTopY = 560;
-        const svgHeight = 680;
+        const lineSpacing = 20;
+        const trebleTopY = 150;
+        const bassTopY = 280;
+        const tabTopY = 400;
+        const rhythmTopY = 640;
+        const svgHeight = 750;
 
         const timeSigTop = scoreData.timeSignature?.split('/')[0] || '4';
         const timeSigBottom = scoreData.timeSignature?.split('/')[1] || '4';
@@ -330,6 +331,8 @@ export default function GuitaleleViewer({ scoreData }) {
         });
 
         const computedRows = [];
+        // Validate measures per voice: ensure each voice sums to beatsPerMeasure
+        const measureValidityMap = {};
 
         for (let i = 0; i < totalMeasures; i += measuresPerRow) {
             const rowMeasuresCount = Math.min(measuresPerRow, totalMeasures - i);
@@ -352,7 +355,7 @@ export default function GuitaleleViewer({ scoreData }) {
                     measureNumber: measureNum,
                     startX: startX,
                     endX: endX,
-                    slotsArray: measureSortedSlots[measureNum] || []
+                    slotsArray: measureSortedSlots[measureNum] || [],
                 });
 
                 currentXPointer = endX;
@@ -420,7 +423,23 @@ export default function GuitaleleViewer({ scoreData }) {
             });
         }
 
-        return { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, SLOT_WIDTH };
+        // Build per-measure per-voice sums and validity
+        for (let m = 1; m <= totalMeasures; m++) {
+            const evs1 = processedEvents.filter(ev => ev.measureNumber === m && ev.voice === 1);
+            const evs2 = processedEvents.filter(ev => ev.measureNumber === m && ev.voice === 2);
+            const sum1 = evs1.reduce((s, e) => s + (e.beatValue || 0), 0);
+            const sum2 = evs2.reduce((s, e) => s + (e.beatValue || 0), 0);
+            const present1 = evs1.length > 0;
+            const present2 = evs2.length > 0;
+
+            // If a voice is completely absent from the measure, treat it as valid (ignore it)
+            const valid1 = present1 ? Math.abs(sum1 - beatsPerMeasure) < 1e-6 : true;
+            const valid2 = present2 ? Math.abs(sum2 - beatsPerMeasure) < 1e-6 : true;
+
+            measureValidityMap[m] = { sum1, sum2, present1, present2, valid1, valid2, valid: valid1 && valid2 };
+        }
+
+        return { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, SLOT_WIDTH, measureValidityMap, beatsPerMeasure };
     }, [scoreData, measuresPerRow]);
 
     const stopPlayback = () => {
@@ -577,14 +596,13 @@ export default function GuitaleleViewer({ scoreData }) {
         return <div className="text-slate-500 font-mono text-xs p-4">No notation data package available.</div>;
     }
 
-    const { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, SLOT_WIDTH } = scoreLayout;
+    const { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, SLOT_WIDTH, measureValidityMap, beatsPerMeasure } = scoreLayout;
 
     const rhythm1TopY = rhythmTopY;
     const rhythm2TopY = rhythmTopY + 28;
 
     return (
         <div className={`w-full h-full min-h-[500px] flex flex-col overflow-hidden ${DARK_THEME.bgPage}`}>
-            <span>Height: {window.innerHeight} Width: {window.innerWidth}   </span>
 
             <div className="flex-none bg-slate-900 border-b border-slate-800 p-4 shadow-xl z-20 w-full">
                 <div className="max-w-6xl mx-auto flex flex-col gap-3">
@@ -688,17 +706,61 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                     {measureGroups.map((measure) => {
                                         const measureCenterX = (measure.startX + measure.endX) / 2;
+                                        const mv = measureValidityMap?.[measure.measureNumber];
+
+                                        const isMeasureInvalid = mv && (!mv.valid1 || !mv.valid2);
+
                                         return (
                                             <g key={`measure-${measure.measureNumber}`}>
+                                                {isMeasureInvalid && (
+                                                    <rect
+                                                        x={measure.startX}
+                                                        y={trebleTopY - 40}
+                                                        width={measure.endX - measure.startX}
+                                                        height={rhythmTopY - trebleTopY + 85}
+                                                        fill={DARK_THEME.bgInvalidMeasure}
+                                                        stroke="rgba(239, 68, 68, 0.4)"
+                                                        strokeWidth="1.5"
+                                                        rx={6}
+                                                    />
+                                                )}
+
                                                 <text
                                                     x={measureCenterX}
-                                                    y={tabTopY + (5 * lineSpacing) + 22}
+                                                    y={tabTopY + (5 * lineSpacing) + 32}
                                                     textAnchor="middle"
                                                     className="text-[10px] font-mono font-bold"
-                                                    fill={DARK_THEME.textTabString}
+                                                    fill={isMeasureInvalid ? "#f87171" : DARK_THEME.textTabString}
                                                 >
-                                                    M{measure.measureNumber}
+                                                    M{measure.measureNumber} {isMeasureInvalid ? "⚠️" : ""}
                                                 </text>
+
+                                                {/* Cleaned up debugging text: dynamically hides absent voices */}
+                                                {isMeasureInvalid && mv && (() => {
+                                                    const pieces = [];
+
+                                                    // Only include Voice 1 string if it's present and invalid
+                                                    if (mv.present1 && !mv.valid1) {
+                                                        pieces.push(`v1:${Number(mv.sum1).toFixed(2)}/${beatsPerMeasure}`);
+                                                    }
+
+                                                    // Only include Voice 2 string if it's present and invalid
+                                                    if (mv.present2 && !mv.valid2) {
+                                                        pieces.push(`v2:${Number(mv.sum2).toFixed(2)}/${beatsPerMeasure}`);
+                                                    }
+
+                                                    return (
+                                                        <text
+                                                            x={measureCenterX}
+                                                            y={tabTopY + (5 * lineSpacing) + 48}
+                                                            textAnchor="middle"
+                                                            className="text-[10px] font-mono font-semibold"
+                                                            fill="#f87171"
+                                                        >
+                                                            {pieces.join(" ")}
+                                                        </text>
+                                                    );
+                                                })()}
                                             </g>
                                         );
                                     })}
@@ -752,15 +814,14 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             </g>
                                                         )}
 
-                                                        {/* Look for this inside the ev.isRest conditional block */}
                                                         <rect
                                                             x={ev.cx - 8}
-                                                            y={tabTopY + (2 * lineSpacing) - 8 + restTabOffset}
-                                                            width={24}
-                                                            height={25}
+                                                            y={tabTopY + (2 * lineSpacing) - 4 + restTabOffset}
+                                                            width={19}
+                                                            height={20}
                                                             fill={DARK_THEME.bgTabRect}
                                                         />
-                                                        <text x={ev.cx} y={tabTopY + (3 * lineSpacing) - 2 + restTabOffset} textAnchor="middle" className="text-[11px] font-mono font-bold" fill={DARK_THEME.fillRest}>𝄾</text>
+                                                        <text x={ev.cx} y={tabTopY + (3 * lineSpacing) - 6 + restTabOffset} textAnchor="middle" className="text-lg font-mono font-bold" fill={DARK_THEME.fillRest}>𝄾</text>
                                                     </g>
                                                 ) : (
                                                     <g>
@@ -798,8 +859,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                     <rect
                                                                         x={ev.cx - 13}
                                                                         y={pitch.tabY - 11}
-                                                                        width={24}
-                                                                        height={25}
+                                                                        width={20}
+                                                                        height={18}
                                                                         fill={DARK_THEME.bgScore.replace('bg-', '#').replace('slate-900', '0f172a')} // Or just use "#0f172a" directly
                                                                         stroke={currentNoteStroke} // Changes color dynamically when hovered or playing!
                                                                         strokeWidth="1.5"
@@ -808,8 +869,8 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                                     {/* Fret Number Text */}
                                                                     <text
-                                                                        x={ev.cx}
-                                                                        y={pitch.tabY + 4.5}
+                                                                        x={ev.cx - 3}
+                                                                        y={pitch.tabY + 3.2}
                                                                         textAnchor="middle"
                                                                         className="text-xs font-sans font-black tracking-wide"
                                                                         fill={currentTabFill}

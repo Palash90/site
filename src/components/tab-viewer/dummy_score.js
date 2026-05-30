@@ -48,7 +48,7 @@ const dummyScore = {
     // === TWO-VOICE DEMONSTRATION (Measures 1 - 3) ===
     // Measure 1: Voice 1 with whole notes, Voice 2 with quarter notes
     // Voice 1: C whole note (4 beats)
-    { "fret": 0, "string": 3, "duration": 4.0, "voice": 1 }, // C whole note
+    { "fret": 0, "string": 3, "duration": 4.0, "voice": 1, "description": "C whole note" },
 
     // Voice 2: C, D, F, A quarter notes (1 beat each = 4 beats)
     { "fret": 0, "string": 1, "duration": 1.0, "voice": 2 },
@@ -265,7 +265,8 @@ const dummyScore = {
     { "fret": 2, "string": 3, "duration": 2.0 },
     { "fret": 0, "string": 4, "duration": 2.0, "tie": true }, // M50
     { "fret": 0, "string": 4, "duration": 4.0, "tie": true }, // M51
-    { "fret": 0, "string": 4, "duration": 4.0 }  // M52 Final Chord Resonator
+    { "fret": 0, "string": 4, "duration": 2.0, "voice": 2 }, // Invalid measure
+    { "fret": 0, "string": 4, "duration": 2.0 }  // M52 Final Chord Resonator
   ]
 };
 
