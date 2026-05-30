@@ -67,7 +67,7 @@ const DARK_THEME = {
     textRhythm: "#94a3b8",       // Slate 400
 
     // --- 5. Polyphonic Voices (High Contrast) ---
-    voice1Color: "#38bdf8",      // Sky 400 (Cool)
+    voice1Color: "#21cea3",      // Sky 400 (Cool)
     voice1Rhythm: "#818cf8",     // Indigo 400 (Cool contrast)
 
     voice2Color: "#fb923c",      // Orange 400 (Warm)
