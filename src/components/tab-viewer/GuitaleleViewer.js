@@ -952,7 +952,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                             return (
                                                                 <g key={`p-${pIdx}`}>
-                                                                    {pitch.isSharp && <text x={ev.cx + 10} y={pitch.staffY + 5} className="text-base font-normal font-serif" fill={currentNoteFill}>♯</text>}
+                                                                    {pitch.isSharp && <text x={ev.cx + 10} y={pitch.staffY + 5} className="text-base font-normal font-serif" fill={activeStrokeColor} filter={glowFilter}>♯</text>}
 
                                                                     {Array.from({ length: Math.max(0, upperLedgers) }).map((_, lIdx) => (<line key={`up-ledg-${lIdx}`} x1={ev.cx - 10} y1={clefTopY - ((lIdx + 1) * lineSpacing)} x2={ev.cx + 10} y2={clefTopY - ((lIdx + 1) * lineSpacing)} stroke={DARK_THEME.lineStaff} strokeWidth="1.2" />))}
                                                                     {Array.from({ length: Math.max(0, lowerLedgers) }).map((_, lIdx) => (<line key={`low-ledg-${lIdx}`} x1={ev.cx - 10} y1={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} x2={ev.cx + 10} y2={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} stroke={DARK_THEME.lineStaff} strokeWidth="1.2" />))}
@@ -1024,7 +1024,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             return (
                                                                 <g filter={glowFilter}>
                                                                     <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={activeStrokeColor} strokeWidth="1.6" />
-                                                                    {numFlags > 0 && <path d={getFlagPath(xPos, extY, stemDown, numFlags)} fill={currentNoteFill} />}
+                                                                    {numFlags > 0 && <path d={getFlagPath(xPos, extY, stemDown, numFlags)} fill={activeStrokeColor} />}
                                                                 </g>
                                                             );
                                                         })()}
@@ -1043,7 +1043,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             return (
                                                                 <g filter={glowFilter}>
                                                                     <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={activeStrokeColor} strokeWidth="1.6" />
-                                                                    {numFlags > 0 && <path d={getFlagPath(xPos, extY, stemDown, numFlags)} fill={currentNoteFill} />}
+                                                                    {numFlags > 0 && <path d={getFlagPath(xPos, extY, stemDown, numFlags)} fill={activeStrokeColor} />}
                                                                 </g>
                                                             );
                                                         })()}
