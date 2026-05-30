@@ -580,7 +580,6 @@ export default function GuitaleleViewer({ scoreData }) {
         /* FIXED OUTER WRAPPER: Constrains height to its parent container */
         <div className={`w-full h-full min-h-[500px] flex flex-col overflow-hidden ${DARK_THEME.bgPage}`}>
 
-            {/* FIXED TOP DASHBOARD: flex-none ensures it stays exactly this size */}
             <div className="flex-none bg-slate-900 border-b border-slate-800 p-4 shadow-xl z-20 w-full">
                 <div className="max-w-6xl mx-auto flex flex-col gap-3">
                     <div className="flex items-center justify-between gap-4">
@@ -644,8 +643,7 @@ export default function GuitaleleViewer({ scoreData }) {
                 </div>
             </div>
 
-            {/* SCROLLABLE INNER CONTAINER: flex-1 + min-h-0 + overflow-y-auto handles the internal scrolling */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar relative">
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar relative" style={{ overflow: "scroll", border: '2px solid', maxHeight: "60vh" }}>
                 <div className="max-w-7xl mx-auto w-full flex flex-col gap-8 pb-12">
                     {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX }, rowIdx) => {
                         return (
