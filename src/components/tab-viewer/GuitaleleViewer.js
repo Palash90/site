@@ -41,33 +41,47 @@ const getDurationLabel = (beatValue) => {
 };
 
 const DARK_THEME = {
+    // --- 1. Base Backgrounds ---
     bgPage: "bg-slate-950",
     bgScore: "bg-slate-900",
     borderScore: "border-slate-800",
-    textClef: "#93c5fd",
-    textTimeSig: "#e0c276",
-    lineStaff: "#575c3c",
-    lineBar: "tomato",
-    lineTab: "#23c9c0",
-    textTabLabel: "#5eead4",
-    textTabString: "#99f6e4",
-    bgTabRect: "#0f172a",
-    textTabNumber: "#ecfeff",
-    lineStem: "#60a5fa",
-    fillNote: "#7dd3fc",
-    fillRest: "#fb7185",
-    textRhythm: "#a5b4fc",
-    lineTie: "#cbd5e1",
-    fillHoverHighlight: "rgba(65, 77, 94, 0.45)",
-    fillNoteHover: "#67e8f9",
-    strokeNoteHover: "#67e8f9",
-    textTabNumberHover: "#a5f3fc",
-    textRhythmHover: "#a5f3fc",
-    voice1Color: "#60a5fa",
-    voice1Rhythm: "#f56ccc",
-    voice2Color: "#fb923c",
-    voice2Rhythm: "#48ec9f",
-    bgInvalidMeasure: "rgba(239, 68, 68, 0.15)",
+
+    // --- 2. Structural Lines (Muted to let notes pop) ---
+    lineStaff: "#4a4a83",         // Zinc 800 - dark, clean background lines
+    lineTab: "#57576e",           // Slightly darker zinc so it doesn't fight the notes
+    lineBar: "#103466",           // Gray 600 - subtle but distinct division
+    lineTie: "#8aa8d1",          // Slate 500
+
+    // --- 3. Static UI Text & Symbols ---
+    textClef: "#64748b",         // Slate 500 - visible but secondary
+    textTimeSig: "#fbbf24",      // Amber 400 - nice gold accent
+    textTabLabel: "#4b5563",     // Slate 600
+    textTabString: "#374151",    // Slate 600
+    bgTabRect: "#0f172a",        // Matches bgScore exactly for seamless masking
+    textTabNumber: "#e2e8f0",    // Slate 300 - clear baseline readability
+
+    // --- 4. Core Musical Elements (Voice 1 Default) ---
+    lineStem: "#38bdf8",         // Sky 400
+    fillNote: "#38bdf8",         // Sky 400
+    fillRest: "#f43f5e",         // Rose 500 - distinctly different from playable notes
+    textRhythm: "#94a3b8",       // Slate 400
+
+    // --- 5. Polyphonic Voices (High Contrast) ---
+    voice1Color: "#38bdf8",      // Sky 400 (Cool)
+    voice1Rhythm: "#818cf8",     // Indigo 400 (Cool contrast)
+
+    voice2Color: "#fb923c",      // Orange 400 (Warm)
+    voice2Rhythm: "#f472b6",     // Pink 400 (Warm contrast)
+
+    // --- 6. Hover & Interaction (The Glow) ---
+    fillHoverHighlight: "rgba(56, 189, 248, 0.08)", // Very subtle sky-blue glass effect
+    fillNoteHover: "#7dd3fc",    // Sky 300
+    strokeNoteHover: "#ffffff",  // Pure white for maximum pop when hovered
+    textTabNumberHover: "#ffffff",
+    textRhythmHover: "#f8fafc",  // Slate 50
+
+    // --- 7. System States ---
+    bgInvalidMeasure: "rgba(225, 29, 72, 0.15)", // Rose 600 transparent
 };
 
 const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
