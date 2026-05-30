@@ -682,7 +682,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
         return `${baseHeader} • ${voiceDetails}`;
     }, [activeEvents]);
-    
+
     if (!scoreLayout) {
         return <div className="text-slate-500 font-mono text-xs p-4">No notation data package available.</div>;
     }
@@ -764,6 +764,16 @@ export default function GuitaleleViewer({ scoreData }) {
                         return (
                             <div key={`row-${rowIdx}`} className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto`}>
                                 <svg viewBox={`0 0 ${totalWidth} ${svgHeight}`} style={{ maxWidth: "1280px" }} className="select-none mx-auto block">
+
+                                    <defs>
+                                        <filter id="note-glow" x="-50%" y="-50%" width="200%" height="200%">
+                                            <feGaussianBlur stdDeviation="3" result="blur" />
+                                            <feMerge>
+                                                <feMergeNode in="blur" />
+                                                <feMergeNode in="SourceGraphic" />
+                                            </feMerge>
+                                        </filter>
+                                    </defs>
 
                                     <path d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`} fill="none" stroke={DARK_THEME.lineStaff} strokeWidth="2.5" />
 
@@ -921,6 +931,11 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             const lowerLedgers = pitch.staffY > bottomStaffEdge ? Math.floor((pitch.staffY - bottomStaffEdge) / lineSpacing) : 0;
                                                             const upperLedgers = pitch.staffY < clefTopY ? Math.floor((clefTopY - pitch.staffY) / lineSpacing) : 0;
 
+                                                            const voiceColor = ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color;
+                                                            const activeNoteColor = isActive ? voiceColor : DARK_THEME.fillNote;
+                                                            const activeStrokeColor = isActive ? voiceColor : DARK_THEME.fillNote;
+                                                            const glowFilter = isActive ? "url(#note-glow)" : "none";
+
                                                             return (
                                                                 <g key={`p-${pIdx}`}>
                                                                     {pitch.isSharp && <text x={ev.cx + 10} y={pitch.staffY + 5} className="text-base font-normal font-serif" fill={currentNoteFill}>♯</text>}
@@ -929,9 +944,19 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                     {Array.from({ length: Math.max(0, lowerLedgers) }).map((_, lIdx) => (<line key={`low-ledg-${lIdx}`} x1={ev.cx - 10} y1={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} x2={ev.cx + 10} y2={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} stroke={DARK_THEME.lineStaff} strokeWidth="1.2" />))}
 
                                                                     {ev.beatValue >= 2.0 ? (
-                                                                        <ellipse cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`} fill="none" stroke={currentNoteStroke} strokeWidth="1.8" />
+                                                                        <ellipse
+                                                                            cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4}
+                                                                            transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`}
+                                                                            fill="none" stroke={activeStrokeColor} strokeWidth="1.8"
+                                                                            filter={glowFilter}
+                                                                        />
                                                                     ) : (
-                                                                        <ellipse cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4} transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`} fill={currentNoteFill} />
+                                                                        <ellipse
+                                                                            cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4}
+                                                                            transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`}
+                                                                            fill={activeNoteColor}
+                                                                            filter={glowFilter}
+                                                                        />
                                                                     )}
 
                                                                     {ev.isTiedToNext && (() => {
@@ -944,17 +969,17 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                         return null;
                                                                     })()}
 
-                                                                   // Expanded mask dimension to 18x16 pixels to completely erase the line intersection
                                                                     {/* Bordered Rectangle Box for Fret Numbers */}
                                                                     <rect
                                                                         x={ev.cx - 13}
                                                                         y={pitch.tabY - 11}
                                                                         width={20}
                                                                         height={18}
-                                                                        fill={DARK_THEME.bgScore.replace('bg-', '#').replace('slate-900', '0f172a')} // Or just use "#0f172a" directly
-                                                                        stroke={currentNoteStroke} // Changes color dynamically when hovered or playing!
-                                                                        strokeWidth="1.5"
-                                                                        rx={3} // Gives it slightly rounded corners
+                                                                        fill="#0f172a"
+                                                                        stroke={activeStrokeColor}
+                                                                        strokeWidth={isActive ? "2" : "1.5"}
+                                                                        filter={glowFilter}
+                                                                        rx={3}
                                                                     />
 
                                                                     {/* Fret Number Text */}
@@ -963,7 +988,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                         y={pitch.tabY + 3.2}
                                                                         textAnchor="middle"
                                                                         className="text-xs font-sans font-black tracking-wide"
-                                                                        fill={currentTabFill}
+                                                                        fill={isActive ? DARK_THEME.textTabNumberHover : DARK_THEME.textTabNumber}
                                                                     >
                                                                         {pitch.fret}
                                                                     </text>
@@ -973,14 +998,18 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                         {/* Treble Voice Stems */}
                                                         {ev.trebleStem && ev.beatValue < 4.0 && (() => {
+                                                            const voiceColor = ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color;
+                                                            const activeStrokeColor = isActive ? voiceColor : DARK_THEME.fillNote;
+                                                            const glowFilter = isActive ? "url(#note-glow)" : "none";
+
                                                             const { lowestY, highestY, stemDown } = ev.trebleStem;
                                                             const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
                                                             const extY = stemDown ? lowestY + 28 : highestY - 28;
                                                             const numFlags = ev.beatValue <= 0.25 ? 2 : (ev.beatValue <= 0.75 ? 1 : 0);
 
                                                             return (
-                                                                <g>
-                                                                    <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={currentStemStroke} strokeWidth="1.6" />
+                                                                <g filter={glowFilter}>
+                                                                    <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={activeStrokeColor} strokeWidth="1.6" />
                                                                     {numFlags > 0 && <path d={getFlagPath(xPos, extY, stemDown, numFlags)} fill={currentNoteFill} />}
                                                                 </g>
                                                             );
@@ -988,14 +1017,18 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                         {/* Bass Voice Stems */}
                                                         {ev.bassStem && ev.beatValue < 4.0 && (() => {
+                                                            const voiceColor = ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color;
+                                                            const activeStrokeColor = isActive ? voiceColor : DARK_THEME.fillNote;
+                                                            const glowFilter = isActive ? "url(#note-glow)" : "none";
+
                                                             const { lowestY, highestY, stemDown } = ev.bassStem;
                                                             const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
                                                             const extY = stemDown ? lowestY + 28 : highestY - 28;
                                                             const numFlags = ev.beatValue <= 0.25 ? 2 : (ev.beatValue <= 0.75 ? 1 : 0);
 
                                                             return (
-                                                                <g>
-                                                                    <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={currentStemStroke} strokeWidth="1.6" />
+                                                                <g filter={glowFilter}>
+                                                                    <line x1={xPos} y1={highestY} x2={xPos} y2={extY} stroke={activeStrokeColor} strokeWidth="1.6" />
                                                                     {numFlags > 0 && <path d={getFlagPath(xPos, extY, stemDown, numFlags)} fill={currentNoteFill} />}
                                                                 </g>
                                                             );
