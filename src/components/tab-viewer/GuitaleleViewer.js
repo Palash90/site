@@ -191,6 +191,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const [playbackIndex, setPlaybackIndex] = useState(null);
     const [bpm, setBpm] = useState(100);
     const [segmentDescriptions, setSegmentDescriptions] = useState({});
+    const [slotWidth, setSlotWidth] = useState(45);
 
     // --- Responsive Layout State ---
     const [measuresPerRow, setMeasuresPerRow] = useState(4);
@@ -207,10 +208,15 @@ export default function GuitaleleViewer({ scoreData }) {
     // Responsive window observer
     useEffect(() => {
         const updateLayoutBoundaries = () => {
-            if (window.innerWidth < 768) {
+            if (window.innerWidth < 480) {
+                setMeasuresPerRow(1); // Small mobile layout profile
+                setSlotWidth(35);
+            } else if (window.innerWidth < 768) {
                 setMeasuresPerRow(2); // Mobile layout profile
+                setSlotWidth(50);
             } else {
                 setMeasuresPerRow(4); // Tablet & Desktop profile
+                setSlotWidth(50);
             }
         };
 
@@ -245,7 +251,7 @@ export default function GuitaleleViewer({ scoreData }) {
         const denominator = parseInt(timeSigBottom, 10);
         const beatsPerMeasure = numerator * (4 / denominator);
 
-        const SLOT_WIDTH = 65;
+        const SLOT_WIDTH = slotWidth;
         const MEASURE_PADDING = 35;
 
         const voiceCursors = { 1: 0, 2: 0 };
@@ -577,8 +583,8 @@ export default function GuitaleleViewer({ scoreData }) {
     const rhythm2TopY = rhythmTopY + 28;
 
     return (
-        /* FIXED OUTER WRAPPER: Constrains height to its parent container */
         <div className={`w-full h-full min-h-[500px] flex flex-col overflow-hidden ${DARK_THEME.bgPage}`}>
+            <span>Height: {window.innerHeight} Width: {window.innerWidth}   </span>
 
             <div className="flex-none bg-slate-900 border-b border-slate-800 p-4 shadow-xl z-20 w-full">
                 <div className="max-w-6xl mx-auto flex flex-col gap-3">
@@ -636,7 +642,7 @@ export default function GuitaleleViewer({ scoreData }) {
                             </span>
                         ) : (
                             <span className="text-[11px] font-mono text-slate-500 italic tracking-wide">
-                                Hover over note lanes or tap segments below to read real-time properties.
+                                Hover over or tap a note lane or tap segments below to read real-time properties.
                             </span>
                         )}
                     </div>
@@ -648,7 +654,7 @@ export default function GuitaleleViewer({ scoreData }) {
                     {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX }, rowIdx) => {
                         return (
                             <div key={`row-${rowIdx}`} className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto`}>
-                                <svg width={totalWidth} height={svgHeight} className="select-none mx-auto block">
+                                <svg viewBox={`0 0 ${totalWidth} ${svgHeight}`} style={{ maxWidth: "1024px" }} className="select-none mx-auto block">
 
                                     <path d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`} fill="none" stroke={DARK_THEME.lineStaff} strokeWidth="2.5" />
 
