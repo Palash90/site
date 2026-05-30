@@ -45,13 +45,13 @@ const DARK_THEME = {
     bgScore: "bg-slate-900",
     borderScore: "border-slate-800",
     textClef: "#93c5fd",
-    textTimeSig: "#fbbf24",
-    lineStaff: "#94a3b8",
-    lineBar: "#f59e0b",
-    lineTab: "#2dd4bf",
+    textTimeSig: "#e0c276",
+    lineStaff: "#575c3c",
+    lineBar: "tomato",
+    lineTab: "#23c9c0",
     textTabLabel: "#5eead4",
     textTabString: "#99f6e4",
-    bgTabRect: "#0f766e40",
+    bgTabRect: "#0f172a",
     textTabNumber: "#ecfeff",
     lineStem: "#60a5fa",
     fillNote: "#7dd3fc",
@@ -64,9 +64,9 @@ const DARK_THEME = {
     textTabNumberHover: "#a5f3fc",
     textRhythmHover: "#a5f3fc",
     voice1Color: "#60a5fa",
-    voice1Rhythm: "#8b5cf6",
+    voice1Rhythm: "#f56ccc",
     voice2Color: "#fb923c",
-    voice2Rhythm: "#ec4899",
+    voice2Rhythm: "#48ec9f",
 };
 
 const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
@@ -238,12 +238,12 @@ export default function GuitaleleViewer({ scoreData }) {
         if (!scoreData || !scoreData.notes) return null;
 
         const paddingX = 140;
-        const lineSpacing = 14;
+        const lineSpacing = 24;
         const trebleTopY = 70;
-        const bassTopY = 150;
-        const tabTopY = 250;
-        const rhythmTopY = 390;
-        const svgHeight = 490;
+        const bassTopY = 210;
+        const tabTopY = 360;
+        const rhythmTopY = 560;
+        const svgHeight = 680;
 
         const timeSigTop = scoreData.timeSignature?.split('/')[0] || '4';
         const timeSigBottom = scoreData.timeSignature?.split('/')[1] || '4';
@@ -654,7 +654,7 @@ export default function GuitaleleViewer({ scoreData }) {
                     {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX }, rowIdx) => {
                         return (
                             <div key={`row-${rowIdx}`} className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto`}>
-                                <svg viewBox={`0 0 ${totalWidth} ${svgHeight}`} style={{ maxWidth: "1024px" }} className="select-none mx-auto block">
+                                <svg viewBox={`0 0 ${totalWidth} ${svgHeight}`} style={{ maxWidth: "1280px" }} className="select-none mx-auto block">
 
                                     <path d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`} fill="none" stroke={DARK_THEME.lineStaff} strokeWidth="2.5" />
 
@@ -751,8 +751,16 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                 <path d={`M ${ev.cx - 4} ${trebleTopY + 36} A 3 3 0 1 1 ${ev.cx + 1} ${trebleTopY + 38} Q ${ev.cx - 3} ${trebleTopY + 42} ${ev.cx + 3} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 52}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                             </g>
                                                         )}
-                                                        <rect x={ev.cx - 6} y={tabTopY + (2 * lineSpacing) - 4 + restTabOffset} width={12} height={16} fill={DARK_THEME.bgTabRect} />
-                                                        <text x={ev.cx} y={tabTopY + (3 * lineSpacing) - 2 + restTabOffset} textAnchor="middle" className="text-[10px] font-mono font-bold" fill={DARK_THEME.fillRest}>𝄾</text>
+
+                                                        {/* Look for this inside the ev.isRest conditional block */}
+                                                        <rect
+                                                            x={ev.cx - 8}
+                                                            y={tabTopY + (2 * lineSpacing) - 8 + restTabOffset}
+                                                            width={24}
+                                                            height={25}
+                                                            fill={DARK_THEME.bgTabRect}
+                                                        />
+                                                        <text x={ev.cx} y={tabTopY + (3 * lineSpacing) - 2 + restTabOffset} textAnchor="middle" className="text-[11px] font-mono font-bold" fill={DARK_THEME.fillRest}>𝄾</text>
                                                     </g>
                                                 ) : (
                                                     <g>
@@ -785,8 +793,29 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                         return null;
                                                                     })()}
 
-                                                                    <rect x={ev.cx - 7} y={pitch.tabY - 7} width={14} height={14} fill={DARK_THEME.bgTabRect} />
-                                                                    <text x={ev.cx} y={pitch.tabY + 4} textAnchor="middle" className="text-[11px] font-sans font-bold" fill={currentTabFill}>{pitch.fret}</text>
+                                                                   // Expanded mask dimension to 18x16 pixels to completely erase the line intersection
+                                                                    {/* Bordered Rectangle Box for Fret Numbers */}
+                                                                    <rect
+                                                                        x={ev.cx - 13}
+                                                                        y={pitch.tabY - 11}
+                                                                        width={24}
+                                                                        height={25}
+                                                                        fill={DARK_THEME.bgScore.replace('bg-', '#').replace('slate-900', '0f172a')} // Or just use "#0f172a" directly
+                                                                        stroke={currentNoteStroke} // Changes color dynamically when hovered or playing!
+                                                                        strokeWidth="1.5"
+                                                                        rx={3} // Gives it slightly rounded corners
+                                                                    />
+
+                                                                    {/* Fret Number Text */}
+                                                                    <text
+                                                                        x={ev.cx}
+                                                                        y={pitch.tabY + 4.5}
+                                                                        textAnchor="middle"
+                                                                        className="text-xs font-sans font-black tracking-wide"
+                                                                        fill={currentTabFill}
+                                                                    >
+                                                                        {pitch.fret}
+                                                                    </text>
                                                                 </g>
                                                             );
                                                         })}
@@ -840,7 +869,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                     />
                                                     {ev.isTiedToNext && (() => {
                                                         const nextEv = rowEvents.slice(idx + 1).find(e => e.voice === ev.voice);
-                                                        if (nextEv) return <line x1={ev.cx + 12} y1={yLane - 4} x2={nextEv.cx - 12} y2={yLane - 4} stroke={DARK_THEME.lineStaff} strokeWidth="2" strokeLinecap="round" />;
+                                                        if (nextEv) return <line x1={ev.cx + 20} y1={yLane - 4} x2={nextEv.cx - 20} y2={yLane - 4} stroke={DARK_THEME.lineStaff} strokeWidth="2" strokeLinecap="round" />;
                                                         return null;
                                                     })()}
                                                     <text x={ev.cx} y={yLane} textAnchor="middle" className="font-mono font-black text-sm" fill={ev.isRest ? DARK_THEME.fillRest : (ev.voice === 2 ? DARK_THEME.voice2Rhythm : DARK_THEME.voice1Rhythm)}>
