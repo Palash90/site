@@ -1,14 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { playHumanizedGuitaleleNote, TUNING } from './audio';
 
-// --- Static Configuration Matrix ---
-const GUITALELE_TUNING = {
-    1: { baseMidi: 69 }, // A4
-    2: { baseMidi: 64 }, // E4
-    3: { baseMidi: 60 }, // C4 (Middle C)
-    4: { baseMidi: 55 }, // G3
-    5: { baseMidi: 50 }, // D3
-    6: { baseMidi: 45 }  // A2
-};
 
 const RHYTHM_BEAT_VALUES = {
     'o': 4.0, 'o.': 6.0, '.': 2.0, '..': 3.0, ':': 1.0, ':.': 1.5, '+': 0.5, '+.': 0.75, '=': 0.25,
@@ -121,83 +113,7 @@ const getFlagPath = (sx, sy, isDown = false, flags = 1) => {
     return path.trim();
 };
 
-const playHumanizedGuitaleleNote = (ctx, midi, startTime, duration, velocity = 1.0) => {
-    const fundamental = 440 * Math.pow(2, (midi - 69) / 12);
-    const mainGain = ctx.createGain();
-    const bodyFilter = ctx.createBiquadFilter();
-    bodyFilter.type = 'lowpass';
-    bodyFilter.frequency.setValueAtTime(Math.min(2800, fundamental * 6), startTime);
-    bodyFilter.Q.value = 0.7;
-    bodyFilter.connect(ctx.destination);
-    mainGain.connect(bodyFilter);
 
-    const attackTime = 0.004;
-    const decayTime = Math.max(duration * 0.85, 1.4);
-
-    mainGain.gain.setValueAtTime(0, startTime);
-    mainGain.gain.linearRampToValueAtTime(velocity * 0.5, startTime + attackTime);
-    mainGain.gain.exponentialRampToValueAtTime(velocity * 0.18, startTime + 0.08);
-    mainGain.gain.exponentialRampToValueAtTime(0.001, startTime + decayTime);
-
-    const stringOsc = ctx.createOscillator();
-    stringOsc.type = 'triangle';
-    stringOsc.frequency.value = fundamental;
-
-    const overtoneOsc = ctx.createOscillator();
-    overtoneOsc.type = 'sine';
-    overtoneOsc.frequency.value = fundamental * 2;
-    const overtoneGain = ctx.createGain();
-    overtoneGain.gain.value = 0.08;
-    overtoneOsc.connect(overtoneGain);
-
-    const midResonance = ctx.createBiquadFilter();
-    midResonance.type = 'bandpass';
-    midResonance.frequency.setValueAtTime(Math.max(650, fundamental * 1.8), startTime);
-    midResonance.Q.value = 1.4;
-
-    const pluckOsc = ctx.createOscillator();
-    pluckOsc.type = 'triangle';
-    pluckOsc.frequency.setValueAtTime(fundamental * 1.7, startTime);
-    pluckOsc.frequency.exponentialRampToValueAtTime(fundamental * 0.98, startTime + 0.025);
-
-    const pluckGain = ctx.createGain();
-    pluckGain.gain.setValueAtTime(0, startTime);
-    pluckGain.gain.linearRampToValueAtTime(velocity * 0.16, startTime + 0.003);
-    pluckGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.045);
-
-    const noiseBuffer = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * 0.025)), ctx.sampleRate);
-    const noiseData = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < noiseData.length; i++) {
-        noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
-    }
-    const pluckNoise = ctx.createBufferSource();
-    pluckNoise.buffer = noiseBuffer;
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'highpass';
-    noiseFilter.frequency.value = 900;
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(velocity * 0.045, startTime);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.028);
-
-    pluckOsc.connect(pluckGain);
-    pluckGain.connect(mainGain);
-    stringOsc.connect(mainGain);
-    overtoneGain.connect(midResonance);
-    midResonance.connect(mainGain);
-    pluckNoise.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(mainGain);
-
-    stringOsc.start(startTime);
-    overtoneOsc.start(startTime);
-    pluckOsc.start(startTime);
-    pluckNoise.start(startTime);
-
-    stringOsc.stop(startTime + decayTime);
-    overtoneOsc.stop(startTime + decayTime);
-    pluckOsc.stop(startTime + decayTime);
-    pluckNoise.stop(startTime + 0.03);
-};
 
 export default function GuitaleleViewer({ scoreData }) {
     const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
@@ -458,7 +374,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                     const processedPitches = ev.pitches.map(p => {
                         const tabY = tabTopY + ((p.string - 1) * lineSpacing);
-                        const midi = GUITALELE_TUNING[p.string].baseMidi + p.fret;
+                        const midi = TUNING[p.string].baseMidi + p.fret;
                         const clef = midi >= 60 ? 'treble' : 'bass';
                         const clefTopY = clef === 'treble' ? trebleTopY : bassTopY;
                         const pitchProps = parsePitchProperties(midi, clef, clefTopY, lineSpacing);
@@ -595,31 +511,69 @@ export default function GuitaleleViewer({ scoreData }) {
 
         const ctx = audioCtxRef.current;
         const beatDurationSeconds = 60 / bpm;
-
-        // Small buffer to ensure first note doesn't clip
         const scheduleOffsetSec = 0.05;
 
-        // Schedule all Audio once and leave it in the AudioContext queue
-        targetedEvents.forEach(ev => {
-            const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
-            const noteDurationSec = ev.beatValue * beatDurationSeconds;
+        // Track pitches already swallowed by a continuous chain performance
+        const consumedPitches = new Set();
 
-            if (!ev.isRest) {
-                const sortedPitches = [...ev.processedPitches].sort((a, b) => b.string - a.string);
-                sortedPitches.forEach((pitch, pitchIdx) => {
-                    const strumDelay = sortedPitches.length > 1 ? pitchIdx * 0.022 : 0.0;
-                    const humanJitter = (Math.random() - 0.5) * 0.005;
-                    const humanVelocity = 0.88 + Math.random() * 0.22;
+        targetedEvents.forEach((ev, evIdx) => {
+            if (ev.isRest) return;
 
-                    // Final audio clock time calculation
-                    const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + strumDelay + humanJitter;
+            ev.processedPitches.forEach((pitch) => {
+                const pitchKey = `${ev.globalIndex}_${pitch.string}`;
+                if (consumedPitches.has(pitchKey)) return;
 
-                    playHumanizedGuitaleleNote(ctx, pitch.midi, finalPluckTime, noteDurationSec, humanVelocity);
-                });
-            }
+                // 1. Always start the chain execution with an initial pluck
+                const segments = [{
+                    type: 'pluck',
+                    midi: pitch.midi,
+                    duration: ev.beatValue * beatDurationSeconds
+                }];
+
+                let currentEvent = ev;
+                let currentEventIdx = evIdx;
+                let currentPitch = pitch;
+
+                // 2. Continuous chain builder using ONLY the tie property
+                while (currentEvent.isTiedToNext) { // maps directly to "tie": true in JSON
+                    // Find the next active note on this specific voice channel
+                    const nextEvent = targetedEvents.slice(currentEventIdx + 1).find(e => e.voice === currentEvent.voice && !e.isRest);
+                    if (!nextEvent) break;
+
+                    const nextPitch = nextEvent.processedPitches.find(np => np.string === currentPitch.string);
+                    if (!nextPitch) break;
+
+                    // --- SMART INFERENCE HAPPENS HERE ---
+                    // If MIDI pitch is identical, it's a structural Tie. If it changes, treat it as a Slide!
+                    const inferredType = (nextPitch.midi === currentPitch.midi) ? 'tie' : 'slide';
+
+                    segments.push({
+                        type: inferredType,
+                        midi: nextPitch.midi,
+                        duration: nextEvent.beatValue * beatDurationSeconds
+                    });
+
+                    // Lock down this downstream pitch so it doesn't fire a separate attack window
+                    const nextKey = `${nextEvent.globalIndex}_${nextPitch.string}`;
+                    consumedPitches.add(nextKey);
+
+                    // Step forward in timeline sequence
+                    currentEventIdx = targetedEvents.indexOf(nextEvent);
+                    currentEvent = nextEvent;
+                    currentPitch = nextPitch;
+                }
+
+                // 3. Fire the custom compiled chain array downstream to audio.js
+                const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
+                const humanJitter = (Math.random() - 0.5) * 0.005;
+                const humanVelocity = 0.88 + Math.random() * 0.22;
+                const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
+
+                playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, humanVelocity);
+            });
         });
 
-        // Initialize visual sequence tracking
+        // Visual playhead sequencer stays safely intact
         scheduleVisuals(targetedEvents, startOffsetBeat, -scheduleOffsetSec);
     };
 
@@ -981,6 +935,39 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                             return (<path d={`M ${ev.cx + 4} ${pitch.staffY + 5} Q ${(ev.cx + nextEv.cx) / 2} ${Math.max(pitch.staffY, targetPitch.staffY) + 16} ${nextEv.cx - 4} ${targetPitch.staffY + 5}`} fill="none" stroke={DARK_THEME.lineTie} strokeWidth="1.8" strokeLinecap="round" />);
                                                                         }
                                                                         return null;
+                                                                    })()}
+
+                                                                    {ev.isTiedToNext && (() => {
+                                                                        const nextEv = rowEvents.slice(idx + 1).find(e => e.voice === ev.voice && !e.isRest);
+                                                                        if (!nextEv) return null;
+
+                                                                        const targetPitch = nextEv.processedPitches.find(np => np.string === pitch.string);
+                                                                        if (!targetPitch) return null;
+
+                                                                        // Direct Inference Rule: Same note gets a curved tie arc, varying note gets a straight slide ramp
+                                                                        if (targetPitch.midi === pitch.midi) {
+                                                                            return (
+                                                                                <path
+                                                                                    d={`M ${ev.cx + 4} ${pitch.tabY} Q ${(ev.cx + nextEv.cx) / 2} ${pitch.tabY + 12} ${nextEv.cx - 4} ${targetPitch.tabY}`}
+                                                                                    fill="none"
+                                                                                    stroke={DARK_THEME.lineTie}
+                                                                                    strokeWidth="1.8"
+                                                                                    strokeLinecap="round"
+                                                                                />
+                                                                            );
+                                                                        } else {
+                                                                            return (
+                                                                                <line
+                                                                                    x1={ev.cx + 12}
+                                                                                    y1={pitch.tabY}
+                                                                                    x2={nextEv.cx - 12}
+                                                                                    y2={targetPitch.tabY}
+                                                                                    stroke={DARK_THEME.lineTie}
+                                                                                    strokeWidth="2"
+                                                                                    strokeLinecap="round"
+                                                                                />
+                                                                            );
+                                                                        }
                                                                     })()}
 
                                                                     {/* Bordered Rectangle Box for Fret Numbers */}

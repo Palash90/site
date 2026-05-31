@@ -906,4 +906,48 @@ export const dummyScore22 = {
   ]
 };
 
-export const allScores = [dummyScore, maryHadALittleLamb, twinkleTwinkleLittleStar, dummyScore34, dummyScore68, dummyScore22, two_voice_test];
+const many_ties_score = {
+  "id": "many_ties_score",
+  "title": "Many Ties Score",
+  "description": "A score designed to test the handling of multiple tied notes across measures.",
+  "timeSignature": "4/4",
+  "measures": [
+    {
+      "measureNumber": 1,
+      "notes": [
+        { "fret": 3, "string": 1, "duration": 2.0, "tie": true },
+        { "fret": 5, "string": 1, "duration": 2.0 }
+      ]
+    },
+    {
+      "measureNumber": 2,
+      "notes": [
+        { "fret": 3, "string": 1, "duration": 2.0, "tie": true },
+        { "fret": 3, "string": 1, "duration": 1.0 },
+        { "fret": 5, "string": 1, "duration": 1.0 }
+      ]
+    },
+    {
+      "measureNumber": 3,
+      "notes": [
+        { "fret": 2, "string": 1, "duration": 2.0, "tie": true },
+        { "fret": 2, "string": 1, "duration": 1.0 },
+        { "fret": 5, "string": 1, "duration": 1.0 }
+      ]
+    },
+    {
+      "measureNumber": 4,
+      "notes": [
+        { "fret": 1, "string": 2, "duration": 4.0 }
+      ]
+    }, {
+      "measureNumber": 5,
+      "notes": [
+        { "fret": 7, "string": 1, "duration": 2.0, "tie": true },
+        { "fret": 3, "string": 1, "duration": 2.0 }
+      ]
+    },
+  ]
+};
+
+export const allScores = [dummyScore, maryHadALittleLamb, twinkleTwinkleLittleStar, dummyScore34, dummyScore68, dummyScore22, two_voice_test, many_ties_score];
