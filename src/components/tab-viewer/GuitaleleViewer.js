@@ -519,80 +519,91 @@ export default function GuitaleleViewer({ scoreData }) {
         targetedEvents.forEach((ev, evIdx) => {
             if (ev.isRest) return;
 
-            ev.processedPitches.forEach((pitch) => {
-                const pitchKey = `${ev.globalIndex}_${pitch.string}`;
-                if (consumedPitches.has(pitchKey)) return;
+                ev.processedPitches.forEach((pitch) => {
+                    const pitchKey = `${ev.globalIndex}_${pitch.string}`;
+                    if (consumedPitches.has(pitchKey)) return;
 
-                // 1. Always start the chain execution with an initial pluck
-                const segments = [{
-                    type: 'pluck',
-                    midi: pitch.midi,
-                    duration: ev.beatValue * beatDurationSeconds
-                }];
-
-                let currentEvent = ev;
-                let currentEventIdx = evIdx;
-                let currentPitch = pitch;
-
-                // 2. Continuous chain builder using ONLY the tie property with proactive slide timing
-                while (currentEvent.isTiedToNext) {
-                    // Find the next active note on this specific voice channel
-                    const nextEvent = targetedEvents.slice(currentEventIdx + 1).find(e => e.voice === currentEvent.voice && !e.isRest);
-                    if (!nextEvent) break;
-
-                    const nextPitch = nextEvent.processedPitches.find(np => np.string === currentPitch.string);
-                    if (!nextPitch) break;
-
-                    const nextDurationSec = nextEvent.beatValue * beatDurationSeconds;
-
-                    // Determine articulation type based on pitch changes
-                    if (nextPitch.midi === currentPitch.midi) {
-                        // Structural Tie: Maintain the current pitch steady through the next note block
-                        segments.push({
-                            type: 'tie',
-                            midi: nextPitch.midi,
-                            duration: nextDurationSec
-                        });
-                    } else {
-                        // Realistic Slide Modification:
-                        // 1. Mutate the last segment (the current note) to end early by half its duration
-                        const currentSeg = segments[segments.length - 1];
-                        const halfDuration = currentSeg.duration / 2;
-                        currentSeg.duration = halfDuration;
-
-                        // 2. Insert the active slide transition inside the remaining half of the current note's space
-                        segments.push({
-                            type: 'slide',
-                            midi: nextPitch.midi,
-                            duration: halfDuration
-                        });
-
-                        // 3. Keep the target note steady once reached, sustaining it for its scheduled block
-                        segments.push({
-                            type: 'tie',
-                            midi: nextPitch.midi,
-                            duration: nextDurationSec
-                        });
+                    // If this pitch is muted (fret === null) schedule a silent/mute segment
+                    if (pitch.fret === null) {
+                        const segments = [{ type: 'mute', duration: ev.beatValue * beatDurationSeconds }];
+                        const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
+                        const humanJitter = (Math.random() - 0.5) * 0.005;
+                        const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
+                        playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, 0);
+                        return;
                     }
 
-                    // Lock down this downstream pitch so it doesn't fire a separate attack window
-                    const nextKey = `${nextEvent.globalIndex}_${nextPitch.string}`;
-                    consumedPitches.add(nextKey);
+                    // 1. Always start the chain execution with an initial pluck
+                    const segments = [{
+                        type: 'pluck',
+                        midi: pitch.midi,
+                        duration: ev.beatValue * beatDurationSeconds
+                    }];
 
-                    // Step forward in timeline sequence
-                    currentEventIdx = targetedEvents.indexOf(nextEvent);
-                    currentEvent = nextEvent;
-                    currentPitch = nextPitch;
-                }
-                // 3. Fire the custom compiled chain array downstream to audio.js
-                const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
-                const humanJitter = (Math.random() - 0.5) * 0.005;
-                const humanVelocity = 0.88 + Math.random() * 0.22;
-                const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
+                    let currentEvent = ev;
+                    let currentEventIdx = evIdx;
+                    let currentPitch = pitch;
 
-                playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, humanVelocity);
+                    // 2. Continuous chain builder using ONLY the tie property with proactive slide timing
+                    while (currentEvent.isTiedToNext) {
+                        // Find the next active note on this specific voice channel
+                        const nextEvent = targetedEvents.slice(currentEventIdx + 1).find(e => e.voice === currentEvent.voice && !e.isRest);
+                        if (!nextEvent) break;
+
+                        const nextPitch = nextEvent.processedPitches.find(np => np.string === currentPitch.string);
+                        if (!nextPitch) break;
+
+                        const nextDurationSec = nextEvent.beatValue * beatDurationSeconds;
+
+                        // Determine articulation type based on pitch changes
+                        if (nextPitch.midi === currentPitch.midi) {
+                            // Structural Tie: Maintain the current pitch steady through the next note block
+                            segments.push({
+                                type: 'tie',
+                                midi: nextPitch.midi,
+                                duration: nextDurationSec
+                            });
+                        } else {
+                            // Realistic Slide Modification:
+                            // 1. Mutate the last segment (the current note) to end early by half its duration
+                            const currentSeg = segments[segments.length - 1];
+                            const halfDuration = currentSeg.duration / 2;
+                            currentSeg.duration = halfDuration;
+
+                            // 2. Insert the active slide transition inside the remaining half of the current note's space
+                            segments.push({
+                                type: 'slide',
+                                midi: nextPitch.midi,
+                                duration: halfDuration
+                            });
+
+                            // 3. Keep the target note steady once reached, sustaining it for its scheduled block
+                            segments.push({
+                                type: 'tie',
+                                midi: nextPitch.midi,
+                                duration: nextDurationSec
+                            });
+                        }
+
+                        // Lock down this downstream pitch so it doesn't fire a separate attack window
+                        const nextKey = `${nextEvent.globalIndex}_${nextPitch.string}`;
+                        consumedPitches.add(nextKey);
+
+                        // Step forward in timeline sequence
+                        currentEventIdx = targetedEvents.indexOf(nextEvent);
+                        currentEvent = nextEvent;
+                        currentPitch = nextPitch;
+                    }
+
+                    // 3. Fire the custom compiled chain array downstream to audio.js
+                    const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
+                    const humanJitter = (Math.random() - 0.5) * 0.005;
+                    const humanVelocity = 0.88 + Math.random() * 0.22;
+                    const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
+
+                    playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, humanVelocity);
+                });
             });
-        });
 
         // Visual playhead sequencer stays safely intact
         scheduleVisuals(targetedEvents, startOffsetBeat, -scheduleOffsetSec);
@@ -932,38 +943,45 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                     {Array.from({ length: Math.max(0, upperLedgers) }).map((_, lIdx) => (<line key={`up-ledg-${lIdx}`} x1={ev.cx - 10} y1={clefTopY - ((lIdx + 1) * lineSpacing)} x2={ev.cx + 10} y2={clefTopY - ((lIdx + 1) * lineSpacing)} stroke={DARK_THEME.lineStaff} strokeWidth="1.2" />))}
                                                                     {Array.from({ length: Math.max(0, lowerLedgers) }).map((_, lIdx) => (<line key={`low-ledg-${lIdx}`} x1={ev.cx - 10} y1={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} x2={ev.cx + 10} y2={bottomStaffEdge + ((lIdx + 1) * lineSpacing)} stroke={DARK_THEME.lineStaff} strokeWidth="1.2" />))}
 
-                                                                    {ev.beatValue >= 2.0 ? (
-                                                                        <ellipse
-                                                                            cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4}
-                                                                            transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`}
-                                                                            fill="none" stroke={activeStrokeColor} strokeWidth="1.8"
-                                                                            filter={glowFilter}
-                                                                        />
+                                                                    {pitch.fret === null ? (
+                                                                        <g>
+                                                                            <line x1={ev.cx - 6} y1={pitch.staffY - 6} x2={ev.cx + 6} y2={pitch.staffY + 6} stroke={activeStrokeColor} strokeWidth="1.8" strokeLinecap="round" />
+                                                                            <line x1={ev.cx - 6} y1={pitch.staffY + 6} x2={ev.cx + 6} y2={pitch.staffY - 6} stroke={activeStrokeColor} strokeWidth="1.8" strokeLinecap="round" />
+                                                                        </g>
                                                                     ) : (
-                                                                        <ellipse
-                                                                            cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4}
-                                                                            transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`}
-                                                                            fill={activeNoteColor}
-                                                                            filter={glowFilter}
-                                                                        />
+                                                                        ev.beatValue >= 2.0 ? (
+                                                                            <ellipse
+                                                                                cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4}
+                                                                                transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`}
+                                                                                fill="none" stroke={activeStrokeColor} strokeWidth="1.8"
+                                                                                filter={glowFilter}
+                                                                            />
+                                                                        ) : (
+                                                                            <ellipse
+                                                                                cx={ev.cx} cy={pitch.staffY} rx={5.5} ry={4}
+                                                                                transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`}
+                                                                                fill={activeNoteColor}
+                                                                                filter={glowFilter}
+                                                                            />
+                                                                        )
                                                                     )}
 
-                                                                    {ev.isTiedToNext && (() => {
+                                                                    {ev.isTiedToNext && pitch.fret !== null && (() => {
                                                                         const nextEv = rowEvents.slice(idx + 1).find(e => e.voice === ev.voice && !e.isRest);
                                                                         if (!nextEv) return null;
                                                                         const targetPitch = nextEv.processedPitches.find(np => np.string === pitch.string) || nextEv.processedPitches[0];
-                                                                        if (targetPitch) {
+                                                                        if (targetPitch && targetPitch.fret !== null) {
                                                                             return (<path d={`M ${ev.cx + 4} ${pitch.staffY + 5} Q ${(ev.cx + nextEv.cx) / 2} ${Math.max(pitch.staffY, targetPitch.staffY) + 16} ${nextEv.cx - 4} ${targetPitch.staffY + 5}`} fill="none" stroke={DARK_THEME.lineTie} strokeWidth="1.8" strokeLinecap="round" />);
                                                                         }
                                                                         return null;
                                                                     })()}
 
-                                                                    {ev.isTiedToNext && (() => {
+                                                                    {ev.isTiedToNext && pitch.fret !== null && (() => {
                                                                         const nextEv = rowEvents.slice(idx + 1).find(e => e.voice === ev.voice && !e.isRest);
                                                                         if (!nextEv) return null;
 
                                                                         const targetPitch = nextEv.processedPitches.find(np => np.string === pitch.string);
-                                                                        if (!targetPitch) return null;
+                                                                        if (!targetPitch || targetPitch.fret === null) return null;
 
                                                                         // Direct Inference Rule: Same note gets a curved tie arc, varying note gets a straight slide ramp
                                                                         if (targetPitch.midi === pitch.midi) {
@@ -1012,7 +1030,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                         className="text-xs font-sans font-black tracking-wide"
                                                                         fill={isActive ? DARK_THEME.textTabNumberHover : DARK_THEME.textTabNumber}
                                                                     >
-                                                                        {pitch.fret}
+                                                                        {pitch.fret === null ? "X" : pitch.fret}
                                                                     </text>
                                                                 </g>
                                                             );

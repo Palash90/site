@@ -50,8 +50,55 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     const effectiveVelocity = velocity * polyphonyScale;
 
     // 3. Calculate Cumulative Physical Duration
-    const totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
-    const initialMidi = segments[0].midi;
+    const totalDuration = segments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
+
+    // Choose the first playable segment's MIDI for initial tuning math.
+    const firstPlayable = segments.find(s => typeof s.midi === 'number');
+
+    // Helper: play a short percussive noise for muted/dead notes
+    const playMutedPercussion = (time, dur = 0.06, vel = 0.7) => {
+        const len = Math.max(1, Math.floor(ctx.sampleRate * Math.min(0.08, dur)));
+        const noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < len; i++) {
+            // short, decaying noise shaped by (1 - t)
+            data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer;
+
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.setValueAtTime(1200, time);
+        bp.Q.value = 0.7;
+
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(Math.max(0.0001, vel * 0.18), time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + Math.min(dur, 0.06));
+
+        src.connect(bp);
+        bp.connect(g);
+        g.connect(getMasterGain(ctx));
+
+        src.start(time);
+        src.stop(time + Math.min(dur, 0.08));
+    };
+
+    // If there are no playable segments (everything is mute), schedule percussive noise and return.
+    if (!firstPlayable) {
+        let cursor = startTime;
+        for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i];
+            const segDur = seg.duration || 0.25;
+            if (seg.type === 'mute') {
+                playMutedPercussion(cursor, Math.min(0.08, segDur));
+            }
+            cursor += segDur;
+        }
+        return;
+    }
+
+    const initialMidi = firstPlayable.midi;
     const initialFundamental = 440 * Math.pow(2, (initialMidi - 69) / 12);
 
     // --- DE-DIGITALIZATION: Waveshaping Distortion for Acoustic Saturation ---
@@ -131,6 +178,11 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     midResonance.type = 'bandpass';
     midResonance.Q.value = 1.0;
 
+    // If the entire chain is mute, return early to avoid allocating audio nodes
+    if (segments.length > 0 && segments.every(s => s.type === 'mute')) {
+        return;
+    }
+
     // 7. Continuous Pitch Timeline Automation
     let timeCursor = startTime;
     let currentMidi = initialMidi;
@@ -151,10 +203,16 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
         const seg = segments[i];
         const segmentStartTime = timeCursor;
         const segmentEndTime = timeCursor + seg.duration;
-        const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
+        const hasMidi = typeof seg.midi === 'number';
+        // If this segment is explicitly a mute, advance the time cursor and skip audio work
+        if (seg.type === 'mute') {
+            timeCursor = segmentEndTime;
+            continue;
+        }
 
         if (seg.type === 'slide') {
             const startFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
+            const targetFund = hasMidi ? 440 * Math.pow(2, (seg.midi - 69) / 12) : startFund;
 
             stringOsc.frequency.setValueAtTime(startFund, segmentStartTime);
             bassSubOsc.frequency.setValueAtTime(startFund, segmentStartTime);
@@ -170,18 +228,21 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
 
             currentMidi = seg.midi;
         } else if (seg.type === 'hammer' || seg.type === 'pull') {
-            stringOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
-            bassSubOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
-            brightOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
-            overtoneOsc.frequency.setValueAtTime(targetFund * 2, segmentStartTime);
-            midResonance.frequency.setValueAtTime(Math.max(600, targetFund * 1.7), segmentStartTime);
+            if (hasMidi) {
+                const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
+                stringOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
+                bassSubOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
+                brightOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
+                overtoneOsc.frequency.setValueAtTime(targetFund * 2, segmentStartTime);
+                midResonance.frequency.setValueAtTime(Math.max(600, targetFund * 1.7), segmentStartTime);
 
-            currentMidi = seg.midi;
+                currentMidi = seg.midi;
 
-            stringOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
-            bassSubOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
-            brightOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
-            overtoneOsc.frequency.setValueAtTime(targetFund * 2, segmentEndTime);
+                stringOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
+                bassSubOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
+                brightOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
+                overtoneOsc.frequency.setValueAtTime(targetFund * 2, segmentEndTime);
+            }
         } else {
             const currentFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
             stringOsc.frequency.setValueAtTime(currentFund, segmentEndTime);

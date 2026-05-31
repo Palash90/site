@@ -12,7 +12,7 @@ export const two_voice_test = {
           "voice": 1,
           "description": "Voice 1: Sustained C major chord (C3, E3, G3, C4, E4, C5) held for a whole note duration.",
           "pitches": [
-            { "fret": 3, "string": 6 },
+            { "fret": null, "string": 6 },
             { "fret": 2, "string": 5 },
             { "fret": 0, "string": 4 },
             { "fret": 0, "string": 3 },
@@ -21,7 +21,7 @@ export const two_voice_test = {
           ]
         },
         { "fret": 0, "string": 1, "duration": 1.0, "voice": 2 },
-        { "fret": 2, "string": 1, "duration": 1.0, "voice": 2 },
+        { "fret": null, "string": 1, "duration": 1.0, "voice": 2 },
         { "fret": 3, "string": 2, "duration": 0.5, "voice": 2 },
         { "fret": 1, "string": 2, "duration": 0.5, "voice": 2 },
         { "fret": 0, "string": 3, "duration": 1.0, "voice": 2 }
@@ -74,7 +74,7 @@ export const dummyScore = {
         { "fret": 0, "string": 1, "duration": 1.0, "voice": 1 },
         { "fret": 2, "string": 1, "duration": 1.0, "voice": 1 },
         { "fret": 3, "string": 1, "duration": 1.0, "voice": 1 },
-        { "fret": 0, "string": 2, "duration": 1.0, "voice": 1 },
+        { "fret": null, "string": 2, "duration": 1.0, "voice": 1 },
         { "fret": 0, "string": 1, "duration": 0.5, "voice": 2 },
         { "fret": 1, "string": 1, "duration": 0.5, "voice": 2 },
         { "fret": 2, "string": 1, "duration": 0.5, "voice": 2 },
