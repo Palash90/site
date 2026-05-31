@@ -7,6 +7,7 @@ import Content from "./Content"
 import CustomComponent from "./CustomComponent"
 import { Container } from "react-bootstrap"
 import TabViewerDemo from "./tab-viewer/TabViewerDemo"
+import TabSorthandParser from "./tab-viewer/TabShorthandParser"
 
 export default function RouteResolver() {
     return (
@@ -19,6 +20,7 @@ export default function RouteResolver() {
                     <Route path='/content/:contentId' element={<Content />} />
                     <Route path='/projects' element={<Projects />} />
                     <Route path='/tab-demo' element={<TabViewerDemo />} />
+                    <Route path='/tab-parser' element={<TabSorthandParser />} />
                     <Route path='/component/:componentId' element={<CustomComponent />} />
                     <Route path='/about' element={<About />} />
                 </Routes>

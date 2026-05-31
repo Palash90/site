@@ -20,7 +20,7 @@ export default function TabViewer(props) {
                 return response.text();
             })
             .then(textData => {
-                setData(JSON.parse(textData));
+                setData(textData);
                 setLoading(false);
             })
             .catch(err => {

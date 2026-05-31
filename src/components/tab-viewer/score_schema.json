@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstrumentTablatureScore",
+  "description": "Schema for validating musical instrument tablature structures, supporting multi-voice polyphony, chords, rests, and ties.",
+  "type": "object",
+  "required": ["id", "title", "instrument", "timeSignature", "measures"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the musical score."
+    },
+    "title": {
+      "type": "string",
+      "description": "The title of the piece or exercise."
+    },
+    "instrument": {
+      "type": "string",
+      "description": "The target musical instrument for this tablature (e.g., 'Guitalele')."
+    },
+    "description": {
+      "type": "string",
+      "description": "An optional summary or stylistic context regarding the arrangement."
+    },
+    "timeSignature": {
+      "type": "string",
+      "pattern": "^\\d+/\\d+$",
+      "description": "The time signature of the piece formatted as 'Beats/BeatUnit' (e.g., '4/4', '2/4', '6/8')."
+    },
+    "measures": {
+      "type": "array",
+      "description": "The chronologically ordered list of bars or measures making up the score.",
+      "items": {
+        "type": "object",
+        "required": ["measureNumber", "notes"],
+        "properties": {
+          "measureNumber": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The sequential number of the measure within the score."
+          },
+          "notes": {
+            "type": "array",
+            "description": "A collection of sequential or overlapping musical events (notes, rests, chords) within this measure.",
+            "items": {
+              "type": "object",
+              "required": ["duration"],
+              "properties": {
+                "duration": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "The rhythmic duration of the musical event in beats (e.g., 4.0 for a whole note, 1.0 for a quarter note, 0.5 for an eighth note in common time)."
+                },
+                "fret": {
+                  "type": ["integer", "null"],
+                  "minimum": 0,
+                  "description": "The fret position to press. An integer value means a specific fret, 0 means open string, and null implies a uniquely muted/dead fret scenario or dynamic placement instruction."
+                },
+                "string": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "The physical string line index on the instrument fretboard."
+                },
+                "voice": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Used in polyphonic lines to differentiate parallel voice tracks within the same time space (e.g., Voice 1 for melody, Voice 2 for bass line)."
+                },
+                "tie": {
+                  "type": "boolean",
+                  "description": "Indicates that the sound of this note sustains seamlessly into the immediate following note configuration."
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Optional educational text or playback annotations tied to this particular note action."
+                },
+                "pitches": {
+                  "type": "array",
+                  "description": "Defines a simultaneous chord profile. When present, individual string/fret combinations move here instead of the root object mapping.",
+                  "items": {
+                    "type": "object",
+                    "required": ["string"],
+                    "properties": {
+                      "fret": {
+                        "type": ["integer", "null"],
+                        "minimum": 0,
+                        "description": "The specific fret position for this piece of the chord array block."
+                      },
+                      "string": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The target string designation for this coordinate block entry."
+                      }
+                    }
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "comment": "If string is present, fret must be declared too (even if null). Validates standard single notes.",
+                  "if": { "required": ["string"] },
+                  "then": { "required": ["fret"] }
+                },
+                {
+                  "comment": "If neither pitches nor string/fret are populated, this object represents a musical rest.",
+                  "if": {
+                    "not": { "required": ["string"] }
+                  },
+                  "then": {
+                    "not": { "required": ["pitches"] }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

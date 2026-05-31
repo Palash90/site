@@ -1,4 +1,4 @@
-export const two_voice_test = {
+const two_voice_test = {
   "id": "two_voice_test",
   "title": "Two Voice Separation Demo",
   "instrument": "Guitalele",
@@ -40,7 +40,7 @@ export const two_voice_test = {
   ]
 };
 
-export const dummyScore = {
+const dummyScore = {
   "id": "full_test_score",
   "title": "Guitalele Tab viewer Full Test Score",
   "instrument": "Guitalele",
@@ -512,7 +512,7 @@ export const dummyScore = {
   ]
 };
 
-export const dummyScore24 = {
+const dummyScore24 = {
   "id": "marching_pattern_24",
   "instrument": "Guitalele",
   "title": "2/4 Marching Pattern",
@@ -560,7 +560,7 @@ export const dummyScore24 = {
     {
       "measureNumber": 6,
       "notes": [
-        { "duration": 1.0 },
+        { "duration": 1.0 }, 
         { "fret": 0, "string": 4, "duration": 1.0 }
       ]
     },
@@ -583,7 +583,7 @@ export const dummyScore24 = {
   ]
 };
 
-export const maryHadALittleLamb = {
+const maryHadALittleLamb = {
   "id": "mary_had_a_little_lamb",
   "title": "Mary Had a Little Lamb",
   "description": "A classic nursery rhyme arrangement mapped accurately to standard Guitalele tuning (ADGCEA).",
@@ -694,7 +694,7 @@ export const maryHadALittleLamb = {
   ]
 };
 
-export const twinkleTwinkleLittleStar = {
+const twinkleTwinkleLittleStar = {
   "id": "twinkle_twinkle_little_star",
   "title": "Twinkle Twinkle Little Star",
   "description": "A classic nursery rhyme arrangement mapped to standard Guitalele tuning (ADGCEA).",
@@ -755,7 +755,7 @@ export const twinkleTwinkleLittleStar = {
   ]
 };
 
-export const dummyScore34 = {
+const dummyScore34 = {
   "id": "34_waltz_excerpt",
   "title": "3/4 Waltz Excerpt",
   "description": "A sweeping arpeggio block focusing on 3-beat divisions and dotted notes.",
@@ -808,7 +808,7 @@ export const dummyScore34 = {
   ]
 };
 
-export const dummyScore68 = {
+const dummyScore68 = {
   "id": "68_arpeggio_flow",
   "title": "6/8 Arpeggio Flow",
   "description": "Flowing 6-beat cascading notes. Demonstrates longer horizontal measure stretching.",
@@ -851,7 +851,7 @@ export const dummyScore68 = {
   ]
 };
 
-export const dummyScore22 = {
+const dummyScore22 = {
   "id": "22_cut_time_fanfare",
   "title": "2/2 Cut Time Fanfare",
   "description": "A brisk, driving march in Cut Time. Note that each measure sums to 4.0 beats total to ensure correct barline placement.",
@@ -956,4 +956,120 @@ const many_ties_score = {
   ]
 };
 
-export const allScores = [dummyScore, maryHadALittleLamb, twinkleTwinkleLittleStar, dummyScore34, dummyScore68, dummyScore22, two_voice_test, many_ties_score, dummyScore24];
+const allScores = [
+  dummyScore24,
+  maryHadALittleLamb,
+  twinkleTwinkleLittleStar,
+  dummyScore34,
+  dummyScore68,
+  dummyScore22,
+  many_ties_score,
+  two_voice_test,
+  dummyScore
+];
+
+/**
+ * Encodes a single note into shorthand format
+ */
+function encodeNote(note) {
+  // Handle rest
+  if (!note.hasOwnProperty('fret') && !note.hasOwnProperty('string') && !note.hasOwnProperty('pitches')) {
+    let shorthand = `-@${note.duration}`;
+    if (note.voice) shorthand += `v${note.voice}`;
+    return shorthand;
+  }
+
+  // Handle pitches array (chord)
+  if (note.pitches && Array.isArray(note.pitches)) {
+    const pitchesShorthand = note.pitches.map(pitch => {
+      if (pitch.fret === null) return `X:${pitch.string}`;
+      if (pitch.fret === 0) return `O:${pitch.string}`;
+      return `${pitch.fret}:${pitch.string}`;
+    }).join('|');
+
+    let shorthand = `[${pitchesShorthand}]@${note.duration}`;
+    if (note.voice) shorthand += `v${note.voice}`;
+    if (note.tie) shorthand += 't';
+    return shorthand;
+  }
+
+  // Handle single note
+  let fretPart = '';
+  if (note.fret === null) {
+    fretPart = `X:${note.string}`;
+  } else if (note.fret === 0) {
+    fretPart = `O:${note.string}`;
+  } else {
+    fretPart = `${note.fret}:${note.string}`;
+  }
+
+  let shorthand = `${fretPart}@${note.duration}`;
+  if (note.voice) shorthand += `v${note.voice}`;
+  if (note.tie) shorthand += 't';
+  if (note.description) shorthand += `d:${note.description}`;
+
+  return shorthand;
+}
+
+/**
+ * Encodes an entire score into shorthand format
+ */
+function encodeScore(score) {
+  let output = '';
+  output += `\n${'='.repeat(80)}\n`;
+  output += `Score: ${score.title || score.id}\n`;
+  output += `ID: ${score.id}\n`;
+  output += `Instrument: ${score.instrument || 'N/A'}\n`;
+  output += `Time Signature: ${score.timeSignature || 'N/A'}\n`;
+  if (score.description) output += `Description: ${score.description}\n`;
+  output += `${'='.repeat(80)}\n\n`;
+
+  score.measures.forEach(measure => {
+    output += `Measure ${measure.measureNumber}: `;
+    const notesShorthand = measure.notes.map(encodeNote).join(' | ');
+    output += notesShorthand;
+    output += '\n';
+  });
+
+  return output;
+}
+
+const fs = require('fs');
+
+const encodeAllScores = () => {
+  const scores = allScores;
+
+  if (scores.length === 0) {
+    console.error('No scores found in dummy_score.js');
+    process.exit(1);
+  }
+
+  // Generate output
+  let outputContent = '';
+  outputContent += `GUITAR TAB SCORES - SHORTHAND ENCODING\n`;
+  outputContent += `Generated: ${new Date().toISOString()}\n`;
+  outputContent += `Format: F:S@D[v#][t][d:description]\n`;
+  outputContent += `  F = Fret (0-24, O=open, X=muted)\n`;
+  outputContent += `  S = String (1-6)\n`;
+  outputContent += `  D = Duration (0.25, 0.5, 1.0, 2.0, 4.0)\n`;
+  outputContent += `  v# = Voice (optional)\n`;
+  outputContent += `  t = Tie (optional)\n`;
+  outputContent += `  d:text = Description (optional)\n`;
+  outputContent += `  - = Rest\n`;
+  outputContent += `  | = Note separator\n`;
+  outputContent += `  [F:S|F:S...] = Chord/Pitches\n`;
+  outputContent += `${'='.repeat(80)}\n`;
+
+  console.log(`✓ Found ${scores.length} scores to encode.`);
+  // Encode all scores
+  scores.forEach(score => {
+    outputContent += encodeScore(score);
+  });
+
+  fs.writeFileSync('encoded_scores.txt', outputContent, 'utf-8');
+
+  console.log(`✓ Writing encoded scores\n`, outputContent);
+  console.log("Done encoding all scores.");
+}
+
+encodeAllScores();
