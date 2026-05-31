@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import GuitaleleViewer from "./GuitaleleViewer";
+import { parseShorthandText } from "./parseShorthandUtils";
 
 export default function TabViewer(props) {
 
@@ -20,7 +21,8 @@ export default function TabViewer(props) {
                 return response.text();
             })
             .then(textData => {
-                setData(textData);
+                const parsedData = parseShorthandText(textData);
+                setData(parsedData[0]);
                 setLoading(false);
             })
             .catch(err => {
