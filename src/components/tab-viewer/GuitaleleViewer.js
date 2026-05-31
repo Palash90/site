@@ -534,8 +534,8 @@ export default function GuitaleleViewer({ scoreData }) {
                 let currentEventIdx = evIdx;
                 let currentPitch = pitch;
 
-                // 2. Continuous chain builder using ONLY the tie property
-                while (currentEvent.isTiedToNext) { // maps directly to "tie": true in JSON
+                // 2. Continuous chain builder using ONLY the tie property with proactive slide timing
+                while (currentEvent.isTiedToNext) {
                     // Find the next active note on this specific voice channel
                     const nextEvent = targetedEvents.slice(currentEventIdx + 1).find(e => e.voice === currentEvent.voice && !e.isRest);
                     if (!nextEvent) break;
@@ -543,15 +543,37 @@ export default function GuitaleleViewer({ scoreData }) {
                     const nextPitch = nextEvent.processedPitches.find(np => np.string === currentPitch.string);
                     if (!nextPitch) break;
 
-                    // --- SMART INFERENCE HAPPENS HERE ---
-                    // If MIDI pitch is identical, it's a structural Tie. If it changes, treat it as a Slide!
-                    const inferredType = (nextPitch.midi === currentPitch.midi) ? 'tie' : 'slide';
+                    const nextDurationSec = nextEvent.beatValue * beatDurationSeconds;
 
-                    segments.push({
-                        type: inferredType,
-                        midi: nextPitch.midi,
-                        duration: nextEvent.beatValue * beatDurationSeconds
-                    });
+                    // Determine articulation type based on pitch changes
+                    if (nextPitch.midi === currentPitch.midi) {
+                        // Structural Tie: Maintain the current pitch steady through the next note block
+                        segments.push({
+                            type: 'tie',
+                            midi: nextPitch.midi,
+                            duration: nextDurationSec
+                        });
+                    } else {
+                        // Realistic Slide Modification:
+                        // 1. Mutate the last segment (the current note) to end early by half its duration
+                        const currentSeg = segments[segments.length - 1];
+                        const halfDuration = currentSeg.duration / 2;
+                        currentSeg.duration = halfDuration;
+
+                        // 2. Insert the active slide transition inside the remaining half of the current note's space
+                        segments.push({
+                            type: 'slide',
+                            midi: nextPitch.midi,
+                            duration: halfDuration
+                        });
+
+                        // 3. Keep the target note steady once reached, sustaining it for its scheduled block
+                        segments.push({
+                            type: 'tie',
+                            midi: nextPitch.midi,
+                            duration: nextDurationSec
+                        });
+                    }
 
                     // Lock down this downstream pitch so it doesn't fire a separate attack window
                     const nextKey = `${nextEvent.globalIndex}_${nextPitch.string}`;
@@ -562,7 +584,6 @@ export default function GuitaleleViewer({ scoreData }) {
                     currentEvent = nextEvent;
                     currentPitch = nextPitch;
                 }
-
                 // 3. Fire the custom compiled chain array downstream to audio.js
                 const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
                 const humanJitter = (Math.random() - 0.5) * 0.005;

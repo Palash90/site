@@ -80,34 +80,42 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
 
     for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
-        const nextTime = timeCursor + seg.duration;
+        const segmentStartTime = timeCursor;
+        const segmentEndTime = timeCursor + seg.duration;
+
+        const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
 
         if (seg.type === 'slide') {
-            // SLIDE UP / SLIDE DOWN: Linearly ramp frequency to destination over segment duration
-            const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
-            stringOsc.frequency.linearRampToValueAtTime(targetFund, nextTime);
-            overtoneOsc.frequency.linearRampToValueAtTime(targetFund * 2, nextTime);
-            midResonance.frequency.linearRampToValueAtTime(Math.max(650, targetFund * 1.8), nextTime);
+            // Anchor the current starting pitch at the beginning of the slide segment
+            const startFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
+            stringOsc.frequency.setValueAtTime(startFund, segmentStartTime);
+            overtoneOsc.frequency.setValueAtTime(startFund * 2, segmentStartTime);
+            midResonance.frequency.setValueAtTime(Math.max(650, startFund * 1.8), segmentStartTime);
+
+            // Linearly ramp frequency across the slide duration, arriving precisely at the boundary
+            stringOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
+            overtoneOsc.frequency.linearRampToValueAtTime(targetFund * 2, segmentEndTime);
+            midResonance.frequency.linearRampToValueAtTime(Math.max(650, targetFund * 1.8), segmentEndTime);
+
             currentMidi = seg.midi;
         } else if (seg.type === 'hammer' || seg.type === 'pull') {
-            // HAMMER ON / PULL OFF: Instantly snap pitch at segment boundary without a new pluck
-            const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
-            stringOsc.frequency.setValueAtTime(targetFund, timeCursor);
-            overtoneOsc.frequency.setValueAtTime(targetFund * 2, timeCursor);
-            midResonance.frequency.setValueAtTime(Math.max(650, targetFund * 1.8), timeCursor);
-            currentMidi = seg.midi;
+            // Instant mechanical fret change snap
+            stringOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
+            overtoneOsc.frequency.setValueAtTime(targetFund * 2, segmentStartTime);
+            midResonance.frequency.setValueAtTime(Math.max(650, targetFund * 1.8), segmentStartTime);
 
-            // Hold frequency value steady to the end of the segment
-            stringOsc.frequency.setValueAtTime(targetFund, nextTime);
-            overtoneOsc.frequency.setValueAtTime(targetFund * 2, nextTime);
+            // Sustain value steady through the rest of this duration block
+            stringOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
+            overtoneOsc.frequency.setValueAtTime(targetFund * 2, segmentEndTime);
+            currentMidi = seg.midi;
         } else {
-            // TIE / PLUCK: Maintain current string length pitch steady through this duration block
+            // TIE / PLUCK: Hold current pitch steady throughout this block
             const currentFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
-            stringOsc.frequency.setValueAtTime(currentFund, nextTime);
-            overtoneOsc.frequency.setValueAtTime(currentFund * 2, nextTime);
+            stringOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
+            overtoneOsc.frequency.setValueAtTime(currentFund * 2, segmentEndTime);
         }
 
-        timeCursor = nextTime;
+        timeCursor = segmentEndTime;
     }
 
     // 7. Mechanical Pluck Transient (Fires ONLY once at the initial timestamp)

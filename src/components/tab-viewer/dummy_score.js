@@ -946,7 +946,13 @@ const many_ties_score = {
         { "fret": 7, "string": 1, "duration": 2.0, "tie": true },
         { "fret": 3, "string": 1, "duration": 2.0 }
       ]
-    },
+    }, {
+      "measureNumber": 6,
+      "notes": [
+        { "fret": 2, "string": 1, "duration": 2.0, "tie": true },
+        { "fret": 7, "string": 1, "duration": 2.0 }
+      ]
+    }
   ]
 };
 
