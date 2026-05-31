@@ -82,6 +82,13 @@ export default function Content() {
             </>)
         case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} tab={tab} />
 
-        default: return <div>Unknown Content Type</div>
+        default: {
+            if (tab) {
+                return <>
+                    <TabViewer tab={tab} />
+                </>
+            }
+            return <div>Unknown Content Type</div>
+        }
     }
 }
