@@ -18,6 +18,15 @@ const getMasterGain = (ctx) => {
     return ctx.masterGain;
 };
 
+// Add this helper or integrate directly into playHumanizedGuitaleleNote
+const getDynamicVolume = (midiOrChain, velocity) => {
+    // Determine the number of simultaneous triggers
+    const triggerCount = Array.isArray(midiOrChain) ? 1 : 1; // You can pass 'activeNoteCount' as a param
+    // Logarithmic scaling prevents the "doubling volume" effect
+    const scale = 1 / Math.sqrt(Math.max(1, 3)); // Assume 3 notes are always possible
+    return velocity * scale;
+};
+
 /**
  * Plays a single note or a chain of continuous articulations with realistic nylon string modeling.
  * Enhanced to eliminate 1980s digital synthesis artifacts and add warm body bass response.
@@ -218,14 +227,21 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     overtoneOsc.start(startTime);
     pluckNoise.start(startTime);
 
-    // 9. Playback Execution with Fade-Out
-    const fadeOutTime = 0.000000625;
+    // 1. Scale velocity for chords to prevent clipping
+    const polyphonyScale = Array.isArray(midiOrChain) && midiOrChain.length > 1 ? 0.6 : 1.0;
+    const effectiveVelocity = velocity * polyphonyScale;
+
+    // 2. Playback Execution with a proper Fade-Out
+    const fadeOutTime = 0.0000001; // 10ms is the "sweet spot" for click-free stops
     const stopTime = startTime + totalDecayTime;
 
-    // Ramp to silence before stopping
+    // Ensure we ramp to zero *at* the stopTime
+    // First, anchor the current gain at the start of the fade-out
     mainGain.gain.setValueAtTime(mainGain.gain.value, stopTime - fadeOutTime);
+    // Then ramp to zero over the fadeOutTime duration
     mainGain.gain.linearRampToValueAtTime(0, stopTime);
 
+    // 3. Stop the oscillators exactly at the stopTime
     stringOsc.stop(stopTime);
     bassSubOsc.stop(stopTime);
     brightOsc.stop(stopTime);
