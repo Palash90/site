@@ -560,7 +560,7 @@ const dummyScore24 = {
     {
       "measureNumber": 6,
       "notes": [
-        { "duration": 1.0 }, 
+        { "duration": 1.0 },
         { "fret": 0, "string": 4, "duration": 1.0 }
       ]
     },
@@ -1019,8 +1019,8 @@ function encodeScore(score) {
   output += `\n${'='.repeat(80)}\n`;
   output += `Score: ${score.title || score.id}\n`;
   output += `ID: ${score.id}\n`;
-  output += `Instrument: ${score.instrument || 'N/A'}\n`;
-  output += `Time Signature: ${score.timeSignature || 'N/A'}\n`;
+  output += `Instrument: ${score.instrument || 'Guitalele'}\n`;
+  output += `Time Signature: ${score.timeSignature || '4/4'}\n`;
   if (score.description) output += `Description: ${score.description}\n`;
   output += `${'='.repeat(80)}\n\n`;
 
@@ -1037,7 +1037,52 @@ function encodeScore(score) {
 const fs = require('fs');
 
 const encodeAllScores = () => {
-  const scores = allScores;
+  const scores = [{
+    "title": "Guitalele Default Tuning",
+    "description": "The default tuning for a guitalele is A-D-G-C-E-A",
+    "timeSignature": "4/4",
+    "measures": [
+      {
+        "measureNumber": 1,
+        "notes": [
+          {
+            "fret": 0,
+            "string": 6,
+            "duration": 1,
+            "tie": true
+          },
+          {
+            "fret": 0,
+            "string": 5,
+            "duration": 1
+          },
+          {
+            "fret": 0,
+            "string": 4,
+            "duration": 1
+          },
+          {
+            "fret": 0,
+            "string": 3,
+            "duration": 1
+          }]
+      },
+      {
+        "measureNumber": 2,
+        "notes": [
+          {
+            "fret": 0,
+            "string": 2,
+            "duration": 1
+          },
+          {
+            "fret": 0,
+            "string": 1,
+            "duration": 1
+          }]
+      }
+    ]
+  }];
 
   if (scores.length === 0) {
     console.error('No scores found in dummy_score.js');
@@ -1046,7 +1091,7 @@ const encodeAllScores = () => {
 
   // Generate output
   let outputContent = '';
-  outputContent += `GUITAR TAB SCORES - SHORTHAND ENCODING\n`;
+  outputContent += `GUITALELE TAB SCORES - SHORTHAND ENCODING\n`;
   outputContent += `Generated: ${new Date().toISOString()}\n`;
   outputContent += `Format: F:S@D[v#][t][d:description]\n`;
   outputContent += `  F = Fret (0-24, O=open, X=muted)\n`;

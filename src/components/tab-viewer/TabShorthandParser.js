@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { parseShorthandText } from './parseShorthandUtils';
+import GuitaleleViewer from './GuitaleleViewer';
 
 export const TabShorthandParser = () => {
     const [shorthandText, setShorthandText] = useState('');
@@ -45,6 +46,7 @@ export const TabShorthandParser = () => {
                     </pre>
                 </div>
             )}
+            <GuitaleleViewer scoreData={parsedData && parsedData.length > 0 ? parsedData[0] : null} editorMode={false} />
         </div>
     );
 };
