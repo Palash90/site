@@ -12,7 +12,7 @@ const GUITALELE_TUNING = {
 
 const RHYTHM_BEAT_VALUES = {
     'o': 4.0, 'o.': 6.0, '.': 2.0, '..': 3.0, ':': 1.0, ':.': 1.5, '+': 0.5, '+.': 0.75, '=': 0.25,
-    'x': 1.0, 'x.': 1.5, 'x+': 0.5, 'x=': 0.25
+    'r': 1.0, 'r.': 1.5, 'r+': 0.5, 'r=': 0.25
 };
 
 const CHROMATIC_MAP = {
@@ -293,10 +293,10 @@ export default function GuitaleleViewer({ scoreData }) {
 
                 if (!detectedRhythm && event.duration !== undefined) {
                     if (isRestEvent) {
-                        if (event.duration === 1.5) detectedRhythm = 'x.';
-                        else if (event.duration === 1.0) detectedRhythm = 'x';
-                        else if (event.duration === 0.5) detectedRhythm = 'x+';
-                        else if (event.duration === 0.25) detectedRhythm = 'x=';
+                        if (event.duration === 1.5) detectedRhythm = 'r.';
+                        else if (event.duration === 1.0) detectedRhythm = 'r';
+                        else if (event.duration === 0.5) detectedRhythm = 'r+';
+                        else if (event.duration === 0.25) detectedRhythm = 'r=';
                     } else {
                         if (event.duration === 6.0) detectedRhythm = 'o.';
                         else if (event.duration === 4.0) detectedRhythm = 'o';
@@ -325,9 +325,9 @@ export default function GuitaleleViewer({ scoreData }) {
                         ...event,
                         pitches: [...pitches],
                         descriptions: event.description ? [event.description] : [],
-                        rhythm: detectedRhythm || (isRestEvent ? 'x' : ':'),
+                        rhythm: detectedRhythm || (isRestEvent ? 'r' : ':'),
                         beatValue,
-                        isRest: isRestEvent || (detectedRhythm && detectedRhythm.startsWith('x')),
+                        isRest: isRestEvent || (detectedRhythm && detectedRhythm.startsWith('r')),
                         voice,
                         startBeat,
                         measureNumber: mNum,
@@ -919,9 +919,9 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                 {ev.isRest ? (
                                                     <g>
-                                                        {ev.rhythm === 'x' && <path d={`M ${ev.cx - 4} ${trebleTopY + 28} L ${ev.cx + 4} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 40} Q ${ev.cx + 6} ${trebleTopY + 44} ${ev.cx} ${trebleTopY + 50}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" strokeLinecap="round" />}
-                                                        {ev.rhythm === 'x+' && <path d={`M ${ev.cx - 3} ${trebleTopY + 32} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${trebleTopY + 34} Q ${ev.cx - 2} ${trebleTopY + 38} ${ev.cx + 4} ${trebleTopY + 30} L ${ev.cx - 3} ${trebleTopY + 50}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
-                                                        {ev.rhythm === 'x=' && (
+                                                        {ev.rhythm === 'r' && <path d={`M ${ev.cx - 4} ${trebleTopY + 28} L ${ev.cx + 4} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 40} Q ${ev.cx + 6} ${trebleTopY + 44} ${ev.cx} ${trebleTopY + 50}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" strokeLinecap="round" />}
+                                                        {ev.rhythm === 'r+' && <path d={`M ${ev.cx - 3} ${trebleTopY + 32} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${trebleTopY + 34} Q ${ev.cx - 2} ${trebleTopY + 38} ${ev.cx + 4} ${trebleTopY + 30} L ${ev.cx - 3} ${trebleTopY + 50}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+                                                        {ev.rhythm === 'r=' && (
                                                             <g>
                                                                 <path d={`M ${ev.cx - 2} ${trebleTopY + 27} A 3 3 0 1 1 ${ev.cx + 3} ${trebleTopY + 29} Q ${ev.cx - 1} ${trebleTopY + 33} ${ev.cx + 5} ${trebleTopY + 25}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" />
                                                                 <path d={`M ${ev.cx - 4} ${trebleTopY + 36} A 3 3 0 1 1 ${ev.cx + 1} ${trebleTopY + 38} Q ${ev.cx - 3} ${trebleTopY + 42} ${ev.cx + 3} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 52}`} fill="none" stroke={DARK_THEME.fillRest} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
