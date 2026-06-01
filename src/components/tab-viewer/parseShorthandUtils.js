@@ -7,6 +7,18 @@ const parseFretValue = (fretStr) => {
     return parseInt(cleanFret, 10);
 };
 
+const durationMap = {
+    's': 0.25,   // Sixteenth
+    'e': 0.5,    // Eighth
+    'e.': 0.75,  // Dotted Eighth
+    'q': 1.0,    // Quarter
+    'q.': 1.5,   // Dotted Quarter
+    'h': 2.0,    // Half
+    'h.': 3.0,   // Dotted Half
+    'w': 4.0,    // Whole
+    'w.': 6.0    // Dotted Whole
+};
+
 // Helper to parse individual note/rest/chord tokens cleanly
 export const parseToken = (token) => {
     const event = { duration: 1.0 }; // Default fallback
@@ -33,9 +45,11 @@ export const parseToken = (token) => {
     }
 
     // 4. Extract Duration flag
-    const durationMatch = workingToken.match(/@([\d.]+)/);
+    const durationMatch = workingToken.match(/@([whqes]\.?)/);
     if (durationMatch) {
-        event.duration = parseFloat(durationMatch[1]);
+        const durStr = durationMatch[1];
+        // Map the string to the value; default to parseFloat if it's a raw number
+        event.duration = durationMap[durStr] || parseFloat(durStr);
         workingToken = workingToken.split('@')[0];
     }
 
@@ -48,7 +62,7 @@ export const parseToken = (token) => {
     if (workingToken.startsWith('[') && workingToken.endsWith(']')) {
         const chordContent = workingToken.slice(1, -1);
         const elements = chordContent.split('|').filter(Boolean);
-        
+
         event.pitches = elements.map(el => {
             const parts = el.split(':');
             return {
@@ -112,16 +126,17 @@ export const parseShorthandText = (shorthandText) => {
                 continue;
             }
 
-            // Process structural measure text lines
-            if (line.startsWith('Measure')) {
-                const measureMatch = line.match(/^Measure\s+(\d+):\s*(.*)$/);
+            // --- CHANGED SECTION ---
+            // Process structural measure text lines (Matches "Measure 1:" or "M 1:" or "M1:")
+            if (line.startsWith('Measure') || line.startsWith('M')) {
+                const measureMatch = line.match(/^(?:Measure|M)\s*(\d+):\s*(.*)$/);
                 if (measureMatch) {
                     const measureNumber = parseInt(measureMatch[1], 10);
                     const measureContent = measureMatch[2];
 
                     // Splitting tokens using a regex matching pipes outside brackets
                     const rawTokens = measureContent
-                        .split(/\s+\|\s+/)
+                        .split(/\s\|\s+/)
                         .map(t => t.trim())
                         .filter(Boolean);
 
@@ -133,10 +148,10 @@ export const parseShorthandText = (shorthandText) => {
                     });
                 }
             }
+            // -----------------------
         }
     }
 
-    // Always catch trailing score items at bottom of loop context
     if (currentScore) {
         scores.push(currentScore);
     }

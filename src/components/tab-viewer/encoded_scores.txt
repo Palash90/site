@@ -15,10 +15,11 @@ Format: F:S@D[v#][t][d:description]
 ================================================================================
 Score: Guitalele Default Tuning
 ID: undefined
-Instrument: N/A
+Instrument: Guitalele
 Time Signature: 4/4
 Description: The default tuning for a guitalele is A-D-G-C-E-A
 ================================================================================
 
-Measure 1: O:6@1t | O:5@1 | O:4@1 | O:3@1
-Measure 2: O:2@1 | O:1@1
+Measure 1: O:6@qt | O:5@q | O:4@q | O:3@q
+Measure 2: O:2@q | O:1@q |-@q
+M3: [0:6|0:4]@q d: check some

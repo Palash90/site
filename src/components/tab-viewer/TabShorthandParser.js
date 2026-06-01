@@ -11,6 +11,7 @@ export const TabShorthandParser = () => {
         try {
             setError(null);
             const scores = parseShorthandText(shorthandText);
+            console.log('Parsed Scores:', scores);
             setParsedData(scores);
         } catch (err) {
             setError(err.message || 'An error occurred during parsing.');
@@ -34,6 +35,13 @@ export const TabShorthandParser = () => {
                 style={{ padding: '10px 20px', marginTop: '10px', cursor: 'pointer', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px' }}
             >
                 Parse to Schema JSON
+            </button>
+
+            <button
+                onClick={() => { setShorthandText(''); setParsedData(null); setError(null); }}
+                style={{ padding: '10px 20px', marginTop: '10px', cursor: 'pointer', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px' }}
+            >
+                Clear
             </button>
 
             {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
