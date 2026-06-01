@@ -20,7 +20,7 @@ const durationMap = {
 };
 
 // Helper to parse individual note/rest/chord tokens cleanly
-export const parseToken = (token) => {
+export const parseToken = (token, capo = 0) => {
     const event = { duration: 1.0 }; // Default fallback
     let workingToken = token.trim();
 
@@ -77,7 +77,8 @@ export const parseToken = (token) => {
     if (workingToken.includes(':')) {
         const parts = workingToken.split(':');
         event.string = parseInt(parts[1], 10);
-        event.fret = parseFretValue(parts[0]);
+        const rawFret = parseFretValue(parts[0].trim());
+        event.fret = (rawFret !== null) ? (rawFret + capo) : null;
         return event;
     }
 
@@ -103,7 +104,8 @@ export const parseShorthandText = (shorthandText) => {
                 title: line.replace('Score:', '').trim(),
                 instrument: '',
                 timeSignature: '',
-                measures: []
+                measures: [],
+                capo: 0
             };
             continue;
         }
@@ -125,6 +127,11 @@ export const parseShorthandText = (shorthandText) => {
                 currentScore.description = line.replace('Description:', '').trim();
                 continue;
             }
+            if (line.startsWith('Capo:')) {
+                const capoValue = line.replace('Capo:', '').trim();
+                currentScore.capo = parseInt(capoValue, 10) || 0;
+                continue;
+            }
 
             // --- CHANGED SECTION ---
             // Process structural measure text lines (Matches "Measure 1:" or "M 1:" or "M1:")
@@ -140,7 +147,7 @@ export const parseShorthandText = (shorthandText) => {
                         .map(t => t.trim())
                         .filter(Boolean);
 
-                    const notes = rawTokens.map(token => parseToken(token));
+                    const notes = rawTokens.map(token => parseToken(token, currentScore.capo));
 
                     currentScore.measures.push({
                         measureNumber,
