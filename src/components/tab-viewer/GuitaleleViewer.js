@@ -127,11 +127,12 @@ export default function GuitaleleViewer({ scoreData }) {
 
     const lookaheadTimerRef = useRef(null);
     const nextNoteIndexRef = useRef(0);
-    const scheduleAheadTime = 0.150; // How far ahead to schedule audio nodes (seconds)
-    const lookaheadInterval = 30;    // How frequently to check the clock queue (milliseconds)
+    const scheduleAheadTime = 0.350; // How far ahead to schedule audio nodes (seconds)
+    const lookaheadInterval = 40;    // How frequently to check the clock queue (milliseconds)
 
     const currentTimelineBeatsRef = useRef([]); // Holds unique sorted beat time slices
     const nextBeatIndexRef = useRef(0);
+
 
     // --- Responsive Layout State ---
     const [measuresPerRow, setMeasuresPerRow] = useState(4);
@@ -447,7 +448,6 @@ export default function GuitaleleViewer({ scoreData }) {
 
         setIsAudioCompiled(false);
 
-        // Run compilation on a brief timeout to let the UI render first
         const timer = setTimeout(() => {
             const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
             const compiledAudioTimeline = [];
@@ -466,6 +466,8 @@ export default function GuitaleleViewer({ scoreData }) {
                             voice: ev.voice,
                             startBeat: ev.startBeat,
                             globalIndex: ev.globalIndex,
+                            preCalculatedJitter: (Math.random() - 0.5) * 0.003, // Pre-calculate here!
+                            preCalculatedVelocity: 0.88 + Math.random() * 0.22,
                             segments: [{ type: 'mute', duration: ev.beatValue }]
                         });
                         return;
@@ -515,6 +517,8 @@ export default function GuitaleleViewer({ scoreData }) {
                         startBeat: ev.startBeat,
                         globalIndex: ev.globalIndex,
                         midi: pitch.midi,
+                        preCalculatedJitter: (Math.random() - 0.5) * 0.003,    // Pre-calculate here!
+                        preCalculatedVelocity: 0.88 + Math.random() * 0.22,   // Pre-calculate here!
                         segments: segments
                     });
                 });
@@ -624,26 +628,26 @@ export default function GuitaleleViewer({ scoreData }) {
         const offsetBeat = startOffsetBeat !== null ? startOffsetBeat : playbackStartBeatRef.current;
         const ctx = audioCtxRef.current;
         const beatDurationSeconds = 60 / bpm;
-        const scheduleOffsetSec = 0.15; // 150ms buffer layout initialization
+        const scheduleOffsetSec = 0.20; // Increased to 200ms to allow smooth audio connection on slow screens
 
         const scheduleTimelineChunk = () => {
             if (!ctx || ctx.state === 'closed') return;
 
             const absoluteCurrentPlaybackTime = ctx.currentTime - playbackStartTimeRef.current + pausedTimeRef.current;
 
-            // Process all time slices falling inside our forward lookahead boundary
             while (nextBeatIndexRef.current < currentTimelineBeatsRef.current.length) {
                 const beatSlice = currentTimelineBeatsRef.current[nextBeatIndexRef.current];
                 const eventAbsoluteSec = (beatSlice.startBeat - offsetBeat) * beatDurationSeconds;
 
                 if (eventAbsoluteSec < absoluteCurrentPlaybackTime + scheduleAheadTime) {
-                    // Exact unified timestamp ensures chords pluck perfectly synchronously
-                    const humanJitter = (Math.random() - 0.5) * 0.003;
-                    const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
+                    // Extract values from the first note of the slice to lock the chord's timing perfectly
+                    const fallbackNote = beatSlice.notes[0];
+                    const jitter = fallbackNote ? fallbackNote.preCalculatedJitter : 0;
 
-                    // 1. Play all notes assigned to this exact beat timestamp in unison
+                    const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + jitter;
+
+                    // 1. Instantly dispatch raw audio nodes to the Web Audio timeline
                     beatSlice.notes.forEach(note => {
-                        const humanVelocity = 0.88 + Math.random() * 0.22;
                         const runtimeSegments = note.segments.map(seg => ({
                             ...seg,
                             duration: seg.duration * beatDurationSeconds
@@ -654,28 +658,31 @@ export default function GuitaleleViewer({ scoreData }) {
                             runtimeSegments,
                             finalPluckTime,
                             null,
-                            note.type === 'mute' ? 0 : humanVelocity
+                            note.type === 'mute' ? 0 : note.preCalculatedVelocity
                         );
                     });
 
-                    // 2. Schedule exactly ONE visual tracker callback per column slice
-                    const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
-                    const visualTimeout = setTimeout(() => {
-                        setPlaybackIndex(beatSlice.globalIndex);
-                    }, timeUntilVisualMs);
+                    // 2. Offload the UI timeout creation from the audio loop
+                    // This prevents React re-render tracking from blocking the audio wave generation
+                    setTimeout(() => {
+                        const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
+                        const visualTimeout = setTimeout(() => {
+                            setPlaybackIndex(beatSlice.globalIndex);
+                        }, timeUntilVisualMs);
 
-                    playbackTimeoutsRef.current.push(visualTimeout);
+                        playbackTimeoutsRef.current.push(visualTimeout);
+                    }, 0);
+
                     nextBeatIndexRef.current++;
                 } else {
                     break;
                 }
             }
 
-            // Handle track ending gracefully without cutting off the final note's ring
+            // End tracking termination
             if (nextBeatIndexRef.current >= currentTimelineBeatsRef.current.length) {
                 const lastSlice = currentTimelineBeatsRef.current[currentTimelineBeatsRef.current.length - 1];
                 if (lastSlice) {
-                    // Calculate longest sustaining segment length within the last note collection
                     const maxSustainBeats = Math.max(...lastSlice.notes.map(n =>
                         n.segments.reduce((acc, s) => acc + s.duration, 0)
                     ), 1.0);
@@ -835,8 +842,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                     onClick={() => startPlayback(1)}
                                     disabled={!isAudioCompiled}
                                     className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${isAudioCompiled
-                                            ? 'bg-emerald-600 hover:bg-emerald-500 cursor-pointer'
-                                            : 'bg-slate-700 opacity-60 cursor-not-allowed'
+                                        ? 'bg-emerald-600 hover:bg-emerald-500 cursor-pointer'
+                                        : 'bg-slate-700 opacity-60 cursor-not-allowed'
                                         }`}
                                 >
                                     {isAudioCompiled ? '▶ START PLAYBACK' : '⏳ COMPILING SCORE...'}
