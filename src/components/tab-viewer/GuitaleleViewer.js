@@ -121,9 +121,17 @@ export default function GuitaleleViewer({ scoreData }) {
     const [isPaused, setIsPaused] = useState(false);
     const [playbackIndex, setPlaybackIndex] = useState(null);
     const [bpm, setBpm] = useState(100);
-    const [segmentDescriptions, setSegmentDescriptions] = useState({});
     const [slotWidth, setSlotWidth] = useState(45);
     const containerRef = useRef(null);
+    const [isAudioCompiled, setIsAudioCompiled] = useState(false);
+
+    const lookaheadTimerRef = useRef(null);
+    const nextNoteIndexRef = useRef(0);
+    const scheduleAheadTime = 0.150; // How far ahead to schedule audio nodes (seconds)
+    const lookaheadInterval = 30;    // How frequently to check the clock queue (milliseconds)
+
+    const currentTimelineBeatsRef = useRef([]); // Holds unique sorted beat time slices
+    const nextBeatIndexRef = useRef(0);
 
     // --- Responsive Layout State ---
     const [measuresPerRow, setMeasuresPerRow] = useState(4);
@@ -432,9 +440,101 @@ export default function GuitaleleViewer({ scoreData }) {
         return { computedRows, timeSigTop, timeSigBottom, paddingX, trebleTopY, bassTopY, tabTopY, rhythmTopY, svgHeight, lineSpacing, SLOT_WIDTH, measureValidityMap, beatsPerMeasure };
     }, [scoreData, measuresPerRow]);
 
+    const preCompiledTimelineRef = useRef([]);
+
+    useEffect(() => {
+        if (!scoreLayout) return;
+
+        setIsAudioCompiled(false);
+
+        // Run compilation on a brief timeout to let the UI render first
+        const timer = setTimeout(() => {
+            const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
+            const compiledAudioTimeline = [];
+            const consumedPitches = new Set();
+
+            allEvents.forEach((ev, evIdx) => {
+                if (ev.isRest) return;
+
+                ev.processedPitches.forEach((pitch) => {
+                    const pitchKey = `${ev.globalIndex}_${pitch.string}`;
+                    if (consumedPitches.has(pitchKey)) return;
+
+                    if (pitch.fret === null) {
+                        compiledAudioTimeline.push({
+                            type: 'mute',
+                            voice: ev.voice,
+                            startBeat: ev.startBeat,
+                            globalIndex: ev.globalIndex,
+                            segments: [{ type: 'mute', duration: ev.beatValue }]
+                        });
+                        return;
+                    }
+
+                    const segments = [{
+                        type: 'pluck',
+                        midi: pitch.midi,
+                        duration: ev.beatValue
+                    }];
+
+                    let currentEvent = ev;
+                    let currentEventIdx = evIdx;
+                    let currentPitch = pitch;
+
+                    while (currentEvent.isTiedToNext) {
+                        const nextEvent = allEvents.slice(currentEventIdx + 1).find(e => e.voice === currentEvent.voice && !e.isRest);
+                        if (!nextEvent) break;
+
+                        const nextPitch = nextEvent.processedPitches.find(np => np.string === currentPitch.string);
+                        if (!nextPitch) break;
+
+                        const nextDuration = nextEvent.beatValue;
+
+                        if (nextPitch.midi === currentPitch.midi) {
+                            segments.push({ type: 'tie', midi: nextPitch.midi, duration: nextDuration });
+                        } else {
+                            const currentSeg = segments[segments.length - 1];
+                            const halfDuration = currentSeg.duration / 2;
+                            currentSeg.duration = halfDuration;
+
+                            segments.push({ type: 'slide', midi: nextPitch.midi, duration: halfDuration });
+                            segments.push({ type: 'tie', midi: nextPitch.midi, duration: nextDuration });
+                        }
+
+                        const nextKey = `${nextEvent.globalIndex}_${nextPitch.string}`;
+                        consumedPitches.add(nextKey);
+
+                        currentEventIdx = allEvents.indexOf(nextEvent);
+                        currentEvent = nextEvent;
+                        currentPitch = nextPitch;
+                    }
+
+                    compiledAudioTimeline.push({
+                        type: 'pluck',
+                        voice: ev.voice,
+                        startBeat: ev.startBeat,
+                        globalIndex: ev.globalIndex,
+                        midi: pitch.midi,
+                        segments: segments
+                    });
+                });
+            });
+
+            preCompiledTimelineRef.current = compiledAudioTimeline;
+            setIsAudioCompiled(true);
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, [scoreLayout]);
+
     const stopPlayback = () => {
+        if (lookaheadTimerRef.current) {
+            clearTimeout(lookaheadTimerRef.current);
+            lookaheadTimerRef.current = null;
+        }
         playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
         playbackTimeoutsRef.current = [];
+
         setIsPlaying(false);
         setIsPaused(false);
         setPlaybackIndex(null);
@@ -449,11 +549,13 @@ export default function GuitaleleViewer({ scoreData }) {
     const pausePlayback = () => {
         if (!isPlaying || isPaused) return;
 
-        // Clear all scheduled timeout visual updates
+        if (lookaheadTimerRef.current) {
+            clearTimeout(lookaheadTimerRef.current);
+            lookaheadTimerRef.current = null;
+        }
         playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
         playbackTimeoutsRef.current = [];
 
-        // Accumulate exactly how much elapsed playback time has passed
         const elapsedSec = audioCtxRef.current.currentTime - playbackStartTimeRef.current;
         pausedTimeRef.current += elapsedSec;
 
@@ -463,39 +565,22 @@ export default function GuitaleleViewer({ scoreData }) {
         }
     };
 
-    // Pure visual state tracker cleanly separated from Audio scheduling
-    const scheduleVisuals = (eventsList, startOffsetBeat, currentElapsedSec) => {
-        const beatDurationSeconds = 60 / bpm;
+    const resumePlayback = () => {
+        if (!isPlaying || !isPaused) return;
 
-        eventsList.forEach(ev => {
-            const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
-            const timeUntilEventSec = eventAbsoluteSec - currentElapsedSec;
+        if (audioCtxRef.current) {
+            audioCtxRef.current.resume();
+            playbackStartTimeRef.current = audioCtxRef.current.currentTime;
+            setIsPaused(false);
 
-            if (timeUntilEventSec >= 0) {
-                const visualTimeout = setTimeout(() => {
-                    setPlaybackIndex(ev.globalIndex);
-                }, timeUntilEventSec * 1000);
-                playbackTimeoutsRef.current.push(visualTimeout);
-            }
-        });
-
-        // Add a final timeout to shut down the player gracefully
-        const lastEvent = eventsList[eventsList.length - 1];
-        if (lastEvent) {
-            const totalDurationSec = ((lastEvent.startBeat - startOffsetBeat) + lastEvent.beatValue) * beatDurationSeconds;
-            const timeUntilEndSec = totalDurationSec - currentElapsedSec;
-            if (timeUntilEndSec >= 0) {
-                const endTimeout = setTimeout(() => {
-                    stopPlayback();
-                }, timeUntilEndSec * 1000);
-                playbackTimeoutsRef.current.push(endTimeout);
-            }
+            runSchedulerLoop();
         }
     };
 
     const startPlayback = (fromMeasure = 1) => {
-        if (isPlaying || !scoreLayout) return;
+        if (isPlaying || !scoreLayout || !isAudioCompiled) return;
 
+        // Sync hook initiation for mobile WebKit audio focus
         if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
             audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -512,119 +597,104 @@ export default function GuitaleleViewer({ scoreData }) {
         const startOffsetBeat = targetedEvents.length > 0 ? targetedEvents[0].startBeat : 0;
         playbackStartBeatRef.current = startOffsetBeat;
 
-        const ctx = audioCtxRef.current;
-        const beatDurationSeconds = 60 / bpm;
-        const scheduleOffsetSec = 0.05;
+        // Group our precompiled notes by their exact startBeat timestamp
+        const notesForRun = preCompiledTimelineRef.current.filter(n => n.startBeat >= startOffsetBeat);
 
-        // Track pitches already swallowed by a continuous chain performance
-        const consumedPitches = new Set();
-
-        targetedEvents.forEach((ev, evIdx) => {
-            if (ev.isRest) return;
-
-            ev.processedPitches.forEach((pitch) => {
-                const pitchKey = `${ev.globalIndex}_${pitch.string}`;
-                if (consumedPitches.has(pitchKey)) return;
-
-                // If this pitch is muted (fret === null) schedule a silent/mute segment
-                if (pitch.fret === null) {
-                    const segments = [{ type: 'mute', duration: ev.beatValue * beatDurationSeconds }];
-                    const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
-                    const humanJitter = (Math.random() - 0.5) * 0.005;
-                    const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
-                    playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, 0);
-                    return;
-                }
-
-                // 1. Always start the chain execution with an initial pluck
-                const segments = [{
-                    type: 'pluck',
-                    midi: pitch.midi,
-                    duration: ev.beatValue * beatDurationSeconds
-                }];
-
-                let currentEvent = ev;
-                let currentEventIdx = evIdx;
-                let currentPitch = pitch;
-
-                // 2. Continuous chain builder using ONLY the tie property with proactive slide timing
-                while (currentEvent.isTiedToNext) {
-                    // Find the next active note on this specific voice channel
-                    const nextEvent = targetedEvents.slice(currentEventIdx + 1).find(e => e.voice === currentEvent.voice && !e.isRest);
-                    if (!nextEvent) break;
-
-                    const nextPitch = nextEvent.processedPitches.find(np => np.string === currentPitch.string);
-                    if (!nextPitch) break;
-
-                    const nextDurationSec = nextEvent.beatValue * beatDurationSeconds;
-
-                    // Determine articulation type based on pitch changes
-                    if (nextPitch.midi === currentPitch.midi) {
-                        // Structural Tie: Maintain the current pitch steady through the next note block
-                        segments.push({
-                            type: 'tie',
-                            midi: nextPitch.midi,
-                            duration: nextDurationSec
-                        });
-                    } else {
-                        // Realistic Slide Modification:
-                        // 1. Mutate the last segment (the current note) to end early by half its duration
-                        const currentSeg = segments[segments.length - 1];
-                        const halfDuration = currentSeg.duration / 2;
-                        currentSeg.duration = halfDuration;
-
-                        // 2. Insert the active slide transition inside the remaining half of the current note's space
-                        segments.push({
-                            type: 'slide',
-                            midi: nextPitch.midi,
-                            duration: halfDuration
-                        });
-
-                        // 3. Keep the target note steady once reached, sustaining it for its scheduled block
-                        segments.push({
-                            type: 'tie',
-                            midi: nextPitch.midi,
-                            duration: nextDurationSec
-                        });
-                    }
-
-                    // Lock down this downstream pitch so it doesn't fire a separate attack window
-                    const nextKey = `${nextEvent.globalIndex}_${nextPitch.string}`;
-                    consumedPitches.add(nextKey);
-
-                    // Step forward in timeline sequence
-                    currentEventIdx = targetedEvents.indexOf(nextEvent);
-                    currentEvent = nextEvent;
-                    currentPitch = nextPitch;
-                }
-
-                // 3. Fire the custom compiled chain array downstream to audio.js
-                const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
-                const humanJitter = (Math.random() - 0.5) * 0.005;
-                const humanVelocity = 0.88 + Math.random() * 0.22;
-                const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
-
-                playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, humanVelocity);
-            });
+        // Create an ordered timeline map of unique beat moments
+        const uniqueBeatsMap = {};
+        notesForRun.forEach(note => {
+            if (!uniqueBeatsMap[note.startBeat]) {
+                uniqueBeatsMap[note.startBeat] = {
+                    startBeat: note.startBeat,
+                    globalIndex: note.globalIndex, // Map to layout position for UI highlights
+                    notes: []
+                };
+            }
+            uniqueBeatsMap[note.startBeat].notes.push(note);
         });
 
-        // Visual playhead sequencer stays safely intact
-        scheduleVisuals(targetedEvents, startOffsetBeat, -scheduleOffsetSec);
+        // Sort chronologically
+        currentTimelineBeatsRef.current = Object.values(uniqueBeatsMap).sort((a, b) => a.startBeat - b.startBeat);
+        nextBeatIndexRef.current = 0;
+
+        runSchedulerLoop(startOffsetBeat);
     };
 
-    const resumePlayback = () => {
-        if (!isPlaying || !isPaused) return;
+    const runSchedulerLoop = (startOffsetBeat = null) => {
+        const offsetBeat = startOffsetBeat !== null ? startOffsetBeat : playbackStartBeatRef.current;
+        const ctx = audioCtxRef.current;
+        const beatDurationSeconds = 60 / bpm;
+        const scheduleOffsetSec = 0.15; // 150ms buffer layout initialization
 
-        if (audioCtxRef.current) {
-            audioCtxRef.current.resume();
+        const scheduleTimelineChunk = () => {
+            if (!ctx || ctx.state === 'closed') return;
 
-            // Reset the start time so we track the next 'chunk' of playing time correctly
-            playbackStartTimeRef.current = audioCtxRef.current.currentTime;
-            setIsPaused(false);
+            const absoluteCurrentPlaybackTime = ctx.currentTime - playbackStartTimeRef.current + pausedTimeRef.current;
 
-            // Re-schedule purely visual timeout markers based on total accumulated pause duration
-            scheduleVisuals(currentPlaybackEventsRef.current, playbackStartBeatRef.current, pausedTimeRef.current);
-        }
+            // Process all time slices falling inside our forward lookahead boundary
+            while (nextBeatIndexRef.current < currentTimelineBeatsRef.current.length) {
+                const beatSlice = currentTimelineBeatsRef.current[nextBeatIndexRef.current];
+                const eventAbsoluteSec = (beatSlice.startBeat - offsetBeat) * beatDurationSeconds;
+
+                if (eventAbsoluteSec < absoluteCurrentPlaybackTime + scheduleAheadTime) {
+                    // Exact unified timestamp ensures chords pluck perfectly synchronously
+                    const humanJitter = (Math.random() - 0.5) * 0.003;
+                    const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
+
+                    // 1. Play all notes assigned to this exact beat timestamp in unison
+                    beatSlice.notes.forEach(note => {
+                        const humanVelocity = 0.88 + Math.random() * 0.22;
+                        const runtimeSegments = note.segments.map(seg => ({
+                            ...seg,
+                            duration: seg.duration * beatDurationSeconds
+                        }));
+
+                        playHumanizedGuitaleleNote(
+                            ctx,
+                            runtimeSegments,
+                            finalPluckTime,
+                            null,
+                            note.type === 'mute' ? 0 : humanVelocity
+                        );
+                    });
+
+                    // 2. Schedule exactly ONE visual tracker callback per column slice
+                    const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
+                    const visualTimeout = setTimeout(() => {
+                        setPlaybackIndex(beatSlice.globalIndex);
+                    }, timeUntilVisualMs);
+
+                    playbackTimeoutsRef.current.push(visualTimeout);
+                    nextBeatIndexRef.current++;
+                } else {
+                    break;
+                }
+            }
+
+            // Handle track ending gracefully without cutting off the final note's ring
+            if (nextBeatIndexRef.current >= currentTimelineBeatsRef.current.length) {
+                const lastSlice = currentTimelineBeatsRef.current[currentTimelineBeatsRef.current.length - 1];
+                if (lastSlice) {
+                    // Calculate longest sustaining segment length within the last note collection
+                    const maxSustainBeats = Math.max(...lastSlice.notes.map(n =>
+                        n.segments.reduce((acc, s) => acc + s.duration, 0)
+                    ), 1.0);
+
+                    const totalDurationSec = ((lastSlice.startBeat - offsetBeat) + maxSustainBeats) * beatDurationSeconds;
+                    const timeUntilEndMs = (totalDurationSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000;
+
+                    const endTimeout = setTimeout(() => {
+                        stopPlayback();
+                    }, Math.max(0, timeUntilEndMs));
+                    playbackTimeoutsRef.current.push(endTimeout);
+                }
+                return;
+            }
+
+            lookaheadTimerRef.current = setTimeout(scheduleTimelineChunk, lookaheadInterval);
+        };
+
+        scheduleTimelineChunk();
     };
 
     useEffect(() => {
@@ -718,7 +788,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const outerContainerStyle = {
         position: 'relative',    // Establishes boundary for absolute positioning
         width: '100%',           // Adapts to wherever you drop it in the page
-        height: '60%',         // Constrained height so it knows when to scroll
+        height: svgHeight + "px",         // Constrained height so it knows when to scroll
         overflow: 'hidden',      // Prevents content from breaking outside the box
         border: '1px solid #ccc',
         boxSizing: 'border-box'
@@ -763,9 +833,13 @@ export default function GuitaleleViewer({ scoreData }) {
                             {!isPlaying ? (
                                 <button
                                     onClick={() => startPlayback(1)}
-                                    className="px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide bg-emerald-600 text-white hover:bg-emerald-500 transition-all"
+                                    disabled={!isAudioCompiled}
+                                    className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${isAudioCompiled
+                                            ? 'bg-emerald-600 hover:bg-emerald-500 cursor-pointer'
+                                            : 'bg-slate-700 opacity-60 cursor-not-allowed'
+                                        }`}
                                 >
-                                    ▶ START PLAYBACK
+                                    {isAudioCompiled ? '▶ START PLAYBACK' : '⏳ COMPILING SCORE...'}
                                 </button>
                             ) : (
                                 <>
@@ -823,20 +897,17 @@ export default function GuitaleleViewer({ scoreData }) {
                 {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX }, rowIdx) => {
                     return (
                         <div key={`row-${rowIdx}`} className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto flex justify-center`}>
+
                             <svg
                                 viewBox={`0 0 ${totalWidth} ${svgHeight}`}
                                 style={{
                                     width: `${totalWidth}px`,
                                     maxWidth: "100%",
-                                    height: `${svgHeight}px`,
+                                    height: `${svgHeight * 0.9}px`,
                                     maxHeight: "none"
                                 }}
                                 className="select-none block shrink-0"
                             >
-
-                            </svg>
-                            <svg viewBox={`0 0 ${totalWidth} ${svgHeight}`} style={{ maxWidth: "70vh", maxHeight: "60vh" }} className="select-none mx-auto block">
-
                                 <defs>
                                     <filter id="note-glow" x="-50%" y="-50%" width="200%" height="200%">
                                         <feGaussianBlur stdDeviation="3" result="blur" />
