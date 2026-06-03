@@ -36,175 +36,99 @@ const getMasterGain = (ctx) => {
  */
 export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration, velocity = 1.0) => {
     let segments = [];
-
-    // 1. Parse Input for Backward Compatibility
     if (Array.isArray(midiOrChain)) {
         segments = midiOrChain;
     } else {
         segments = [{ type: 'pluck', midi: midiOrChain, duration: duration }];
     }
 
-    // 2. Headroom & Polyphony Volume Balance Matrix
-    // Dynamic scaling: If many notes or segments pass concurrently, scale down to provide headroom
     const polyphonyScale = Array.isArray(midiOrChain) && midiOrChain.length > 1 ? 0.65 : 1.0;
     const effectiveVelocity = velocity * polyphonyScale;
-
-    // 3. Calculate Cumulative Physical Duration
     const totalDuration = segments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
-
-    // Choose the first playable segment's MIDI for initial tuning math.
     const firstPlayable = segments.find(s => typeof s.midi === 'number');
 
-    // Helper: play a short percussive noise for muted/dead notes
-    const playMutedPercussion = (time, dur = 0.06, vel = 0.7) => {
-        const len = Math.max(1, Math.floor(ctx.sampleRate * Math.min(0.08, dur)));
-        const noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
-        const data = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < len; i++) {
-            // short, decaying noise shaped by (1 - t)
-            data[i] = (Math.random() * 2 - 1) * (1 - i / len);
-        }
-        const src = ctx.createBufferSource();
-        src.buffer = noiseBuffer;
-
-        const bp = ctx.createBiquadFilter();
-        bp.type = 'bandpass';
-        bp.frequency.setValueAtTime(1200, time);
-        bp.Q.value = 0.7;
-
+    // High efficiency percussive noise for dead notes (No buffers allocated)
+    const playMutedPercussion = (time, dur = 0.05, vel = 0.5) => {
+        const osc = ctx.createOscillator();
         const g = ctx.createGain();
-        g.gain.setValueAtTime(Math.max(0.0001, vel * 0.18), time);
-        g.gain.exponentialRampToValueAtTime(0.001, time + Math.min(dur, 0.06));
-
-        src.connect(bp);
-        bp.connect(g);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120, time);
+        
+        g.gain.setValueAtTime(vel * 0.15, time);
+        g.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        
+        osc.connect(g);
         g.connect(getMasterGain(ctx));
-
-        src.start(time);
-        src.stop(time + Math.min(dur, 0.08));
+        osc.start(time);
+        osc.stop(time + dur);
     };
 
-    // If there are no playable segments (everything is mute), schedule percussive noise and return.
     if (!firstPlayable) {
         let cursor = startTime;
         for (let i = 0; i < segments.length; i++) {
             const seg = segments[i];
             const segDur = seg.duration || 0.25;
-            if (seg.type === 'mute') {
-                playMutedPercussion(cursor, Math.min(0.08, segDur));
-            }
+            if (seg.type === 'mute') playMutedPercussion(cursor, Math.min(0.06, segDur));
             cursor += segDur;
         }
         return;
     }
 
+    if (segments.length > 0 && segments.every(s => s.type === 'mute')) return;
+
     const initialMidi = firstPlayable.midi;
     const initialFundamental = 440 * Math.pow(2, (initialMidi - 69) / 12);
 
-    // --- DE-DIGITALIZATION: Waveshaping Distortion for Acoustic Saturation ---
-    const makeDistortionCurve = (amount) => {
-        const k = typeof amount === 'number' ? amount : 50;
-        const n_samples = 44100;
-        const curve = new Float32Array(n_samples);
-        const deg = Math.PI / 180;
-        for (let i = 0; i < n_samples; ++i) {
-            const x = (i * 2) / n_samples - 1;
-            curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
-        }
-        return curve;
-    };
-    const saturationNode = ctx.createWaveShaper();
-    saturationNode.curve = makeDistortionCurve(10); // Reduced slightly from 15 to clean up dirty overtones
-    saturationNode.oversample = '4x';
-
-    // 4. Main Audio Routing Matrix & Nylon Acoustic Filters
+    // Main Audio Nodes (Consolidated allocation footprint)
     const mainGain = ctx.createGain();
-
-    // Lowpass Damping Filter: Dynamic tone control
     const nylonDampFilter = ctx.createBiquadFilter();
     nylonDampFilter.type = 'lowpass';
-    nylonDampFilter.frequency.setValueAtTime(Math.min(2000, initialFundamental * 3.5), startTime);
-    nylonDampFilter.frequency.exponentialRampToValueAtTime(Math.min(400, initialFundamental * 1.0), startTime + Math.min(totalDuration, 1.0));
-    nylonDampFilter.Q.value = 0.7; // Lowered to prevent filter-ringing artifacts
+    nylonDampFilter.frequency.setValueAtTime(Math.min(1800, initialFundamental * 3.0), startTime);
+    nylonDampFilter.frequency.exponentialRampToValueAtTime(Math.min(350, initialFundamental * 1.0), startTime + Math.min(totalDuration, 0.8));
 
-    // Body Resonance Filter: Adjusted to control the "runaway resonance" issue
     const bodyResonance = ctx.createBiquadFilter();
     bodyResonance.type = 'peaking';
     bodyResonance.frequency.value = 195; 
-    bodyResonance.Q.value = 1.8;        // Widened Q from 3.5 to 1.8 to soften sharp, muddy frequencies
-    bodyResonance.gain.value = 8.5;     // Reduced from 15.0 to eliminate booming/crackling build-up
+    bodyResonance.Q.value = 1.5;        
+    bodyResonance.gain.value = 6.0;     
 
-    // Safe Output Routing Chain
-    mainGain.connect(saturationNode);
-    saturationNode.connect(nylonDampFilter);
+    mainGain.connect(nylonDampFilter);
     nylonDampFilter.connect(bodyResonance);
     bodyResonance.connect(getMasterGain(ctx));
 
-    // 5. Nylon String Amplitude Envelope
-    const attackTime = 0.006; 
-    const totalDecayTime = Math.max(totalDuration * 0.95, 1.5);
+    // Consolidated Nylon Amplitude Envelope
+    const attackTime = 0.005; 
+    const totalDecayTime = Math.max(totalDuration * 0.95, 1.2);
 
     mainGain.gain.setValueAtTime(0, startTime);
-    mainGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.60, startTime + attackTime);
-    mainGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.25, startTime + 0.10);
+    mainGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.65, startTime + attackTime);
+    mainGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.20, startTime + 0.08);
     mainGain.gain.exponentialRampToValueAtTime(0.001, startTime + totalDecayTime - 0.02);
 
-    // 6. Instantiate Core Voice Oscillators
+    // Re-engineered Core Oscillator Chain (Drops multi-oscillator allocation stress)
     const stringOsc = ctx.createOscillator();
-    stringOsc.type = 'triangle';
+    stringOsc.type = 'triangle'; 
 
-    const bassSubOsc = ctx.createOscillator();
-    bassSubOsc.type = 'triangle';
-    const bassGain = ctx.createGain();
-    bassGain.gain.setValueAtTime(effectiveVelocity * 0.28, startTime);
-    bassGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45); // Fast decaying fundamental "thump"
-    bassSubOsc.connect(bassGain);
+    const detune = (Math.random() * 4) - 2; 
+    stringOsc.frequency.setValueAtTime(initialFundamental, startTime);
+    stringOsc.detune.setValueAtTime(detune, startTime);
 
-    const brightOsc = ctx.createOscillator();
-    brightOsc.type = 'sawtooth';
-    const brightGain = ctx.createGain();
-    brightGain.gain.setValueAtTime(effectiveVelocity * 0.10, startTime);
-    brightGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.06); 
-    brightOsc.connect(brightGain);
+    // Organic transient emulation via brief frequency modulation sweep instead of dedicated audio buffer sources
+    stringOsc.frequency.setValueAtTime(initialFundamental * 1.03, startTime);
+    stringOsc.frequency.exponentialRampToValueAtTime(initialFundamental, startTime + 0.02);
 
-    const overtoneOsc = ctx.createOscillator();
-    overtoneOsc.type = 'sine';
-    const overtoneGain = ctx.createGain();
-    overtoneGain.gain.setValueAtTime(effectiveVelocity * 0.03, startTime);
-    overtoneGain.gain.exponentialRampToValueAtTime(0.005, startTime + 0.25);
-    overtoneOsc.connect(overtoneGain);
+    stringOsc.connect(mainGain);
 
-    const midResonance = ctx.createBiquadFilter();
-    midResonance.type = 'bandpass';
-    midResonance.Q.value = 1.0;
-
-    // If the entire chain is mute, return early to avoid allocating audio nodes
-    if (segments.length > 0 && segments.every(s => s.type === 'mute')) {
-        return;
-    }
-
-    // 7. Continuous Pitch Timeline Automation
+    // Continuous Pitch Timeline Automation
     let timeCursor = startTime;
     let currentMidi = initialMidi;
-
-    const detuneA = (Math.random() * 4) - 2; 
-    const detuneB = (Math.random() * 6) - 3; 
-
-    stringOsc.frequency.setValueAtTime(initialFundamental, timeCursor);
-    bassSubOsc.frequency.setValueAtTime(initialFundamental, timeCursor);
-    brightOsc.frequency.setValueAtTime(initialFundamental, timeCursor);
-    overtoneOsc.frequency.setValueAtTime(initialFundamental * 2, timeCursor);
-    midResonance.frequency.setValueAtTime(Math.max(600, initialFundamental * 1.7), timeCursor);
-
-    stringOsc.detune.setValueAtTime(detuneA, timeCursor);
-    bassSubOsc.detune.setValueAtTime(detuneB - 2, timeCursor); 
 
     for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
         const segmentStartTime = timeCursor;
         const segmentEndTime = timeCursor + seg.duration;
         const hasMidi = typeof seg.midi === 'number';
-        // If this segment is explicitly a mute, advance the time cursor and skip audio work
+
         if (seg.type === 'mute') {
             timeCursor = segmentEndTime;
             continue;
@@ -215,96 +139,28 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
             const targetFund = hasMidi ? 440 * Math.pow(2, (seg.midi - 69) / 12) : startFund;
 
             stringOsc.frequency.setValueAtTime(startFund, segmentStartTime);
-            bassSubOsc.frequency.setValueAtTime(startFund, segmentStartTime);
-            brightOsc.frequency.setValueAtTime(startFund, segmentStartTime);
-            overtoneOsc.frequency.setValueAtTime(startFund * 2, segmentStartTime);
-            midResonance.frequency.setValueAtTime(Math.max(600, startFund * 1.7), segmentStartTime);
-
             stringOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
-            bassSubOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
-            brightOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
-            overtoneOsc.frequency.linearRampToValueAtTime(targetFund * 2, segmentEndTime);
-            midResonance.frequency.linearRampToValueAtTime(Math.max(600, targetFund * 1.7), segmentEndTime);
-
             currentMidi = seg.midi;
         } else if (seg.type === 'hammer' || seg.type === 'pull') {
             if (hasMidi) {
                 const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
                 stringOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
-                bassSubOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
-                brightOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
-                overtoneOsc.frequency.setValueAtTime(targetFund * 2, segmentStartTime);
-                midResonance.frequency.setValueAtTime(Math.max(600, targetFund * 1.7), segmentStartTime);
-
                 currentMidi = seg.midi;
-
                 stringOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
-                bassSubOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
-                brightOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
-                overtoneOsc.frequency.setValueAtTime(targetFund * 2, segmentEndTime);
             }
         } else {
             const currentFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
             stringOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
-            bassSubOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
-            brightOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
-            overtoneOsc.frequency.setValueAtTime(currentFund * 2, segmentEndTime);
         }
-
         timeCursor = segmentEndTime;
     }
 
-    // 8. Mechanical Pluck Transient Noise Buffer
-    const noiseBuffer = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * 0.04)), ctx.sampleRate);
-    const noiseData = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < noiseData.length; i++) {
-        noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
-    }
-    const pluckNoise = ctx.createBufferSource();
-    pluckNoise.buffer = noiseBuffer;
-
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.value = 850; 
-    noiseFilter.Q.value = 1.2;
-
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(effectiveVelocity * 0.15, startTime);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.03);
-
-    // Connect Layers
-    stringOsc.connect(mainGain);
-    bassGain.connect(mainGain);
-    brightGain.connect(mainGain);
-
-    overtoneOsc.connect(overtoneGain);
-    overtoneGain.connect(midResonance);
-    midResonance.connect(mainGain);
-
-    pluckNoise.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(mainGain);
-
-    // 9. Playback Execution
     stringOsc.start(startTime);
-    bassSubOsc.start(startTime);
-    brightOsc.start(startTime);
-    overtoneOsc.start(startTime);
-    pluckNoise.start(startTime);
 
-    // --- TIMELINE FIXED FADEOUT CALCULATION ---
-    // A clean, deterministic 15ms fade window that avoids sudden math clipping.
     const fadeOutTime = 0.015; 
     const stopTime = startTime + totalDecayTime;
 
-    // Anchor the current timeline value smoothly just prior to terminating
     mainGain.gain.setValueAtTime(0.001, stopTime - fadeOutTime);
     mainGain.gain.linearRampToValueAtTime(0, stopTime);
-
-    // Turn off scheduling nodes safely on the zero-amplitude line
     stringOsc.stop(stopTime);
-    bassSubOsc.stop(stopTime);
-    brightOsc.stop(stopTime);
-    overtoneOsc.stop(stopTime);
-    pluckNoise.stop(stopTime);
 };

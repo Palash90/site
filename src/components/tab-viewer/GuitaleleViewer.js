@@ -639,44 +639,40 @@ export default function GuitaleleViewer({ scoreData }) {
                 const beatSlice = currentTimelineBeatsRef.current[nextBeatIndexRef.current];
                 const eventAbsoluteSec = (beatSlice.startBeat - offsetBeat) * beatDurationSeconds;
 
-                if (eventAbsoluteSec < absoluteCurrentPlaybackTime + scheduleAheadTime) {
-                    // Extract values from the first note of the slice to lock the chord's timing perfectly
-                    const fallbackNote = beatSlice.notes[0];
-                    const jitter = fallbackNote ? fallbackNote.preCalculatedJitter : 0;
+                // --- REPLACE INSIDE THE WHILE LOOP OF runSchedulerLoop() ---
+if (eventAbsoluteSec < absoluteCurrentPlaybackTime + scheduleAheadTime) {
+    const fallbackNote = beatSlice.notes[0];
+    const jitter = fallbackNote ? fallbackNote.preCalculatedJitter : 0;
+    const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + jitter;
 
-                    const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + jitter;
+    // 1. Dispatch raw audio nodes to the Web Audio timeline instantly
+    beatSlice.notes.forEach(note => {
+        const runtimeSegments = note.segments.map(seg => ({
+            ...seg,
+            duration: seg.duration * beatDurationSeconds
+        }));
 
-                    // 1. Instantly dispatch raw audio nodes to the Web Audio timeline
-                    beatSlice.notes.forEach(note => {
-                        const runtimeSegments = note.segments.map(seg => ({
-                            ...seg,
-                            duration: seg.duration * beatDurationSeconds
-                        }));
+        playHumanizedGuitaleleNote(
+            ctx,
+            runtimeSegments,
+            finalPluckTime,
+            null,
+            note.type === 'mute' ? 0 : note.preCalculatedVelocity
+        );
+    });
 
-                        playHumanizedGuitaleleNote(
-                            ctx,
-                            runtimeSegments,
-                            finalPluckTime,
-                            null,
-                            note.type === 'mute' ? 0 : note.preCalculatedVelocity
-                        );
-                    });
+    // 2. Decouple visual state updates completely without inner setTimeout wrappers
+    const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
+    const visualTimeout = setTimeout(() => {
+        setPlaybackIndex(beatSlice.globalIndex);
+    }, timeUntilVisualMs);
 
-                    // 2. Offload the UI timeout creation from the audio loop
-                    // This prevents React re-render tracking from blocking the audio wave generation
-                    setTimeout(() => {
-                        const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
-                        const visualTimeout = setTimeout(() => {
-                            setPlaybackIndex(beatSlice.globalIndex);
-                        }, timeUntilVisualMs);
+    playbackTimeoutsRef.current.push(visualTimeout);
 
-                        playbackTimeoutsRef.current.push(visualTimeout);
-                    }, 0);
-
-                    nextBeatIndexRef.current++;
-                } else {
-                    break;
-                }
+    nextBeatIndexRef.current++;
+} else {
+    break;
+}
             }
 
             // End tracking termination
