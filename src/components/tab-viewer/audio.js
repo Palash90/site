@@ -13,7 +13,7 @@ const getMasterGain = (ctx) => {
     if (!ctx.masterGain) {
         // Global mix gain with proper headroom for multi-note polyphony
         const masterGain = ctx.createGain();
-        masterGain.gain.value = 0.70; 
+        masterGain.gain.value = 0.65; 
 
         // Intelligent limiter: threshold higher to avoid over-compression, faster attack for safety
         const limiter = ctx.createDynamicsCompressor();
