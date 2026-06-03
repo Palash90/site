@@ -113,7 +113,21 @@ const getFlagPath = (sx, sy, isDown = false, flags = 1) => {
     return path.trim();
 };
 
+/**
+ * Mathematically derives the tightest safe scheduling intervals based on a target BPM.
+ */
+const calculateSchedulerBoundaries = (bpm) => {
+    const beatDurationMs = (60 / bpm) * 1000;
+    const sixteenthNoteMs = beatDurationMs / 4;
 
+    // Lookahead Interval: roughly 40% of a sixteenth note, bounded between 15ms and 45ms.
+    const lookaheadInterval = Math.max(15, Math.min(45, Math.round(sixteenthNoteMs * 0.4)));
+
+    // Schedule Ahead Time: The safety padding window (in seconds).
+    const scheduleAheadTime = (lookaheadInterval * 3.5) / 1000;
+
+    return { lookaheadInterval, scheduleAheadTime };
+};
 
 export default function GuitaleleViewer({ scoreData }) {
     const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
@@ -126,9 +140,10 @@ export default function GuitaleleViewer({ scoreData }) {
     const [isAudioCompiled, setIsAudioCompiled] = useState(false);
 
     const lookaheadTimerRef = useRef(null);
-    const nextNoteIndexRef = useRef(0);
-    const scheduleAheadTime = 0.350; // How far ahead to schedule audio nodes (seconds)
-    const lookaheadInterval = 40;    // How frequently to check the clock queue (milliseconds)
+    
+    const { lookaheadInterval, scheduleAheadTime } = useMemo(() => {
+        return calculateSchedulerBoundaries(bpm);
+    }, [bpm]);
 
     const currentTimelineBeatsRef = useRef([]); // Holds unique sorted beat time slices
     const nextBeatIndexRef = useRef(0);
