@@ -11,17 +11,17 @@ export const TUNING = {
 // Global Node Manager: Clean audio summation channel with a safety compressor
 const getMasterGain = (ctx) => {
     if (!ctx.masterGain) {
-        // Global mix attenuation to prevent multi-voice accumulation clipping
+        // Global mix gain with proper headroom for multi-note polyphony
         const masterGain = ctx.createGain();
-        masterGain.gain.value = 0.35; 
+        masterGain.gain.value = 0.70; 
 
-        // Soft-knee safety limiter to cleanly catch multi-note summing peaks
+        // Intelligent limiter: threshold higher to avoid over-compression, faster attack for safety
         const limiter = ctx.createDynamicsCompressor();
-        limiter.threshold.setValueAtTime(-1.0, ctx.currentTime);
-        limiter.knee.setValueAtTime(3.0, ctx.currentTime);
-        limiter.ratio.setValueAtTime(12.0, ctx.currentTime);
-        limiter.attack.setValueAtTime(0.004, ctx.currentTime);
-        limiter.release.setValueAtTime(0.05, ctx.currentTime);
+        limiter.threshold.setValueAtTime(-8.0, ctx.currentTime);  // -8dB allows more headroom before limiting
+        limiter.knee.setValueAtTime(6.0, ctx.currentTime);        // Increased knee for smoother onset
+        limiter.ratio.setValueAtTime(8.0, ctx.currentTime);       // Reduced ratio for gentler compression
+        limiter.attack.setValueAtTime(0.003, ctx.currentTime);    // Faster attack to catch peaks
+        limiter.release.setValueAtTime(0.15, ctx.currentTime);    // Longer release for musical decay
 
         masterGain.connect(limiter);
         limiter.connect(ctx.destination);
@@ -46,7 +46,7 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
 
     // 2. Headroom & Polyphony Volume Balance Matrix
     // Dynamic scaling: If many notes or segments pass concurrently, scale down to provide headroom
-    const polyphonyScale = Array.isArray(midiOrChain) && midiOrChain.length > 1 ? 0.5 : 0.85;
+    const polyphonyScale = Array.isArray(midiOrChain) && midiOrChain.length > 1 ? 0.65 : 1.0;
     const effectiveVelocity = velocity * polyphonyScale;
 
     // 3. Calculate Cumulative Physical Duration
@@ -145,8 +145,8 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     const totalDecayTime = Math.max(totalDuration * 0.95, 1.5);
 
     mainGain.gain.setValueAtTime(0, startTime);
-    mainGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.35, startTime + attackTime);
-    mainGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.12, startTime + 0.10);
+    mainGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.60, startTime + attackTime);
+    mainGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.25, startTime + 0.10);
     mainGain.gain.exponentialRampToValueAtTime(0.001, startTime + totalDecayTime - 0.02);
 
     // 6. Instantiate Core Voice Oscillators
@@ -156,14 +156,14 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     const bassSubOsc = ctx.createOscillator();
     bassSubOsc.type = 'triangle';
     const bassGain = ctx.createGain();
-    bassGain.gain.setValueAtTime(effectiveVelocity * 0.20, startTime);
+    bassGain.gain.setValueAtTime(effectiveVelocity * 0.28, startTime);
     bassGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.45); // Fast decaying fundamental "thump"
     bassSubOsc.connect(bassGain);
 
     const brightOsc = ctx.createOscillator();
     brightOsc.type = 'sawtooth';
     const brightGain = ctx.createGain();
-    brightGain.gain.setValueAtTime(effectiveVelocity * 0.05, startTime);
+    brightGain.gain.setValueAtTime(effectiveVelocity * 0.10, startTime);
     brightGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.06); 
     brightOsc.connect(brightGain);
 
@@ -269,7 +269,7 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     noiseFilter.Q.value = 1.2;
 
     const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(effectiveVelocity * 0.08, startTime);
+    noiseGain.gain.setValueAtTime(effectiveVelocity * 0.15, startTime);
     noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.03);
 
     // Connect Layers

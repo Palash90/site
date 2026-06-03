@@ -123,6 +123,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const [bpm, setBpm] = useState(100);
     const [segmentDescriptions, setSegmentDescriptions] = useState({});
     const [slotWidth, setSlotWidth] = useState(45);
+    const containerRef = useRef(null);
 
     // --- Responsive Layout State ---
     const [measuresPerRow, setMeasuresPerRow] = useState(4);
@@ -180,6 +181,8 @@ export default function GuitaleleViewer({ scoreData }) {
         let processedEvents = [];
         let absoluteMeasureStartBeat = 0;
         let globalEventIndex = 0; // Tracks the ID for playback/hover highlighting across measures
+
+
 
         // Loop through isolated measure containers
         scoreData.measures.forEach((measure) => {
@@ -519,91 +522,91 @@ export default function GuitaleleViewer({ scoreData }) {
         targetedEvents.forEach((ev, evIdx) => {
             if (ev.isRest) return;
 
-                ev.processedPitches.forEach((pitch) => {
-                    const pitchKey = `${ev.globalIndex}_${pitch.string}`;
-                    if (consumedPitches.has(pitchKey)) return;
+            ev.processedPitches.forEach((pitch) => {
+                const pitchKey = `${ev.globalIndex}_${pitch.string}`;
+                if (consumedPitches.has(pitchKey)) return;
 
-                    // If this pitch is muted (fret === null) schedule a silent/mute segment
-                    if (pitch.fret === null) {
-                        const segments = [{ type: 'mute', duration: ev.beatValue * beatDurationSeconds }];
-                        const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
-                        const humanJitter = (Math.random() - 0.5) * 0.005;
-                        const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
-                        playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, 0);
-                        return;
-                    }
-
-                    // 1. Always start the chain execution with an initial pluck
-                    const segments = [{
-                        type: 'pluck',
-                        midi: pitch.midi,
-                        duration: ev.beatValue * beatDurationSeconds
-                    }];
-
-                    let currentEvent = ev;
-                    let currentEventIdx = evIdx;
-                    let currentPitch = pitch;
-
-                    // 2. Continuous chain builder using ONLY the tie property with proactive slide timing
-                    while (currentEvent.isTiedToNext) {
-                        // Find the next active note on this specific voice channel
-                        const nextEvent = targetedEvents.slice(currentEventIdx + 1).find(e => e.voice === currentEvent.voice && !e.isRest);
-                        if (!nextEvent) break;
-
-                        const nextPitch = nextEvent.processedPitches.find(np => np.string === currentPitch.string);
-                        if (!nextPitch) break;
-
-                        const nextDurationSec = nextEvent.beatValue * beatDurationSeconds;
-
-                        // Determine articulation type based on pitch changes
-                        if (nextPitch.midi === currentPitch.midi) {
-                            // Structural Tie: Maintain the current pitch steady through the next note block
-                            segments.push({
-                                type: 'tie',
-                                midi: nextPitch.midi,
-                                duration: nextDurationSec
-                            });
-                        } else {
-                            // Realistic Slide Modification:
-                            // 1. Mutate the last segment (the current note) to end early by half its duration
-                            const currentSeg = segments[segments.length - 1];
-                            const halfDuration = currentSeg.duration / 2;
-                            currentSeg.duration = halfDuration;
-
-                            // 2. Insert the active slide transition inside the remaining half of the current note's space
-                            segments.push({
-                                type: 'slide',
-                                midi: nextPitch.midi,
-                                duration: halfDuration
-                            });
-
-                            // 3. Keep the target note steady once reached, sustaining it for its scheduled block
-                            segments.push({
-                                type: 'tie',
-                                midi: nextPitch.midi,
-                                duration: nextDurationSec
-                            });
-                        }
-
-                        // Lock down this downstream pitch so it doesn't fire a separate attack window
-                        const nextKey = `${nextEvent.globalIndex}_${nextPitch.string}`;
-                        consumedPitches.add(nextKey);
-
-                        // Step forward in timeline sequence
-                        currentEventIdx = targetedEvents.indexOf(nextEvent);
-                        currentEvent = nextEvent;
-                        currentPitch = nextPitch;
-                    }
-
-                    // 3. Fire the custom compiled chain array downstream to audio.js
+                // If this pitch is muted (fret === null) schedule a silent/mute segment
+                if (pitch.fret === null) {
+                    const segments = [{ type: 'mute', duration: ev.beatValue * beatDurationSeconds }];
                     const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
                     const humanJitter = (Math.random() - 0.5) * 0.005;
-                    const humanVelocity = 0.88 + Math.random() * 0.22;
                     const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
+                    playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, 0);
+                    return;
+                }
 
-                    playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, humanVelocity);
-                });
+                // 1. Always start the chain execution with an initial pluck
+                const segments = [{
+                    type: 'pluck',
+                    midi: pitch.midi,
+                    duration: ev.beatValue * beatDurationSeconds
+                }];
+
+                let currentEvent = ev;
+                let currentEventIdx = evIdx;
+                let currentPitch = pitch;
+
+                // 2. Continuous chain builder using ONLY the tie property with proactive slide timing
+                while (currentEvent.isTiedToNext) {
+                    // Find the next active note on this specific voice channel
+                    const nextEvent = targetedEvents.slice(currentEventIdx + 1).find(e => e.voice === currentEvent.voice && !e.isRest);
+                    if (!nextEvent) break;
+
+                    const nextPitch = nextEvent.processedPitches.find(np => np.string === currentPitch.string);
+                    if (!nextPitch) break;
+
+                    const nextDurationSec = nextEvent.beatValue * beatDurationSeconds;
+
+                    // Determine articulation type based on pitch changes
+                    if (nextPitch.midi === currentPitch.midi) {
+                        // Structural Tie: Maintain the current pitch steady through the next note block
+                        segments.push({
+                            type: 'tie',
+                            midi: nextPitch.midi,
+                            duration: nextDurationSec
+                        });
+                    } else {
+                        // Realistic Slide Modification:
+                        // 1. Mutate the last segment (the current note) to end early by half its duration
+                        const currentSeg = segments[segments.length - 1];
+                        const halfDuration = currentSeg.duration / 2;
+                        currentSeg.duration = halfDuration;
+
+                        // 2. Insert the active slide transition inside the remaining half of the current note's space
+                        segments.push({
+                            type: 'slide',
+                            midi: nextPitch.midi,
+                            duration: halfDuration
+                        });
+
+                        // 3. Keep the target note steady once reached, sustaining it for its scheduled block
+                        segments.push({
+                            type: 'tie',
+                            midi: nextPitch.midi,
+                            duration: nextDurationSec
+                        });
+                    }
+
+                    // Lock down this downstream pitch so it doesn't fire a separate attack window
+                    const nextKey = `${nextEvent.globalIndex}_${nextPitch.string}`;
+                    consumedPitches.add(nextKey);
+
+                    // Step forward in timeline sequence
+                    currentEventIdx = targetedEvents.indexOf(nextEvent);
+                    currentEvent = nextEvent;
+                    currentPitch = nextPitch;
+                }
+
+                // 3. Fire the custom compiled chain array downstream to audio.js
+                const eventAbsoluteSec = (ev.startBeat - startOffsetBeat) * beatDurationSeconds;
+                const humanJitter = (Math.random() - 0.5) * 0.005;
+                const humanVelocity = 0.88 + Math.random() * 0.22;
+                const finalPluckTime = ctx.currentTime + scheduleOffsetSec + eventAbsoluteSec + humanJitter;
+
+                playHumanizedGuitaleleNote(ctx, segments, finalPluckTime, null, humanVelocity);
             });
+        });
 
         // Visual playhead sequencer stays safely intact
         scheduleVisuals(targetedEvents, startOffsetBeat, -scheduleOffsetSec);
@@ -683,6 +686,29 @@ export default function GuitaleleViewer({ scoreData }) {
         return `${baseHeader} • ${voiceDetails}`;
     }, [activeEvents]);
 
+    useEffect(() => {
+        if (isPlaying && playbackIndex !== null) {
+            // Find the active SVG node or highlighted element container
+            const activeNode = document.querySelector(`rect[fill="${DARK_THEME.fillHoverHighlight}"]`);
+            if (activeNode && containerRef.current) {
+                const container = containerRef.current;
+                const nodeRect = activeNode.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+
+                // Calculate if the active element is moving out of the visible view viewport
+                const isBelow = nodeRect.bottom > containerRect.bottom - 120;
+                const isAbove = nodeRect.top < containerRect.top + 120;
+
+                if (isBelow || isAbove) {
+                    activeNode.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }
+        }
+    }, [playbackIndex, isPlaying]);
+
     if (!scoreLayout) {
         return <div className="text-slate-500 font-mono text-xs p-4">No notation data package available.</div>;
     }
@@ -693,7 +719,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const rhythm2TopY = rhythmTopY + 28;
 
     return (
-        <div className={`w-full h-full min-h-[500px] flex flex-col overflow-hidden ${DARK_THEME.bgPage}`}>
+        <div className={`w-full h-screen flex flex-col overflow-hidden relative ${DARK_THEME.bgPage}`}>
 
             <div className="flex-none bg-slate-900 border-b border-slate-800 p-4 shadow-xl z-20 w-full">
                 <div className="max-w-6xl mx-auto flex flex-col gap-3">
@@ -736,7 +762,7 @@ export default function GuitaleleViewer({ scoreData }) {
                         </span>
                         <div className="flex-1 flex items-center">
                             <input
-                                type="range" min="60" max="180" value={bpm}
+                                type="range" min="60" max="240" value={bpm}
                                 disabled={isPlaying}
                                 onChange={(e) => setBpm(parseInt(e.target.value))}
                                 className="w-full h-2 accent-cyan-400 bg-slate-950 rounded-lg cursor-pointer disabled:opacity-30"
@@ -758,11 +784,25 @@ export default function GuitaleleViewer({ scoreData }) {
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar relative" style={{ overflow: "scroll", border: '2px solid', maxHeight: "60vh" }}>
+            <div ref={containerRef}
+                className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar relative"
+                style={{ border: '2px solid', maxHeight: 'calc(100vh - 200px)' }}>
                 <div className="max-w-7xl mx-auto w-full flex flex-col gap-8 pb-12">
                     {computedRows.map(({ rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX }, rowIdx) => {
                         return (
-                            <div key={`row-${rowIdx}`} className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto`}>
+                            <div key={`row-${rowIdx}`} className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto flex justify-center`}>
+                                <svg
+                                    viewBox={`0 0 ${totalWidth} ${svgHeight}`}
+                                    style={{
+                                        width: `${totalWidth}px`,
+                                        maxWidth: "100%",
+                                        height: `${svgHeight}px`,
+                                        maxHeight: "none"
+                                    }}
+                                    className="select-none block shrink-0"
+                                >
+
+                                </svg>
                                 <svg viewBox={`0 0 ${totalWidth} ${svgHeight}`} style={{ maxWidth: "1280px" }} className="select-none mx-auto block">
 
                                     <defs>
