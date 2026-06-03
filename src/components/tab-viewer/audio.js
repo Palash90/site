@@ -13,7 +13,7 @@ const getMasterGain = (ctx) => {
     if (!ctx.masterGain) {
         // Global mix gain with proper headroom for multi-note polyphony
         const masterGain = ctx.createGain();
-        masterGain.gain.value = 0.65; 
+        masterGain.gain.value = 0.65;
 
         // Intelligent limiter: threshold higher to avoid over-compression, faster attack for safety
         const limiter = ctx.createDynamicsCompressor();
@@ -25,7 +25,7 @@ const getMasterGain = (ctx) => {
 
         masterGain.connect(limiter);
         limiter.connect(ctx.destination);
-        ctx.masterGain = masterGain; 
+        ctx.masterGain = masterGain;
     }
     return ctx.masterGain;
 };
@@ -53,10 +53,10 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
         const g = ctx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(120, time);
-        
+
         g.gain.setValueAtTime(vel * 0.15, time);
         g.gain.exponentialRampToValueAtTime(0.001, time + dur);
-        
+
         osc.connect(g);
         g.connect(getMasterGain(ctx));
         osc.start(time);
@@ -88,16 +88,16 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
 
     const bodyResonance = ctx.createBiquadFilter();
     bodyResonance.type = 'peaking';
-    bodyResonance.frequency.value = 195; 
-    bodyResonance.Q.value = 1.5;        
-    bodyResonance.gain.value = 6.0;     
+    bodyResonance.frequency.value = 195;
+    bodyResonance.Q.value = 1.5;
+    bodyResonance.gain.value = 6.0;
 
     mainGain.connect(nylonDampFilter);
     nylonDampFilter.connect(bodyResonance);
     bodyResonance.connect(getMasterGain(ctx));
 
     // Consolidated Nylon Amplitude Envelope
-    const attackTime = 0.005; 
+    const attackTime = 0.005;
     const totalDecayTime = Math.max(totalDuration * 0.95, 1.2);
 
     mainGain.gain.setValueAtTime(0, startTime);
@@ -107,9 +107,9 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
 
     // Re-engineered Core Oscillator Chain (Drops multi-oscillator allocation stress)
     const stringOsc = ctx.createOscillator();
-    stringOsc.type = 'triangle'; 
+    stringOsc.type = 'triangle';
 
-    const detune = (Math.random() * 4) - 2; 
+    const detune = (Math.random() * 4) - 2;
     stringOsc.frequency.setValueAtTime(initialFundamental, startTime);
     stringOsc.detune.setValueAtTime(detune, startTime);
 
@@ -157,7 +157,7 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
 
     stringOsc.start(startTime);
 
-    const fadeOutTime = 0.015; 
+    const fadeOutTime = 0.015;
     const stopTime = startTime + totalDecayTime;
 
     mainGain.gain.setValueAtTime(0.001, stopTime - fadeOutTime);

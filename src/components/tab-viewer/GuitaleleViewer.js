@@ -640,39 +640,39 @@ export default function GuitaleleViewer({ scoreData }) {
                 const eventAbsoluteSec = (beatSlice.startBeat - offsetBeat) * beatDurationSeconds;
 
                 // --- REPLACE INSIDE THE WHILE LOOP OF runSchedulerLoop() ---
-if (eventAbsoluteSec < absoluteCurrentPlaybackTime + scheduleAheadTime) {
-    const fallbackNote = beatSlice.notes[0];
-    const jitter = fallbackNote ? fallbackNote.preCalculatedJitter : 0;
-    const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + jitter;
+                if (eventAbsoluteSec < absoluteCurrentPlaybackTime + scheduleAheadTime) {
+                    const fallbackNote = beatSlice.notes[0];
+                    const jitter = fallbackNote ? fallbackNote.preCalculatedJitter : 0;
+                    const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + jitter;
 
-    // 1. Dispatch raw audio nodes to the Web Audio timeline instantly
-    beatSlice.notes.forEach(note => {
-        const runtimeSegments = note.segments.map(seg => ({
-            ...seg,
-            duration: seg.duration * beatDurationSeconds
-        }));
+                    // 1. Dispatch raw audio nodes to the Web Audio timeline instantly
+                    beatSlice.notes.forEach(note => {
+                        const runtimeSegments = note.segments.map(seg => ({
+                            ...seg,
+                            duration: seg.duration * beatDurationSeconds
+                        }));
 
-        playHumanizedGuitaleleNote(
-            ctx,
-            runtimeSegments,
-            finalPluckTime,
-            null,
-            note.type === 'mute' ? 0 : note.preCalculatedVelocity
-        );
-    });
+                        playHumanizedGuitaleleNote(
+                            ctx,
+                            runtimeSegments,
+                            finalPluckTime,
+                            null,
+                            note.type === 'mute' ? 0 : note.preCalculatedVelocity
+                        );
+                    });
 
-    // 2. Decouple visual state updates completely without inner setTimeout wrappers
-    const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
-    const visualTimeout = setTimeout(() => {
-        setPlaybackIndex(beatSlice.globalIndex);
-    }, timeUntilVisualMs);
+                    // 2. Decouple visual state updates completely without inner setTimeout wrappers
+                    const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
+                    const visualTimeout = setTimeout(() => {
+                        setPlaybackIndex(beatSlice.globalIndex);
+                    }, timeUntilVisualMs);
 
-    playbackTimeoutsRef.current.push(visualTimeout);
+                    playbackTimeoutsRef.current.push(visualTimeout);
 
-    nextBeatIndexRef.current++;
-} else {
-    break;
-}
+                    nextBeatIndexRef.current++;
+                } else {
+                    break;
+                }
             }
 
             // End tracking termination
