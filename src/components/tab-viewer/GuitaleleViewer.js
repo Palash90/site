@@ -636,43 +636,43 @@ export default function GuitaleleViewer({ scoreData }) {
             const absoluteCurrentPlaybackTime = ctx.currentTime - playbackStartTimeRef.current + pausedTimeRef.current;
 
             // --- REPLACE INSIDE scheduleTimelineChunk() WITHIN runSchedulerLoop() ---
-while (nextBeatIndexRef.current < currentTimelineBeatsRef.current.length) {
-    const beatSlice = currentTimelineBeatsRef.current[nextBeatIndexRef.current];
-    const eventAbsoluteSec = (beatSlice.startBeat - offsetBeat) * beatDurationSeconds;
+            while (nextBeatIndexRef.current < currentTimelineBeatsRef.current.length) {
+                const beatSlice = currentTimelineBeatsRef.current[nextBeatIndexRef.current];
+                const eventAbsoluteSec = (beatSlice.startBeat - offsetBeat) * beatDurationSeconds;
 
-    if (eventAbsoluteSec < absoluteCurrentPlaybackTime + scheduleAheadTime) {
-        const fallbackNote = beatSlice.notes[0];
-        const jitter = fallbackNote ? fallbackNote.preCalculatedJitter : 0;
-        const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + jitter;
+                if (eventAbsoluteSec < absoluteCurrentPlaybackTime + scheduleAheadTime) {
+                    const fallbackNote = beatSlice.notes[0];
+                    const jitter = fallbackNote ? fallbackNote.preCalculatedJitter : 0;
+                    const finalPluckTime = playbackStartTimeRef.current - pausedTimeRef.current + scheduleOffsetSec + eventAbsoluteSec + jitter;
 
-        // 1. Dispatch audio nodes instantly to the Web Audio timeline queue
-        beatSlice.notes.forEach(note => {
-            const runtimeSegments = note.segments.map(seg => ({
-                ...seg,
-                duration: seg.duration * beatDurationSeconds
-            }));
+                    // 1. Dispatch audio nodes instantly to the Web Audio timeline queue
+                    beatSlice.notes.forEach(note => {
+                        const runtimeSegments = note.segments.map(seg => ({
+                            ...seg,
+                            duration: seg.duration * beatDurationSeconds
+                        }));
 
-            playHumanizedGuitaleleNote(
-                ctx,
-                runtimeSegments,
-                finalPluckTime,
-                null,
-                note.type === 'mute' ? 0 : note.preCalculatedVelocity
-            );
-        });
+                        playHumanizedGuitaleleNote(
+                            ctx,
+                            runtimeSegments,
+                            finalPluckTime,
+                            null,
+                            note.type === 'mute' ? 0 : note.preCalculatedVelocity
+                        );
+                    });
 
-        // 2. High-precision visual state synchronization tracking
-        const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
-        const visualTimeout = setTimeout(() => {
-            setPlaybackIndex(beatSlice.globalIndex);
-        }, timeUntilVisualMs);
+                    // 2. High-precision visual state synchronization tracking
+                    const timeUntilVisualMs = Math.max(0, (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000);
+                    const visualTimeout = setTimeout(() => {
+                        setPlaybackIndex(beatSlice.globalIndex);
+                    }, timeUntilVisualMs);
 
-        playbackTimeoutsRef.current.push(visualTimeout);
-        nextBeatIndexRef.current++;
-    } else {
-        break;
-    }
-}
+                    playbackTimeoutsRef.current.push(visualTimeout);
+                    nextBeatIndexRef.current++;
+                } else {
+                    break;
+                }
+            }
 
             // End tracking termination
             if (nextBeatIndexRef.current >= currentTimelineBeatsRef.current.length) {

@@ -47,20 +47,37 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     const totalDuration = segments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
     const firstPlayable = segments.find(s => typeof s.midi === 'number');
 
-    // High efficiency percussive noise for dead notes (No buffers allocated)
     const playMutedPercussion = (time, dur = 0.05, vel = 0.5) => {
-        const osc = ctx.createOscillator();
+        // High-efficiency procedural pick-scratch transient without heavy buffer re-allocation
+        const lowThump = ctx.createOscillator();
+        const highScrape = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
         const g = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(120, time);
 
-        g.gain.setValueAtTime(vel * 0.15, time);
+        lowThump.type = 'triangle';
+        lowThump.frequency.setValueAtTime(95, time);
+
+        highScrape.type = 'sawtooth';
+        highScrape.frequency.setValueAtTime(1400, time);
+        highScrape.detune.setValueAtTime((Math.random() * 40) - 20, time);
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, time);
+        filter.Q.value = 2.0;
+
+        g.gain.setValueAtTime(vel * 0.18, time);
         g.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
-        osc.connect(g);
+        lowThump.connect(g);
+        highScrape.connect(filter);
+        filter.connect(g);
+
         g.connect(getMasterGain(ctx));
-        osc.start(time);
-        osc.stop(time + dur);
+
+        lowThump.start(time);
+        highScrape.start(time);
+        lowThump.stop(time + dur);
+        highScrape.stop(time + dur);
     };
 
     if (!firstPlayable) {
@@ -105,24 +122,44 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     mainGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.20, startTime + 0.08);
     mainGain.gain.exponentialRampToValueAtTime(0.001, startTime + totalDecayTime - 0.02);
 
-    // Re-engineered Core Oscillator Chain (Drops multi-oscillator allocation stress)
+    // --- REPLACE THE OSCILLATOR CONFIGURATION BLOCK ---
+    // 1. Core Nylon String Fundamental Layer
     const stringOsc = ctx.createOscillator();
     stringOsc.type = 'triangle';
-
-    const detune = (Math.random() * 4) - 2;
+    const detuneA = (Math.random() * 3) - 1.5;
     stringOsc.frequency.setValueAtTime(initialFundamental, startTime);
-    stringOsc.detune.setValueAtTime(detune, startTime);
+    stringOsc.detune.setValueAtTime(detuneA, startTime);
 
-    // Organic transient emulation via brief frequency modulation sweep instead of dedicated audio buffer sources
-    stringOsc.frequency.setValueAtTime(initialFundamental * 1.03, startTime);
-    stringOsc.frequency.exponentialRampToValueAtTime(initialFundamental, startTime + 0.02);
+    // 2. Low-End Acoustic Body Fundamental Thump (Decays quickly)
+    const bassSubOsc = ctx.createOscillator();
+    bassSubOsc.type = 'sine';
+    const bassGain = ctx.createGain();
+    bassGain.gain.setValueAtTime(effectiveVelocity * 0.24, startTime);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35); // Rapid decay to keep mix clear
+    bassSubOsc.frequency.setValueAtTime(initialFundamental, startTime);
+    bassSubOsc.detune.setValueAtTime((Math.random() * 4) - 2, startTime);
 
+    // 3. Bright Pick Attack Transient (Fades out almost immediately)
+    const brightTransientOsc = ctx.createOscillator();
+    brightTransientOsc.type = 'sawtooth';
+    const brightGain = ctx.createGain();
+    brightGain.gain.setValueAtTime(effectiveVelocity * 0.12, startTime);
+    brightGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.04); // Instant snap
+    brightTransientOsc.frequency.setValueAtTime(initialFundamental * 2.5, startTime);
+
+    // Route secondary layers into the principal synthesis channel
     stringOsc.connect(mainGain);
+    bassSubOsc.connect(bassGain);
+    bassGain.connect(mainGain);
+    brightTransientOsc.connect(brightGain);
+    brightGain.connect(mainGain);
+
 
     // Continuous Pitch Timeline Automation
     let timeCursor = startTime;
     let currentMidi = initialMidi;
 
+    // --- REPLACE THE INTERNALS OF THE SEGMENTS AUTOMATION LOOP ---
     for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
         const segmentStartTime = timeCursor;
@@ -139,28 +176,40 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
             const targetFund = hasMidi ? 440 * Math.pow(2, (seg.midi - 69) / 12) : startFund;
 
             stringOsc.frequency.setValueAtTime(startFund, segmentStartTime);
+            bassSubOsc.frequency.setValueAtTime(startFund, segmentStartTime);
+
             stringOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
+            bassSubOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
             currentMidi = seg.midi;
         } else if (seg.type === 'hammer' || seg.type === 'pull') {
             if (hasMidi) {
                 const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
                 stringOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
+                bassSubOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
                 currentMidi = seg.midi;
                 stringOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
+                bassSubOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
             }
         } else {
             const currentFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
             stringOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
+            bassSubOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
         }
         timeCursor = segmentEndTime;
     }
 
+    // Start and stop all nodes in sync
     stringOsc.start(startTime);
+    bassSubOsc.start(startTime);
+    brightTransientOsc.start(startTime);
 
     const fadeOutTime = 0.015;
     const stopTime = startTime + totalDecayTime;
 
     mainGain.gain.setValueAtTime(0.001, stopTime - fadeOutTime);
     mainGain.gain.linearRampToValueAtTime(0, stopTime);
+
     stringOsc.stop(stopTime);
+    bassSubOsc.stop(stopTime);
+    brightTransientOsc.stop(stopTime);
 };
