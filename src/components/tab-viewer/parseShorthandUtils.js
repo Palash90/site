@@ -73,15 +73,35 @@ export const parseToken = (token, capo = 0) => {
     }
 
     // Case 2: Chord blocks [...]
-    if (workingToken.startsWith("[") && workingToken.endsWith("]")) {
-        const chordContent = workingToken.slice(1, -1);
-        const elements = chordContent.split("|").filter(Boolean);
+    if (workingToken.startsWith("[")) {
+        // Extract trailing duration if present right after the closing bracket (e.g., ]w)
+        const closingBracketIndex = workingToken.lastIndexOf("]");
+        const trailingDuration = workingToken
+            .substring(closingBracketIndex + 1)
+            .toLowerCase();
+
+        if (trailingDuration && durationMap[trailingDuration]) {
+            event.duration = durationMap[trailingDuration];
+        }
+
+        const chordContent = workingToken.slice(1, closingBracketIndex);
+        // Split internal chord notes by spaces or pipes
+        const elements = chordContent.split(/[\s|]+/).filter(Boolean);
 
         event.pitches = elements.map(el => {
+            // Support compact syntax inside chords (e.g., 0f6s)
+            const compactMatch = el.match(/^(\d+|[OXox])f(\d+)s?$/i);
+            if (compactMatch) {
+                return {
+                    fret: parseFretValue(compactMatch[1]),
+                    string: parseInt(compactMatch[2], 10)
+                };
+            }
+            // Fallback to legacy syntax inside chords (e.g., 0:6)
             const parts = el.split(":");
             return {
-                string: parseInt(parts[1], 10),
-                fret: parseFretValue(parts[0])
+                fret: parseFretValue(parts[0]),
+                string: parseInt(parts[1], 10)
             };
         });
         return event;
