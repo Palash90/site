@@ -189,19 +189,34 @@ export const TabShorthandParser = () => {
                     <Col>{showFull}</Col>
                 </Row>
                 {showFull && (
-                    <Row>
-                        <Col>
-                            <textarea
-                                rows={12}
-                                style={{
-                                    width: "100%",
-                                    fontFamily: "monospace",
-                                    padding: "10px"
-                                }}
-                                value={fullScore}
-                            />
-                        </Col>
-                    </Row>
+                    <>
+                        <Row>
+                            <Col>
+                                <textarea
+                                    rows={12}
+                                    style={{
+                                        width: "100%",
+                                        fontFamily: "monospace",
+                                        padding: "10px"
+                                    }}
+                                    value={fullScore}
+                                />
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <textarea
+                                    rows={12}
+                                    style={{
+                                        width: "100%",
+                                        fontFamily: "monospace",
+                                        padding: "10px"
+                                    }}
+                                    value={JSON.stringify(parsedData[0])}
+                                />
+                            </Col>
+                        </Row>
+                    </>
                 )}
                 <Row>
                     <Col>
