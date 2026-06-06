@@ -126,7 +126,7 @@ export const parseShorthandText = shorthandText => {
 
     for (let line of lines) {
         line = line.trim();
-        if (!line || line.startsWith("==") || line.startsWith("GUITAR TAB"))
+        if (!line || line.startsWith("==") || line.startsWith("GUITALELE TAB"))
             continue;
 
         // Detect Score block instantiation
