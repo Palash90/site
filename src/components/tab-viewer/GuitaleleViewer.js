@@ -2022,7 +2022,26 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                 )
                                                                                     return null;
 
-                                                                                // Direct Inference Rule: Same note gets a curved tie arc, varying note gets a straight slide ramp
+                                                                                // Replace with this to dynamically compute the active state, stroke color, and glow filter:
+                                                                                const isTieActive =
+                                                                                    activeIndices.includes(
+                                                                                        ev.globalIndex
+                                                                                    ) ||
+                                                                                    activeIndices.includes(
+                                                                                        nextEv.globalIndex
+                                                                                    );
+                                                                                const tieStrokeColor =
+                                                                                    isTieActive
+                                                                                        ? ev.voice ===
+                                                                                          2
+                                                                                            ? DARK_THEME.voice2Color
+                                                                                            : DARK_THEME.voice1Color
+                                                                                        : DARK_THEME.lineTie;
+                                                                                const tieGlow =
+                                                                                    isTieActive
+                                                                                        ? "url(#note-glow)"
+                                                                                        : "none";
+
                                                                                 if (
                                                                                     targetPitch.midi ===
                                                                                     pitch.midi
@@ -2032,10 +2051,17 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                             d={`M ${ev.cx + 4} ${pitch.tabY} Q ${(ev.cx + nextEv.cx) / 2} ${pitch.tabY + 12} ${nextEv.cx - 4} ${targetPitch.tabY}`}
                                                                                             fill="none"
                                                                                             stroke={
-                                                                                                DARK_THEME.lineTie
+                                                                                                tieStrokeColor
                                                                                             }
-                                                                                            strokeWidth="1.8"
+                                                                                            strokeWidth={
+                                                                                                isTieActive
+                                                                                                    ? "2.5"
+                                                                                                    : "1.8"
+                                                                                            }
                                                                                             strokeLinecap="round"
+                                                                                            filter={
+                                                                                                tieGlow
+                                                                                            }
                                                                                         />
                                                                                     );
                                                                                 } else {
@@ -2056,10 +2082,17 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                                 targetPitch.tabY
                                                                                             }
                                                                                             stroke={
-                                                                                                DARK_THEME.lineTie
+                                                                                                tieStrokeColor
                                                                                             }
-                                                                                            strokeWidth="2"
+                                                                                            strokeWidth={
+                                                                                                isTieActive
+                                                                                                    ? "3"
+                                                                                                    : "2"
+                                                                                            }
                                                                                             strokeLinecap="round"
+                                                                                            filter={
+                                                                                                tieGlow
+                                                                                            }
                                                                                         />
                                                                                     );
                                                                                 }
