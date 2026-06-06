@@ -4,7 +4,20 @@ import GuitaleleViewer from "./GuitaleleViewer";
 import { Col, Container, Row } from "react-bootstrap";
 
 export const TabShorthandParser = () => {
-    const [existingScores, setExistingScores] = useState([]);
+    // 1. Initialize state directly from localStorage as an object
+    const [existingScores, setExistingScores] = useState(() => {
+        const saved = window.localStorage.getItem("musicScores");
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Error parsing localStorage data", e);
+                return {};
+            }
+        }
+        return {};
+    });
+
     const [shorthandText, setShorthandText] = useState("");
     const [parsedData, setParsedData] = useState(null);
     const [error, setError] = useState(null);
@@ -19,10 +32,15 @@ export const TabShorthandParser = () => {
 
     const instruments = ["Guitalele"];
     const timeSignatures = ["4/4", "3/4", "6/8", "2/4", "2/2"];
+
     const handleParse = () => {
         try {
             setError(null);
-            var scoreText = "=".repeat(80);
+            if (!name.trim()) {
+                throw new Error("Score name is required.");
+            }
+
+            let scoreText = "=".repeat(80);
             scoreText += "\nScore: " + name;
             scoreText += "\nTime Signature: " + timeSignature;
             scoreText += "\nInstrument: " + instrument;
@@ -35,6 +53,23 @@ export const TabShorthandParser = () => {
             const scores = parseShorthandText(scoreText);
             console.log("Parsed Scores:", scores);
 
+            // 2. Clone the object to avoid direct state mutation
+            const updatedScores = { ...existingScores };
+
+            // 3. Update the value correctly
+            updatedScores[name] = {
+                name: name,
+                timeSignature: timeSignature,
+                instrument: instrument,
+                capo: capo,
+                desc: desc,
+                rawShorthand: shorthandText // Useful for loading it back later!
+            };
+
+            // 4. Update state and save to LocalStorage as a valid JSON string
+            setExistingScores(updatedScores);
+            window.localStorage.setItem("musicScores", JSON.stringify(updatedScores));
+
             setParsedData(scores);
         } catch (err) {
             setError(err.message || "An error occurred during parsing.");
@@ -42,11 +77,23 @@ export const TabShorthandParser = () => {
         }
     };
 
+    // This effect handles keeping parsedData in sync when loading the app
     useEffect(() => {
-        if (window.localStorage.scores) {
-            setExistingScores(window.localStorage.scores);
-        }
+        setParsedData(existingScores);
     }, []);
+
+    // Placeholder dropdown loader logic
+    const loadExistingScore = (scoreName) => {
+        const score = existingScores[scoreName];
+        if (score) {
+            setName(score.name || "");
+            setTimeSignature(score.timeSignature || "4/4");
+            setInstrument(score.instrument || "Guitalele");
+            setCapo(score.capo || 0);
+            setDesc(score.desc || "");
+            setShorthandText(score.rawShorthand || "");
+        }
+    };
 
     return (
         <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
@@ -58,6 +105,18 @@ export const TabShorthandParser = () => {
                 </Row>
                 <Row className="flex-nowrap">
                     <Col>
+                        <label>Existing Scores</label>
+                        <select
+                            value={name}
+                            onChange={e => loadExistingScore(e.target.value)}
+                        >
+                            <option value="">-- Select Score --</option>
+                            {Object.keys(existingScores).map(t => (
+                                <option key={t} value={t}>{t}</option>
+                            ))}
+                        </select>
+                    </Col>
+                    <Col>
                         <label>Name:</label>
                         <input
                             type="text"
@@ -68,19 +127,20 @@ export const TabShorthandParser = () => {
                     </Col>
                     <Col>
                         <label>Time Signature</label>
-                        <select
+                        <select 
+                            value={timeSignature}
                             onChange={e => setTimeSignature(e.target.value)}
                         >
                             {timeSignatures.map(t => (
-                                <option value={t}>{t}</option>
+                                <option key={t} value={t}>{t}</option>
                             ))}
                         </select>
                     </Col>
                     <Col>
                         <label>Instrument</label>
-                        <select onChange={e => setInstrument(e.target.value)}>
+                        <select value={instrument} onChange={e => setInstrument(e.target.value)}>
                             {instruments.map(i => (
-                                <option value={i}>{i}</option>
+                                <option key={i} value={i}>{i}</option>
                             ))}
                         </select>
                     </Col>
@@ -149,6 +209,9 @@ export const TabShorthandParser = () => {
                                 setShorthandText("");
                                 setParsedData(null);
                                 setError(null);
+                                setName("");
+                                setDesc("");
+                                setCapo(0);
                             }}
                             style={{
                                 padding: "10px 20px",
@@ -183,16 +246,18 @@ export const TabShorthandParser = () => {
                     <Col>
                         <input
                             type="checkbox"
+                            checked={showFull}
                             onChange={e => setShowFull(e.target.checked)}
                         />
                     </Col>
-                    <Col>{showFull}</Col>
+                    <Col>{showFull ? "Showing" : "Hidden"}</Col>
                 </Row>
-                {showFull && (
+                {showFull && parsedData && (
                     <>
                         <Row>
                             <Col>
                                 <textarea
+                                    readOnly
                                     rows={12}
                                     style={{
                                         width: "100%",
@@ -206,13 +271,14 @@ export const TabShorthandParser = () => {
                         <Row>
                             <Col>
                                 <textarea
+                                    readOnly
                                     rows={12}
                                     style={{
                                         width: "100%",
                                         fontFamily: "monospace",
                                         padding: "10px"
                                     }}
-                                    value={JSON.stringify(parsedData[0])}
+                                    value={JSON.stringify(parsedData, null, 2)}
                                 />
                             </Col>
                         </Row>
@@ -224,7 +290,7 @@ export const TabShorthandParser = () => {
                             scoreData={
                                 parsedData && parsedData.length > 0
                                     ? parsedData[0]
-                                    : null
+                                    : Array.isArray(parsedData) ? null : parsedData
                             }
                             editorMode={false}
                         />
