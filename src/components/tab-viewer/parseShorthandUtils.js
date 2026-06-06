@@ -43,19 +43,20 @@ export const parseToken = (token, capo = 0) => {
         event.voice = parseInt(voiceMatch[1], 10);
         workingToken = workingToken.replace(/v\d+/, "");
     }
-    
-    const compactMatch = workingToken.match(/^(\d+|[OXox])f(\d+)s([whqes]\.?)$/i);
+
+    const compactMatch = workingToken.match(
+        /^(\d+|[OXox])f(\d+)s([whqes]\.?)$/i
+    );
     if (compactMatch) {
         const rawFret = parseFretValue(compactMatch[1]);
         event.fret = rawFret !== null ? rawFret + capo : null;
         event.string = parseInt(compactMatch[2], 10);
-        
+
         const durStr = compactMatch[3].toLowerCase();
         event.duration = durationMap[durStr] || 1.0;
-        
+
         return event;
     }
-
 
     // 4. Extract Duration flag
     const durationMatch = workingToken.match(/@([whqes]\.?)/);
@@ -177,10 +178,8 @@ export const parseShorthandText = shorthandText => {
                 measureContent = line;
             }
 
-            const rawTokens = measureContent
-                .split(/\s\|\s+/)
-                .map(t => t.trim())
-                .filter(Boolean);
+            const rawTokens =
+                measureContent.match(/\[[^\]]+\][^\s]*|[^\s|]+/g) || [];
 
             const notes = rawTokens.map(token =>
                 parseToken(token, currentScore.capo)
