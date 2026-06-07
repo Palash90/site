@@ -272,35 +272,46 @@ export default function GuitaleleViewer({ scoreData }) {
         return `${baseHeader} • ${voiceDetails}`;
     }, [activeEvents]);
 
+// 1. Find which row index contains the currently playing note index
+    const activeRowIndex = useMemo(() => {
+        if (playbackIndex === null || !scoreLayout) return -1;
+        return scoreLayout.computedRows.findIndex(row =>
+            row.rowEvents.some(ev => ev.globalIndex === playbackIndex)
+        );
+    }, [playbackIndex, scoreLayout]);
+
+    // 2. Efficiently snap to the top of the row ONLY when changing lines
+    const prevRowIndexRef = useRef(-1);
     useEffect(() => {
-        if (isPlaying && playbackIndex !== null) {
-            // 1. Target the highlighted visual node element
-            const activeNode = document.querySelector('[data-active-indicator="true"]');
+        if (!isPlaying) {
+            prevRowIndexRef.current = -1;
+            return;
+        }
+
+        if (activeRowIndex !== -1 && activeRowIndex !== prevRowIndexRef.current) {
+            prevRowIndexRef.current = activeRowIndex;
             const scrollContainer = containerRef.current;
 
-            if (activeNode && scrollContainer) {
-                const containerRect = scrollContainer.getBoundingClientRect();
-                const nodeRect = activeNode.getBoundingClientRect();
+            if (scrollContainer) {
+                const rowElements = scrollContainer.querySelectorAll("tbody tr");
+                const targetRow = rowElements[activeRowIndex];
 
-                // 2. Determine if the active row is starting to clip out of view
-                const isBelow = nodeRect.bottom > containerRect.bottom - 40;
-                const isAbove = nodeRect.top < containerRect.top + 40;
+                if (targetRow) {
+                    const containerRect = scrollContainer.getBoundingClientRect();
+                    const rowRect = targetRow.getBoundingClientRect();
 
-                if (isBelow || isAbove) {
-                    // 3. Compute target position relative inside the container
-                    const relativeNodeTop = nodeRect.top - containerRect.top + scrollContainer.scrollTop;
-                    const targetScrollTop = relativeNodeTop - (containerRect.height / 2) + (nodeRect.height / 2);
+                    // Calculate the position to line up the row's top edge perfectly with the container's top
+                    const targetScrollTop = rowRect.top - containerRect.top + scrollContainer.scrollTop;
 
-                    // 4. Safely shift only the inner viewport
                     scrollContainer.scrollTo({
-                        top: targetScrollTop,
+                        top: Math.max(0, targetScrollTop - 4), // 4px padding for a clean aesthetic look
                         behavior: "smooth"
                     });
                 }
             }
         }
-    }, [playbackIndex, isPlaying]);
-    
+    }, [activeRowIndex, isPlaying]);
+
 
     if (!scoreLayout) {
         return (

@@ -9,10 +9,10 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
     ) => {
         // 1. Dynamically compute precise vertical bounds based on drawn elements
         // Top-most element is the highlight glow / invalid measure box (trebleTopY - 50)
-        const minY = trebleTopY - 20;
+        const minY = trebleTopY - 55;
 
         // Bottom-most elements are either the rhythm lane 2 background or the measure validity descriptions
-        const maxRhythmY = rhythmTopY + 80; // Covers rhythm text + background rect boundaries
+        const maxRhythmY = rhythmTopY + 55; // Covers rhythm text + background rect boundaries
         const maxValidityTextY = tabTopY + (5 * lineSpacing) + 65; // Covers measure debug details
         const maxY = Math.max(maxRhythmY, maxValidityTextY);
 
