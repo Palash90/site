@@ -363,62 +363,64 @@ export default function GuitaleleViewer({ scoreData }) {
                 overflow: 'hidden'             // Prevents the window scrollbar from appearing
             }}
         >
-<div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0 d-flex gap-3">
-    
-    {/* LEFT SIDEBAR: Controls (Fixed width) */}
-    <div className="d-flex flex-column gap-2" style={{ width: '160px', flexShrink: 0 }}>
-        {/* Playback Buttons */}
-        <div className="btn-group bg-black p-1 rounded border border-secondary">
-            {!isPlaying ? (
-                <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                </Button>
-            ) : isPaused ? (
-                <Button variant="link" onClick={resumePlayback} className="text-warning p-1" title="Resume">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                </Button>
-            ) : (
-                <Button variant="link" onClick={pausePlayback} className="text-warning p-1" title="Pause">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-                </Button>
-            )}
-            <Button variant="link" onClick={stopPlayback} disabled={!isPlaying} className={`p-1 ${isPlaying ? 'text-danger' : 'text-muted'}`} title="Stop">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
-            </Button>
-        </div>
+            <div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
 
-        {/* BPM Control */}
-        <div className="bg-black px-2 py-1 rounded border border-secondary text-center">
-            <Form.Range
-                min="40"
-                max="240"
-                value={bpm}
-                onChange={(e) => setBpm(parseInt(e.target.value, 10))}
-                disabled={isPlaying}
-            />
-            <div style={{ fontSize: '10px' }} className="text-muted font-monospace">
-                BPM: <span className="text-warning fw-bold">{bpm}</span>
+                {/* LEFT SIDEBAR: Controls */}
+                {/* Using a grid to keep items compact and equal in height to the desc area */}
+                <div className="d-flex flex-column gap-1" style={{ width: '140px', flexShrink: 0 }}>
+
+                    {/* Row 1: Buttons */}
+                    <div className="btn-group bg-black p-1 rounded border border-secondary">
+                        {!isPlaying ? (
+                            <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </Button>
+                        ) : isPaused ? (
+                            <Button variant="link" onClick={resumePlayback} className="text-warning p-1" title="Resume">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </Button>
+                        ) : (
+                            <Button variant="link" onClick={pausePlayback} className="text-warning p-1" title="Pause">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                            </Button>
+                        )}
+                        <Button variant="link" onClick={stopPlayback} disabled={!isPlaying} className={`p-1 ${isPlaying ? 'text-danger' : 'text-muted'}`} title="Stop">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
+                        </Button>
+                    </div>
+
+                    {/* Row 2: Compact BPM Control */}
+                    <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center gap-2">
+                        <Form.Range
+                            min="40"
+                            max="240"
+                            value={bpm}
+                            onChange={(e) => setBpm(parseInt(e.target.value, 10))}
+                            disabled={isPlaying}
+                            className="flex-grow-1"
+                        />
+                        <span className="text-warning fw-bold font-monospace" style={{ fontSize: '10px', minWidth: '24px' }}>{bpm}</span>
+                    </div>
+                </div>
+
+                {/* RIGHT SIDE: Description Area */}
+                <div
+                    className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
+                    style={{
+                        minHeight: '68px', // Matches the height of the two control rows
+                        height: '100%',
+                        overflowY: 'auto',
+                        fontSize: '12px',
+                        lineHeight: '1.2'
+                    }}
+                >
+                    {activeDescription ? (
+                        <div>🎵 {activeDescription}</div>
+                    ) : (
+                        <span className="text-muted fst-italic">Select a note to view properties.</span>
+                    )}
+                </div>
             </div>
-        </div>
-    </div>
-
-    {/* RIGHT SIDE: Scrollable Description Area (Takes remaining space) */}
-    <div
-        className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
-        style={{
-            height: '80px', // Increased height to accommodate more text/scrolling
-            overflowY: 'auto',
-            fontSize: '12px',
-            lineHeight: '1.4'
-        }}
-    >
-        {activeDescription ? (
-            <div>🎵 {activeDescription}</div>
-        ) : (
-            <span className="text-muted fst-italic">Select a note to view properties.</span>
-        )}
-    </div>
-</div>
 
             {/* 3. THE TRUE SCROLL VIEWPORT: Only things inside this box will move or scroll */}
             <div
