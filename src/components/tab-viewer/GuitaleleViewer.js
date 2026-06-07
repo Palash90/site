@@ -14,7 +14,7 @@ import {
 } from "././audio";
 import { Table, Row, Col, Button, Form } from "react-bootstrap";
 
-import { buildSvg } from "./svgUtils";
+import { buildSvg } from "./svgUtils1";
 import { useBuildScoreLayout } from "./scoreBuilder";
 
 export default function GuitaleleViewer({ scoreData }) {
