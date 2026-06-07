@@ -51,7 +51,10 @@ export default function GuitaleleViewer({ scoreData }) {
     // Responsive window observer
     useEffect(() => {
         const updateLayoutBoundaries = () => {
-            if (window.innerWidth < 768) {
+            if (window.innerWidth < 480) {
+                setMeasuresPerRow(1); // Extra small mobile layout profile
+                setSlotWidth(40);
+            } else if (window.innerWidth < 768) {
                 setMeasuresPerRow(2); // Mobile layout profile
                 setSlotWidth(50);
             } else {

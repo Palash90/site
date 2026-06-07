@@ -22,6 +22,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
         // Calculate the exact height needed to fit everything snugly
         const calculatedHeight = maxY - minY;
 
+        const fretFontSize = 16 * scaleY + 'px';
         return (
             <div
                 key={`row-${rowIdx}`}
@@ -75,7 +76,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <text
                         x={paddingX - 105}
                         y={(trebleTopY * scaleY) + 3.5 * sLineSpacing}
-                        className="text-4xl font-serif"
+                        style={{ fontSize: `${28 * scaleY}px` }}
                         fill={DARK_THEME.textClef}
                     >
                         𝄞
@@ -94,7 +95,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <text
                         x={paddingX - 105}
                         y={(bassTopY * scaleY) + 3.2 * sLineSpacing}
-                        className="text-4xl font-serif"
+                        style={{ fontSize: `${28 * scaleY}px` }}
                         fill={DARK_THEME.textClef}
                     >
                         𝄢
@@ -166,7 +167,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <g
                         transform={`translate(${paddingX - 105}, ${(tabTopY * scaleY) + 12 * scaleY})`}
                         fill={DARK_THEME.textTabLabel}
-                        style={{ fontSize: "14px", fontWeight: "900", letterSpacing: "-0.05em" }}
+                        style={{ fontSize: `${14 * scaleY}px`, fontWeight: "900", letterSpacing: "-0.05em" }}
                     >
                         <text x="0" y="0">
                             T
@@ -185,7 +186,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             y={(tabTopY * scaleY) + i * sLineSpacing + 4 * scaleY}
                             textAnchor="end"
                             fill={DARK_THEME.textTabString}
-                            style={{ fontSize: "15px", fontWeight: "bold" }}
+                            style={{ fontSize: `${14 * scaleY}px`, fontWeight: "bold" }}
                         >
                             {i + 1}
                         </text>
@@ -722,7 +723,8 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                             y={currentTabY +
                                                                 3.2 * scaleY}
                                                             textAnchor="middle"
-                                                            className="text-xs font-sans font-black tracking-wide"
+                                                            className="font-sans tracking-wide"
+                                                            style={{ fontSize: fretFontSize, fontWeight: "600" }}
                                                             fill={isActive
                                                                 ? DARK_THEME.textTabNumberHover
                                                                 : DARK_THEME.textTabNumber}

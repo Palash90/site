@@ -199,7 +199,9 @@ export const dummyScore = {
         },
         {
             measureNumber: 15,
-            notes: [{ fret: 3, string: 4, duration: 4.0 }]
+            notes: [{ fret: 18, string: 1, duration: 4.0 },
+            { fret: 0, string: 6, duration: 4.0, voice: 2 }
+            ]
         },
         {
             measureNumber: 16,
