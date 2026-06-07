@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { playHumanizedGuitaleleNote, TUNING } from "./audio";
 import {
     DARK_THEME,
     calculateSchedulerBoundaries,
