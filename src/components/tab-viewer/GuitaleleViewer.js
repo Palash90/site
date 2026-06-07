@@ -11,7 +11,7 @@ import {
     resumePlaying,
     startPlaying,
     runScheduler
-} from "././audio";
+} from "./audio1";
 import { Table, Row, Col, Button, Form } from "react-bootstrap";
 
 import { buildSvg } from "./svgUtils1";
