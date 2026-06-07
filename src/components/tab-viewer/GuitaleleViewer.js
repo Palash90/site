@@ -245,44 +245,59 @@ export default function GuitaleleViewer({ scoreData }) {
         [activeEvents]
     );
 
-    const activeDescription = useMemo(() => {
-        if (!activeEvents || activeEvents.length === 0) return null;
+const activeDescription = useMemo(() => {
+    if (!activeEvents || activeEvents.length === 0) return null;
 
-        // 1. Extract and combine any custom input descriptions from the JSON first
-        const customDescriptions = activeEvents
-            .map(ev => ev.description)
-            .filter(desc => typeof desc === "string" && desc.trim().length > 0);
+    // Define a subtle palette for voices
+    const voiceColors = ['#00b894', '#0984e3', '#6c5ce7', '#e17055'];
 
-        // De-duplicate custom messages if multiple voices shared the same reference string
-        const uniqueCustomText = Array.from(new Set(customDescriptions)).join(
-            " | "
-        );
+    return (
+        <div className="d-flex flex-column" style={{ gap: '6px' }}>
+            <div style={{ color: '#8892b0', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Measure {activeEvents[0].measureNumber}
+            </div>
 
-        // 2. Build the calculated voice pitch and rhythm data
-        const voiceDetails = activeEvents
-            .map(ev => {
-                if (ev.isRest) {
-                    return `Voice ${ev.voice}: Rest 𝄾 [${getDurationLabel(ev.beatValue).replace('note', 'rest')}]`;
-                }
-
-                const pitchDesc = ev.processedPitches
-                    .map(p => `${p.noteName} (Str ${p.string}, Fr ${p.fret})`)
-                    .join(" + ");
-
-                return `Voice ${ev.voice}: ${pitchDesc} [${getDurationLabel(ev.beatValue)}]`;
-            })
-            .join("  ‖  ");
-
-        // 3. Assemble components: Measure prefix + Input custom text (if any) + Generated technical values
-        const measureNum = activeEvents[0].measureNumber;
-        const baseHeader = `Measure ${measureNum}`;
-
-        if (uniqueCustomText) {
-            return `${baseHeader} • [${uniqueCustomText}] • ${voiceDetails}`;
-        }
-
-        return `${baseHeader} • ${voiceDetails}`;
-    }, [activeEvents]);
+            <div className="d-flex flex-column" style={{ gap: '4px' }}>
+                {activeEvents.map((ev, idx) => {
+                    const color = voiceColors[ev.voice % voiceColors.length];
+                    
+                    return (
+                        <div key={idx} className="d-flex align-items-start" style={{ 
+                            borderLeft: `3px solid ${color}`, 
+                            paddingLeft: '12px' 
+                        }}>
+                            {ev.isRest ? (
+                                <span style={{ color: '#636e72', fontSize: '11px', fontStyle: 'italic' }}>
+                                    <span style={{ color }}>V{ev.voice}</span> • Rest • {getDurationLabel(ev.beatValue)}
+                                </span>
+                            ) : (
+                                <div className="d-flex flex-column">
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        {/* Duration now at the front */}
+                                        <span style={{ color: '#fdcb6e', fontSize: '10px', fontWeight: 'bold', minWidth: '40px' }}>
+                                            {getDurationLabel(ev.beatValue).toUpperCase()}
+                                        </span>
+                                        <span style={{ color, fontSize: '10px', fontWeight: 'bold' }}>VOICE {ev.voice}</span>
+                                    </div>
+                                    
+                                    {/* Indented/Tabbed note list */}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px', paddingLeft: '8px' }}>
+                                        {ev.processedPitches.map((p, pIdx) => (
+                                            <div key={pIdx} style={{ fontSize: '11px', color: '#dfe6e9' }}>
+                                                • {p.noteName} 
+                                                <span style={{ color: '#636e72', marginLeft: '4px' }}>S{p.string}F{p.fret}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}, [activeEvents]);
 
     // 1. Find which row index contains the currently playing note index
     const activeRowIndex = useMemo(() => {
@@ -403,23 +418,17 @@ export default function GuitaleleViewer({ scoreData }) {
                     </div>
                 </div>
 
-                {/* RIGHT SIDE: Description Area */}
                 <div
-                    className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
-                    style={{
-                        minHeight: '68px', // Matches the height of the two control rows
-                        height: '100%',
-                        overflowY: 'auto',
-                        fontSize: '12px',
-                        lineHeight: '1.2'
-                    }}
-                >
-                    {activeDescription ? (
-                        <div>🎵 {activeDescription}</div>
-                    ) : (
-                        <span className="text-muted fst-italic">Select a note to view properties.</span>
-                    )}
-                </div>
+    className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
+    style={{
+        height: '100px',        // Fixed vertical length
+        overflowY: 'auto',       // Only the description scrolls
+        fontSize: '12px',
+        lineHeight: '1.2'
+    }}
+>
+    {activeDescription || <span className="text-muted fst-italic">Select a note to view properties.</span>}
+</div>
             </div>
 
             {/* 3. THE TRUE SCROLL VIEWPORT: Only things inside this box will move or scroll */}
