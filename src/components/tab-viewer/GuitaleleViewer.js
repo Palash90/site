@@ -1,6 +1,17 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { playHumanizedGuitaleleNote, TUNING } from "./audio";
-import { DARK_THEME, RHYTHM_BEAT_VALUES, calculateSchedulerBoundaries, NOTE_NAMES, getDurationLabel, getFlagPath, parsePitchProperties } from "./guitaleleViewerUtils";
+import {
+    DARK_THEME,
+    RHYTHM_BEAT_VALUES,
+    calculateSchedulerBoundaries,
+    NOTE_NAMES,
+    getDurationLabel,
+    getFlagPath,
+    parsePitchProperties,
+    fixedTopRightStyle,
+    outerContainerStyle,
+    scrollableContentStyle
+} from "./guitaleleViewerUtils";
 
 export default function GuitaleleViewer({ scoreData }) {
     const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
@@ -904,46 +915,8 @@ export default function GuitaleleViewer({ scoreData }) {
     const rhythm1TopY = rhythmTopY;
     const rhythm2TopY = rhythmTopY + 28;
 
-    const outerContainerStyle = {
-        position: "relative", // Establishes boundary for absolute positioning
-        width: "100%", // Adapts to wherever you drop it in the page
-        height: svgHeight + "px", // Constrained height so it knows when to scroll
-        overflow: "hidden", // Prevents content from breaking outside the box
-        border: "1px solid #ccc",
-        boxSizing: "border-box"
-    };
-
-    const fixedTopRightStyle = {
-        position: "absolute",
-        top: "10px",
-        right: "10px",
-        zIndex: 100,
-
-        // The changes:
-        width: "20%" /* Set your exact desired width here */,
-        boxSizing: "border-box" /* Keeps padding from breaking the width */,
-
-        padding: "8px 12px",
-        borderRadius: "4px",
-        pointerEvents: "auto"
-    };
-
-    const scrollableContentStyle = {
-        width: "70%",
-
-        // The changes:
-        height: "60vh" /* Forces the container to exactly 55% of the viewport height */,
-        overflowY: "auto" /* Enables scrolling when content exceeds 55vh */,
-
-        paddingTop: "60px",
-        paddingLeft: "20px",
-        paddingRight: "20px",
-        paddingBottom: "20px",
-        boxSizing: "border-box"
-    };
-
     return (
-        <div style={outerContainerStyle}>
+        <div style={{ ...outerContainerStyle, height: svgHeight + 80 + "px" }}>
             <div style={fixedTopRightStyle}>
                 <div className="max-w-6xl mx-auto flex flex-col gap-3">
                     <div className="flex items-center justify-between gap-4">

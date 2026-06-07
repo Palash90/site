@@ -159,3 +159,40 @@ export const calculateSchedulerBoundaries = bpm => {
 
     return { lookaheadInterval, scheduleAheadTime };
 };
+
+export const outerContainerStyle = {
+    position: "relative", // Establishes boundary for absolute positioning
+    width: "100%", // Adapts to wherever you drop it in the page
+    overflow: "hidden", // Prevents content from breaking outside the box
+    border: "1px solid #ccc",
+    boxSizing: "border-box"
+};
+
+export const fixedTopRightStyle = {
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    zIndex: 100,
+
+    // The changes:
+    width: "20%" /* Set your exact desired width here */,
+    boxSizing: "border-box" /* Keeps padding from breaking the width */,
+
+    padding: "8px 12px",
+    borderRadius: "4px",
+    pointerEvents: "auto"
+};
+
+export const scrollableContentStyle = {
+    width: "70%",
+
+    // The changes:
+    height: "60vh" /* Forces the container to exactly 55% of the viewport height */,
+    overflowY: "auto" /* Enables scrolling when content exceeds 55vh */,
+
+    paddingTop: "60px",
+    paddingLeft: "20px",
+    paddingRight: "20px",
+    paddingBottom: "20px",
+    boxSizing: "border-box"
+};
