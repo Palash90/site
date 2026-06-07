@@ -166,7 +166,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <g
                         transform={`translate(${paddingX - 105}, ${(tabTopY * scaleY) + 12 * scaleY})`}
                         fill={DARK_THEME.textTabLabel}
-                        className="font-black tracking-tighter text-xs"
+                        style={{ fontSize: "14px", fontWeight: "900", letterSpacing: "-0.05em" }}
                     >
                         <text x="0" y="0">
                             T
@@ -184,8 +184,8 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             x={paddingX - 15}
                             y={(tabTopY * scaleY) + i * sLineSpacing + 4 * scaleY}
                             textAnchor="end"
-                            className="text-[9px] font-bold"
                             fill={DARK_THEME.textTabString}
+                            style={{ fontSize: "15px", fontWeight: "bold" }}
                         >
                             {i + 1}
                         </text>
