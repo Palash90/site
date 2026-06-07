@@ -3,9 +3,6 @@ import {
     DARK_THEME,
     calculateSchedulerBoundaries,
     getDurationLabel,
-    fixedTopRightStyle,
-    outerContainerStyle,
-    scrollableContentStyle
 } from "./guitaleleViewerUtils";
 
 import {
@@ -15,6 +12,7 @@ import {
     startPlaying,
     runScheduler
 } from "././audio";
+import { Table } from "react-bootstrap";
 
 import { buildSvg } from "./svgUtils";
 import { useBuildScoreLayout } from "./scoreBuilder";
@@ -276,19 +274,29 @@ export default function GuitaleleViewer({ scoreData }) {
 
     useEffect(() => {
         if (isPlaying && playbackIndex !== null) {
-            // Find the active SVG node or highlighted element container
+            // 1. Target the highlighted visual node element
             const activeNode = document.querySelector(
                 `rect[fill="${DARK_THEME.fillHoverHighlight}"]`
             );
-            if (activeNode && containerRef.current) {
+            const scrollContainer = containerRef.current;
+
+            if (activeNode && scrollContainer) {
+                const containerRect = scrollContainer.getBoundingClientRect();
                 const nodeRect = activeNode.getBoundingClientRect();
-                const isBelow = nodeRect.bottom > window.innerHeight - 60;
-                const isAbove = nodeRect.top < 180; // Adjusted offset to clear the sticky overlay cont
+
+                // 2. Determine if the active row is starting to clip out of view
+                const isBelow = nodeRect.bottom > containerRect.bottom - 40;
+                const isAbove = nodeRect.top < containerRect.top + 40;
 
                 if (isBelow || isAbove) {
-                    activeNode.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center"
+                    // 3. Compute target position relative inside the container
+                    const relativeNodeTop = nodeRect.top - containerRect.top + scrollContainer.scrollTop;
+                    const targetScrollTop = relativeNodeTop - (containerRect.height / 2) + (nodeRect.height / 2);
+
+                    // 4. Safely shift only the inner viewport
+                    scrollContainer.scrollTo({
+                        top: targetScrollTop,
+                        behavior: "smooth"
                     });
                 }
             }
@@ -323,8 +331,24 @@ export default function GuitaleleViewer({ scoreData }) {
     const rhythm2TopY = rhythmTopY + 28;
 
     return (
-        <div style={{ ...outerContainerStyle, height: svgHeight + 80 + "px" }}>
-            <div style={fixedTopRightStyle}>
+        <div
+            style={{
+                height: `${svgHeight + 80}px`,
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: '#0f172a', // Slate-900 dark theme
+                overflow: 'hidden' // Prevents the outer container from scrolling
+            }}
+        >
+            {/* 2. THE LOCKED HEADER: Completely isolated from the scroll mechanics */}
+            <div
+                style={{
+                    flexShrink: 0, // Prevents JavaScript or long tables from shrinking this header
+                    zIndex: 50,
+                    backgroundColor: '#0f172a',
+                    padding: '16px 24px 12px 24px'
+                }}
+            >
                 <div className="max-w-6xl mx-auto flex flex-col gap-3">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
@@ -344,11 +368,7 @@ export default function GuitaleleViewer({ scoreData }) {
                             ) : (
                                 <>
                                     <button
-                                        onClick={
-                                            isPaused
-                                                ? resumePlayback
-                                                : pausePlayback
-                                        }
+                                        onClick={isPaused ? resumePlayback : pausePlayback}
                                         className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${isPaused
                                             ? "bg-amber-600 hover:bg-amber-500"
                                             : "bg-indigo-600 hover:bg-indigo-500"
@@ -406,10 +426,26 @@ export default function GuitaleleViewer({ scoreData }) {
                 </div>
             </div>
 
-            <div ref={containerRef} style={scrollableContentStyle}>
-                {computedRows.map(
-                    buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, setHoveredNoteIndex)
-                )}
+            {/* 3. THE TRUE SCROLL VIEWPORT: Only things inside this box will move or scroll */}
+            <div
+                ref={containerRef}
+                style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    paddingTop: '8px'
+                }}
+            >
+                <Table responsive bordered={false} style={{ margin: 0, width: '100%' }}>
+                    <tbody>
+                        {computedRows.map((row, index) => (
+                            <tr key={index}>
+                                <td style={{ border: 'none', padding: 0 }}>
+                                    {buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, setHoveredNoteIndex)(row, index)}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
             </div>
         </div>
     );
