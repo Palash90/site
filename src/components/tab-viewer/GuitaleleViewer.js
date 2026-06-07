@@ -330,7 +330,6 @@ export default function GuitaleleViewer({ scoreData }) {
         bassTopY,
         tabTopY,
         rhythmTopY,
-        svgHeight,
         lineSpacing,
         SLOT_WIDTH,
         measureValidityMap,
@@ -456,7 +455,6 @@ export default function GuitaleleViewer({ scoreData }) {
                                 <tr key={index}>
                                     <td style={{ border: 'none', padding: `0 12px ${rowPaddingBottom} 12px` }}>
                                         {buildSvg(
-                                            svgHeight,
                                             paddingX,
                                             trebleTopY,
                                             bassTopY,

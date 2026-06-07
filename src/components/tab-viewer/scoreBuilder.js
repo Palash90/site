@@ -13,7 +13,6 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
         const bassTopY = 280;
         const tabTopY = 400;
         const rhythmTopY = 640;
-        const svgHeight = 750;
 
         const timeSigTop = scoreData.timeSignature?.split("/")[0] || "4";
         const timeSigBottom = scoreData.timeSignature?.split("/")[1] || "4";
@@ -335,7 +334,6 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
             bassTopY,
             tabTopY,
             rhythmTopY,
-            svgHeight,
             lineSpacing,
             SLOT_WIDTH,
             measureValidityMap,
