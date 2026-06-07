@@ -1,170 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { playHumanizedGuitaleleNote, TUNING } from "./audio";
-
-const RHYTHM_BEAT_VALUES = {
-    o: 4.0,
-    "o.": 6.0,
-    ".": 2.0,
-    "..": 3.0,
-    ":": 1.0,
-    ":.": 1.5,
-    "+": 0.5,
-    "+.": 0.75,
-    "=": 0.25,
-    r: 1.0,
-    "r.": 1.5,
-    "r+": 0.5,
-    "r=": 0.25
-};
-
-const CHROMATIC_MAP = {
-    0: [0, false],
-    1: [0, true],
-    2: [1, false],
-    3: [1, true],
-    4: [2, false],
-    5: [3, false],
-    6: [3, true],
-    7: [4, false],
-    8: [4, true],
-    9: [5, false],
-    10: [5, true],
-    11: [6, false]
-};
-
-const NOTE_NAMES = [
-    "C",
-    "C#",
-    "D",
-    "D#",
-    "E",
-    "F",
-    "F#",
-    "G",
-    "G#",
-    "A",
-    "A#",
-    "B"
-];
-
-const DURATION_OPTIONS = [
-    { value: 0.25, label: "Sixteenth note" },
-    { value: 0.5, label: "Eighth note" },
-    { value: 0.75, label: "Dotted eighth note" },
-    { value: 1.0, label: "Quarter note" },
-    { value: 1.5, label: "Dotted quarter note" },
-    { value: 2.0, label: "Half note" },
-    { value: 3.0, label: "Dotted half note" },
-    { value: 4.0, label: "Whole note" },
-    { value: 6.0, label: "Dotted whole note" }
-];
-
-const getDurationLabel = beatValue => {
-    const option = DURATION_OPTIONS.find(
-        duration => duration.value === beatValue
-    );
-    return option ? option.label : `${beatValue} beats`;
-};
-
-const DARK_THEME = {
-    // --- 1. Base Backgrounds ---
-    bgPage: "bg-slate-950",
-    bgScore: "bg-slate-900",
-    borderScore: "border-slate-800",
-
-    // --- 2. Structural Lines (Muted to let notes pop) ---
-    lineStaff: "#4a4a83", // Zinc 800 - dark, clean background lines
-    lineTab: "#57576e", // Slightly darker zinc so it doesn't fight the notes
-    lineBar: "#103466", // Gray 600 - subtle but distinct division
-    lineTie: "#8aa8d1", // Slate 500
-
-    // --- 3. Static UI Text & Symbols ---
-    textClef: "#64748b", // Slate 500 - visible but secondary
-    textTimeSig: "#fbbf24", // Amber 400 - nice gold accent
-    textTabLabel: "#4b5563", // Slate 600
-    textTabString: "#374151", // Slate 600
-    bgTabRect: "#0f172a", // Matches bgScore exactly for seamless masking
-    textTabNumber: "#e2e8f0", // Slate 300 - clear baseline readability
-
-    // --- 4. Core Musical Elements (Voice 1 Default) ---
-    lineStem: "#38bdf8", // Sky 400
-    fillNote: "#38bdf8", // Sky 400
-    fillRest: "#f43f5e", // Rose 500 - distinctly different from playable notes
-    textRhythm: "#94a3b8", // Slate 400
-
-    // --- 5. Polyphonic Voices (High Contrast) ---
-    voice1Color: "#21cea3", // Sky 400 (Cool)
-    voice1Rhythm: "#818cf8", // Indigo 400 (Cool contrast)
-
-    voice2Color: "#fb923c", // Orange 400 (Warm)
-    voice2Rhythm: "#f472b6", // Pink 400 (Warm contrast)
-
-    // --- 6. Hover & Interaction (The Glow) ---
-    fillHoverHighlight: "rgba(56, 189, 248, 0.08)", // Very subtle sky-blue glass effect
-    fillNoteHover: "#7dd3fc", // Sky 300
-    strokeNoteHover: "#ffffff", // Pure white for maximum pop when hovered
-    textTabNumberHover: "#ffffff",
-    textRhythmHover: "#f8fafc", // Slate 50
-
-    // --- 7. System States ---
-    bgInvalidMeasure: "rgba(225, 29, 72, 0.15)" // Rose 600 transparent
-};
-
-const parsePitchProperties = (midiNumber, clef, clefTopY, lineSpacing) => {
-    const visualAnchorMidi = clef === "treble" ? 64 : 43;
-    const visualAnchorY = clefTopY + 4 * lineSpacing;
-
-    const getDiatonicAbsoluteStep = midi => {
-        const pitchClass = midi % 12;
-        const octave = Math.floor(midi / 12);
-        const [step] = CHROMATIC_MAP[pitchClass];
-        return octave * 7 + step;
-    };
-
-    const currentStep = getDiatonicAbsoluteStep(midiNumber);
-    const anchorStep = getDiatonicAbsoluteStep(visualAnchorMidi);
-    const stepDiff = currentStep - anchorStep;
-
-    return {
-        y: visualAnchorY - stepDiff * (lineSpacing / 2),
-        isSharp: CHROMATIC_MAP[midiNumber % 12][1]
-    };
-};
-
-const getFlagPath = (sx, sy, isDown = false, flags = 1) => {
-    const drawSlashSegment = yOffset => {
-        const sY = sy + yOffset;
-        if (isDown) {
-            return `M ${sx} ${sY} L ${sx + 7} ${sY - 8} L ${sx + 7} ${sY - 5} L ${sx} ${sY + 3} Z`;
-        }
-        return `M ${sx} ${sY} L ${sx + 7} ${sY + 8} L ${sx + 7} ${sY + 5} L ${sx} ${sY - 3} Z`;
-    };
-
-    let path = "";
-    for (let i = 0; i < flags; i++) {
-        path += drawSlashSegment(isDown ? -(i * 9) : i * 9) + " ";
-    }
-    return path.trim();
-};
-
-/**
- * Mathematically derives the tightest safe scheduling intervals based on a target BPM.
- */
-const calculateSchedulerBoundaries = bpm => {
-    const beatDurationMs = (60 / bpm) * 1000;
-    const sixteenthNoteMs = beatDurationMs / 4;
-
-    // Lookahead Interval: roughly 40% of a sixteenth note, bounded between 15ms and 45ms.
-    const lookaheadInterval = Math.max(
-        15,
-        Math.min(45, Math.round(sixteenthNoteMs * 0.4))
-    );
-
-    // Schedule Ahead Time: The safety padding window (in seconds).
-    const scheduleAheadTime = (lookaheadInterval * 3.5) / 1000;
-
-    return { lookaheadInterval, scheduleAheadTime };
-};
+import { DARK_THEME, RHYTHM_BEAT_VALUES, calculateSchedulerBoundaries, NOTE_NAMES, getDurationLabel, getFlagPath, parsePitchProperties } from "./guitaleleViewerUtils";
 
 export default function GuitaleleViewer({ scoreData }) {
     const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
@@ -865,7 +701,7 @@ export default function GuitaleleViewer({ scoreData }) {
                         (eventAbsoluteSec -
                             absoluteCurrentPlaybackTime +
                             scheduleOffsetSec) *
-                            1000
+                        1000
                     );
                     const visualTimeout = setTimeout(() => {
                         setPlaybackIndex(beatSlice.globalIndex);
@@ -879,13 +715,13 @@ export default function GuitaleleViewer({ scoreData }) {
                                     const tiedAbsoluteSec =
                                         eventAbsoluteSec +
                                         tiedEvent.beatOffset *
-                                            beatDurationSeconds;
+                                        beatDurationSeconds;
                                     const timeUntilTiedVisualMs = Math.max(
                                         0,
                                         (tiedAbsoluteSec -
                                             absoluteCurrentPlaybackTime +
                                             scheduleOffsetSec) *
-                                            1000
+                                        1000
                                     );
 
                                     const tiedVisualTimeout = setTimeout(() => {
@@ -912,7 +748,7 @@ export default function GuitaleleViewer({ scoreData }) {
             ) {
                 const lastSlice =
                     currentTimelineBeatsRef.current[
-                        currentTimelineBeatsRef.current.length - 1
+                    currentTimelineBeatsRef.current.length - 1
                     ];
                 if (lastSlice) {
                     const maxSustainBeats = Math.max(
@@ -1116,11 +952,10 @@ export default function GuitaleleViewer({ scoreData }) {
                                 <button
                                     onClick={() => startPlayback(1)}
                                     disabled={!isAudioCompiled}
-                                    className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${
-                                        isAudioCompiled
-                                            ? "bg-emerald-600 hover:bg-emerald-500 cursor-pointer"
-                                            : "bg-slate-700 opacity-60 cursor-not-allowed"
-                                    }`}
+                                    className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${isAudioCompiled
+                                        ? "bg-emerald-600 hover:bg-emerald-500 cursor-pointer"
+                                        : "bg-slate-700 opacity-60 cursor-not-allowed"
+                                        }`}
                                 >
                                     {isAudioCompiled
                                         ? "▶ START PLAYBACK"
@@ -1134,11 +969,10 @@ export default function GuitaleleViewer({ scoreData }) {
                                                 ? resumePlayback
                                                 : pausePlayback
                                         }
-                                        className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${
-                                            isPaused
-                                                ? "bg-amber-600 hover:bg-amber-500"
-                                                : "bg-indigo-600 hover:bg-indigo-500"
-                                        }`}
+                                        className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${isPaused
+                                            ? "bg-amber-600 hover:bg-amber-500"
+                                            : "bg-indigo-600 hover:bg-indigo-500"
+                                            }`}
                                     >
                                         {isPaused ? "▶ RESUME" : "⏸ PAUSE"}
                                     </button>
@@ -1404,7 +1238,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                 stroke={DARK_THEME.lineBar}
                                                 strokeWidth={
                                                     i ===
-                                                    barlineXPositions.length - 1
+                                                        barlineXPositions.length - 1
                                                         ? "2"
                                                         : "1.6"
                                                 }
@@ -1417,7 +1251,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                 stroke={DARK_THEME.lineTab}
                                                 strokeWidth={
                                                     i ===
-                                                    barlineXPositions.length - 1
+                                                        barlineXPositions.length - 1
                                                         ? "2"
                                                         : "1.6"
                                                 }
@@ -1430,7 +1264,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                             (measure.startX + measure.endX) / 2;
                                         const mv =
                                             measureValidityMap?.[
-                                                measure.measureNumber
+                                            measure.measureNumber
                                             ];
 
                                         const isMeasureInvalid =
@@ -1517,7 +1351,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                 y={
                                                                     tabTopY +
                                                                     5 *
-                                                                        lineSpacing +
+                                                                    lineSpacing +
                                                                     48
                                                                 }
                                                                 textAnchor="middle"
@@ -1654,7 +1488,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             y={
                                                                 tabTopY +
                                                                 2 *
-                                                                    lineSpacing -
+                                                                lineSpacing -
                                                                 4 +
                                                                 restTabOffset
                                                             }
@@ -1669,7 +1503,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             y={
                                                                 tabTopY +
                                                                 3 *
-                                                                    lineSpacing -
+                                                                lineSpacing -
                                                                 6 +
                                                                 restTabOffset
                                                             }
@@ -1688,35 +1522,35 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             (pitch, pIdx) => {
                                                                 const clefTopY =
                                                                     pitch.clef ===
-                                                                    "treble"
+                                                                        "treble"
                                                                         ? trebleTopY
                                                                         : bassTopY;
                                                                 const bottomStaffEdge =
                                                                     clefTopY +
                                                                     4 *
-                                                                        lineSpacing;
+                                                                    lineSpacing;
                                                                 const lowerLedgers =
                                                                     pitch.staffY >
-                                                                    bottomStaffEdge
+                                                                        bottomStaffEdge
                                                                         ? Math.floor(
-                                                                              (pitch.staffY -
-                                                                                  bottomStaffEdge) /
-                                                                                  lineSpacing
-                                                                          )
+                                                                            (pitch.staffY -
+                                                                                bottomStaffEdge) /
+                                                                            lineSpacing
+                                                                        )
                                                                         : 0;
                                                                 const upperLedgers =
                                                                     pitch.staffY <
-                                                                    clefTopY
+                                                                        clefTopY
                                                                         ? Math.floor(
-                                                                              (clefTopY -
-                                                                                  pitch.staffY) /
-                                                                                  lineSpacing
-                                                                          )
+                                                                            (clefTopY -
+                                                                                pitch.staffY) /
+                                                                            lineSpacing
+                                                                        )
                                                                         : 0;
 
                                                                 const voiceColor =
                                                                     ev.voice ===
-                                                                    2
+                                                                        2
                                                                         ? DARK_THEME.voice2Color
                                                                         : DARK_THEME.voice1Color;
                                                                 const activeNoteColor =
@@ -1780,7 +1614,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                         clefTopY -
                                                                                         (lIdx +
                                                                                             1) *
-                                                                                            lineSpacing
+                                                                                        lineSpacing
                                                                                     }
                                                                                     x2={
                                                                                         ev.cx +
@@ -1790,7 +1624,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                         clefTopY -
                                                                                         (lIdx +
                                                                                             1) *
-                                                                                            lineSpacing
+                                                                                        lineSpacing
                                                                                     }
                                                                                     stroke={
                                                                                         DARK_THEME.lineStaff
@@ -1821,7 +1655,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                         bottomStaffEdge +
                                                                                         (lIdx +
                                                                                             1) *
-                                                                                            lineSpacing
+                                                                                        lineSpacing
                                                                                     }
                                                                                     x2={
                                                                                         ev.cx +
@@ -1831,7 +1665,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                         bottomStaffEdge +
                                                                                         (lIdx +
                                                                                             1) *
-                                                                                            lineSpacing
+                                                                                        lineSpacing
                                                                                     }
                                                                                     stroke={
                                                                                         DARK_THEME.lineStaff
@@ -1842,7 +1676,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                         )}
 
                                                                         {pitch.fret ===
-                                                                        null ? (
+                                                                            null ? (
                                                                             <g>
                                                                                 <line
                                                                                     x1={
@@ -1892,7 +1726,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                 />
                                                                             </g>
                                                                         ) : ev.beatValue >=
-                                                                          2.0 ? (
+                                                                            2.0 ? (
                                                                             <ellipse
                                                                                 cx={
                                                                                     ev.cx
@@ -1942,18 +1776,18 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                                         {ev.isTiedToNext &&
                                                                             pitch.fret !==
-                                                                                null &&
+                                                                            null &&
                                                                             (() => {
                                                                                 const nextEv =
                                                                                     rowEvents
                                                                                         .slice(
                                                                                             idx +
-                                                                                                1
+                                                                                            1
                                                                                         )
                                                                                         .find(
                                                                                             e =>
                                                                                                 e.voice ===
-                                                                                                    ev.voice &&
+                                                                                                ev.voice &&
                                                                                                 !e.isRest
                                                                                         );
                                                                                 if (
@@ -1971,7 +1805,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                 if (
                                                                                     targetPitch &&
                                                                                     targetPitch.fret !==
-                                                                                        null
+                                                                                    null
                                                                                 ) {
                                                                                     return (
                                                                                         <path
@@ -1990,18 +1824,18 @@ export default function GuitaleleViewer({ scoreData }) {
 
                                                                         {ev.isTiedToNext &&
                                                                             pitch.fret !==
-                                                                                null &&
+                                                                            null &&
                                                                             (() => {
                                                                                 const nextEv =
                                                                                     rowEvents
                                                                                         .slice(
                                                                                             idx +
-                                                                                                1
+                                                                                            1
                                                                                         )
                                                                                         .find(
                                                                                             e =>
                                                                                                 e.voice ===
-                                                                                                    ev.voice &&
+                                                                                                ev.voice &&
                                                                                                 !e.isRest
                                                                                         );
                                                                                 if (
@@ -2018,7 +1852,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                 if (
                                                                                     !targetPitch ||
                                                                                     targetPitch.fret ===
-                                                                                        null
+                                                                                    null
                                                                                 )
                                                                                     return null;
 
@@ -2033,7 +1867,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                                 const tieStrokeColor =
                                                                                     isTieActive
                                                                                         ? ev.voice ===
-                                                                                          2
+                                                                                            2
                                                                                             ? DARK_THEME.voice2Color
                                                                                             : DARK_THEME.voice1Color
                                                                                         : DARK_THEME.lineTie;
@@ -2150,7 +1984,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                             }
                                                                         >
                                                                             {pitch.fret ===
-                                                                            null
+                                                                                null
                                                                                 ? "X"
                                                                                 : pitch.fret}
                                                                         </text>
@@ -2162,11 +1996,11 @@ export default function GuitaleleViewer({ scoreData }) {
                                                         {/* Treble Voice Stems */}
                                                         {ev.trebleStem &&
                                                             ev.beatValue <
-                                                                4.0 &&
+                                                            4.0 &&
                                                             (() => {
                                                                 const voiceColor =
                                                                     ev.voice ===
-                                                                    2
+                                                                        2
                                                                         ? DARK_THEME.voice2Color
                                                                         : DARK_THEME.voice1Color;
                                                                 const activeStrokeColor =
@@ -2187,23 +2021,23 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                 const xPos =
                                                                     stemDown
                                                                         ? ev.cx -
-                                                                          5.5
+                                                                        5.5
                                                                         : ev.cx +
-                                                                          5.5;
+                                                                        5.5;
                                                                 const extY =
                                                                     stemDown
                                                                         ? lowestY +
-                                                                          28
+                                                                        28
                                                                         : highestY -
-                                                                          28;
+                                                                        28;
                                                                 const numFlags =
                                                                     ev.beatValue <=
-                                                                    0.25
+                                                                        0.25
                                                                         ? 2
                                                                         : ev.beatValue <=
                                                                             0.75
-                                                                          ? 1
-                                                                          : 0;
+                                                                            ? 1
+                                                                            : 0;
 
                                                                 return (
                                                                     <g
@@ -2231,18 +2065,18 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                         />
                                                                         {numFlags >
                                                                             0 && (
-                                                                            <path
-                                                                                d={getFlagPath(
-                                                                                    xPos,
-                                                                                    extY,
-                                                                                    stemDown,
-                                                                                    numFlags
-                                                                                )}
-                                                                                fill={
-                                                                                    activeStrokeColor
-                                                                                }
-                                                                            />
-                                                                        )}
+                                                                                <path
+                                                                                    d={getFlagPath(
+                                                                                        xPos,
+                                                                                        extY,
+                                                                                        stemDown,
+                                                                                        numFlags
+                                                                                    )}
+                                                                                    fill={
+                                                                                        activeStrokeColor
+                                                                                    }
+                                                                                />
+                                                                            )}
                                                                     </g>
                                                                 );
                                                             })()}
@@ -2250,11 +2084,11 @@ export default function GuitaleleViewer({ scoreData }) {
                                                         {/* Bass Voice Stems */}
                                                         {ev.bassStem &&
                                                             ev.beatValue <
-                                                                4.0 &&
+                                                            4.0 &&
                                                             (() => {
                                                                 const voiceColor =
                                                                     ev.voice ===
-                                                                    2
+                                                                        2
                                                                         ? DARK_THEME.voice2Color
                                                                         : DARK_THEME.voice1Color;
                                                                 const activeStrokeColor =
@@ -2274,23 +2108,23 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                 const xPos =
                                                                     stemDown
                                                                         ? ev.cx -
-                                                                          5.5
+                                                                        5.5
                                                                         : ev.cx +
-                                                                          5.5;
+                                                                        5.5;
                                                                 const extY =
                                                                     stemDown
                                                                         ? lowestY +
-                                                                          28
+                                                                        28
                                                                         : highestY -
-                                                                          28;
+                                                                        28;
                                                                 const numFlags =
                                                                     ev.beatValue <=
-                                                                    0.25
+                                                                        0.25
                                                                         ? 2
                                                                         : ev.beatValue <=
                                                                             0.75
-                                                                          ? 1
-                                                                          : 0;
+                                                                            ? 1
+                                                                            : 0;
 
                                                                 return (
                                                                     <g
@@ -2318,18 +2152,18 @@ export default function GuitaleleViewer({ scoreData }) {
                                                                         />
                                                                         {numFlags >
                                                                             0 && (
-                                                                            <path
-                                                                                d={getFlagPath(
-                                                                                    xPos,
-                                                                                    extY,
-                                                                                    stemDown,
-                                                                                    numFlags
-                                                                                )}
-                                                                                fill={
-                                                                                    activeStrokeColor
-                                                                                }
-                                                                            />
-                                                                        )}
+                                                                                <path
+                                                                                    d={getFlagPath(
+                                                                                        xPos,
+                                                                                        extY,
+                                                                                        stemDown,
+                                                                                        numFlags
+                                                                                    )}
+                                                                                    fill={
+                                                                                        activeStrokeColor
+                                                                                    }
+                                                                                />
+                                                                            )}
                                                                     </g>
                                                                 );
                                                             })()}
@@ -2340,24 +2174,24 @@ export default function GuitaleleViewer({ scoreData }) {
                                                         ].includes(
                                                             ev.beatValue
                                                         ) && (
-                                                            <circle
-                                                                cx={ev.cx + 12}
-                                                                cy={
-                                                                    (ev
-                                                                        .trebleStem
-                                                                        ?.highestY ||
-                                                                        ev
-                                                                            .bassStem
+                                                                <circle
+                                                                    cx={ev.cx + 12}
+                                                                    cy={
+                                                                        (ev
+                                                                            .trebleStem
                                                                             ?.highestY ||
-                                                                        trebleTopY) -
-                                                                    3
-                                                                }
-                                                                r={2}
-                                                                fill={
-                                                                    currentNoteFill
-                                                                }
-                                                            />
-                                                        )}
+                                                                            ev
+                                                                                .bassStem
+                                                                                ?.highestY ||
+                                                                            trebleTopY) -
+                                                                        3
+                                                                    }
+                                                                    r={2}
+                                                                    fill={
+                                                                        currentNoteFill
+                                                                    }
+                                                                />
+                                                            )}
                                                     </g>
                                                 )}
 
@@ -2428,8 +2262,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                                             ev.isRest
                                                                 ? DARK_THEME.fillRest
                                                                 : ev.voice === 2
-                                                                  ? DARK_THEME.voice2Rhythm
-                                                                  : DARK_THEME.voice1Rhythm
+                                                                    ? DARK_THEME.voice2Rhythm
+                                                                    : DARK_THEME.voice1Rhythm
                                                         }
                                                     >
                                                         {ev.rhythm}
