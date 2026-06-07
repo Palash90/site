@@ -516,10 +516,8 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                     >
                                                         {pitch.isSharp && (
                                                             <text
-                                                                x={ev.cx +
-                                                                    10}
-                                                                y={currentStaffY +
-                                                                    5 * scaleY}
+                                                                x={ev.cx - 18}
+                                                                y={currentStaffY + 5 * scaleY}
                                                                 className="text-base font-normal font-serif"
                                                                 fill={activeStrokeColor}
                                                                 filter={glowFilter}
@@ -618,7 +616,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                     strokeLinecap="round" />
                                                             </g>
                                                         ) : ev.beatValue >=
-                                                            4.0 ? (
+                                                            2.0 ? (
                                                             <ellipse
                                                                 cx={ev.cx}
                                                                 cy={currentStaffY}

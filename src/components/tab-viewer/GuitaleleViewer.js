@@ -422,6 +422,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                 onChange={(e) => setBpm(parseInt(e.target.value, 10))}
                                 className="mx-1"
                                 style={{ width: '80px' }}
+                                disabled={isPlaying}
                             />
                         </div>
                     </Col>
