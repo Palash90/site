@@ -7,7 +7,7 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
         // 1. Updated guard clause to check for the 'measures' array
         if (!scoreData || !scoreData.measures) return null;
 
-        const paddingX = 140;
+        const paddingX = 130;
         const lineSpacing = 20;
         const trebleTopY = 150;
         const bassTopY = 280;
@@ -21,7 +21,7 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
         const beatsPerMeasure = numerator * (4 / denominator);
 
         const SLOT_WIDTH = slotWidth;
-        const MEASURE_PADDING = 35;
+        const MEASURE_PADDING = 25;
 
         let processedEvents = [];
         let absoluteMeasureStartBeat = 0;

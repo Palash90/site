@@ -11,6 +11,8 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
         const scaleY = measuresPerRow === 1 ? 0.62 : measuresPerRow === 2 ? 0.78 : 1.0;
         const sLineSpacing = lineSpacing * scaleY;
 
+        const leftMargin = (paddingX - 105) * (measuresPerRow === 4 ? 1 : 0.85);
+
         // 1. Dynamically compute precise vertical bounds based on drawn elements
         const minY = (trebleTopY - 55) * scaleY;
 
@@ -74,7 +76,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             strokeWidth="1" />
                     ))}
                     <text
-                        x={paddingX - 105}
+                        x={leftMargin}
                         y={(trebleTopY * scaleY) + 3.5 * sLineSpacing}
                         style={{ fontSize: `${28 * scaleY}px` }}
                         fill={DARK_THEME.textClef}
@@ -93,7 +95,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             strokeWidth="1" />
                     ))}
                     <text
-                        x={paddingX - 105}
+                        x={leftMargin}
                         y={(bassTopY * scaleY) + 3.2 * sLineSpacing}
                         style={{ fontSize: `${28 * scaleY}px` }}
                         fill={DARK_THEME.textClef}
@@ -104,7 +106,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <g
                         className="font-serif font-black text-2xl text-center"
                         fill={DARK_THEME.textTimeSig}
-                        transform={`translate(${paddingX - 55}, 0)`}
+                        transform={`translate(${paddingX - (90 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9))}, 0)`}
                     >
                         <text
                             x="0"
@@ -165,7 +167,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             strokeWidth="1.2" />
                     ))}
                     <g
-                        transform={`translate(${paddingX - 105}, ${(tabTopY * scaleY) + 12 * scaleY})`}
+                        transform={`translate(${leftMargin}, ${(tabTopY * scaleY) + 12 * scaleY})`}
                         fill={DARK_THEME.textTabLabel}
                         style={{ fontSize: `${14 * scaleY}px`, fontWeight: "900", letterSpacing: "-0.05em" }}
                     >
@@ -182,7 +184,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     {[0, 1, 2, 3, 4, 5].map(i => (
                         <text
                             key={`string-${i}`}
-                            x={paddingX - 15}
+                            x={paddingX - (30 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9))}
                             y={(tabTopY * scaleY) + i * sLineSpacing + 4 * scaleY}
                             textAnchor="end"
                             fill={DARK_THEME.textTabString}
