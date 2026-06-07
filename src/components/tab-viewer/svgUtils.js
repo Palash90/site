@@ -1,19 +1,22 @@
 import { DARK_THEME, getFlagPath } from "./guitaleleViewerUtils";
 
-export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, setHoveredNoteIndex) {
+export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, setHoveredNoteIndex, measuresPerRow) {
     return (
         {
             rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX
         },
         rowIdx
     ) => {
+        // Determine the vertical scaling factor based on the responsive measures layout profile
+        const scaleY = measuresPerRow === 1 ? 0.62 : measuresPerRow === 2 ? 0.78 : 1.0;
+        const sLineSpacing = lineSpacing * scaleY;
+
         // 1. Dynamically compute precise vertical bounds based on drawn elements
-        // Top-most element is the highlight glow / invalid measure box (trebleTopY - 50)
-        const minY = trebleTopY - 55;
+        const minY = (trebleTopY - 55) * scaleY;
 
         // Bottom-most elements are either the rhythm lane 2 background or the measure validity descriptions
-        const maxRhythmY = rhythmTopY + 55; // Covers rhythm text + background rect boundaries
-        const maxValidityTextY = tabTopY + (5 * lineSpacing) + 65; // Covers measure debug details
+        const maxRhythmY = (rhythmTopY + 80) * scaleY; // Covers rhythm text + background rect boundaries
+        const maxValidityTextY = (tabTopY + (5 * lineSpacing) + 65) * scaleY; // Covers measure debug details
         const maxY = Math.max(maxRhythmY, maxValidityTextY);
 
         // Calculate the exact height needed to fit everything snugly
@@ -54,7 +57,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                     </defs>
 
                     <path
-                        d={`M ${paddingX - 115} ${trebleTopY} L ${paddingX - 122} ${trebleTopY} L ${paddingX - 122} ${bassTopY + 4 * lineSpacing} L ${paddingX - 115} ${bassTopY + 4 * lineSpacing}`}
+                        d={`M ${paddingX - 115} ${trebleTopY * scaleY} L ${paddingX - 122} ${trebleTopY * scaleY} L ${paddingX - 122} ${(bassTopY + 4 * lineSpacing) * scaleY} L ${paddingX - 115} ${(bassTopY + 4 * lineSpacing) * scaleY}`}
                         fill="none"
                         stroke={DARK_THEME.lineStaff}
                         strokeWidth="2.5" />
@@ -63,15 +66,15 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                         <line
                             key={`treble-${i}`}
                             x1={paddingX}
-                            y1={trebleTopY + i * lineSpacing}
+                            y1={(trebleTopY * scaleY) + i * sLineSpacing}
                             x2={rowEndX}
-                            y2={trebleTopY + i * lineSpacing}
+                            y2={(trebleTopY * scaleY) + i * sLineSpacing}
                             stroke={DARK_THEME.lineStaff}
                             strokeWidth="1" />
                     ))}
                     <text
                         x={paddingX - 105}
-                        y={trebleTopY + 3.5 * lineSpacing}
+                        y={(trebleTopY * scaleY) + 3.5 * sLineSpacing}
                         className="text-4xl font-serif"
                         fill={DARK_THEME.textClef}
                     >
@@ -82,15 +85,15 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                         <line
                             key={`bass-${i}`}
                             x1={paddingX}
-                            y1={bassTopY + i * lineSpacing}
+                            y1={(bassTopY * scaleY) + i * sLineSpacing}
                             x2={rowEndX}
-                            y2={bassTopY + i * lineSpacing}
+                            y2={(bassTopY * scaleY) + i * sLineSpacing}
                             stroke={DARK_THEME.lineStaff}
                             strokeWidth="1" />
                     ))}
                     <text
                         x={paddingX - 105}
-                        y={bassTopY + 3.2 * lineSpacing}
+                        y={(bassTopY * scaleY) + 3.2 * sLineSpacing}
                         className="text-4xl font-serif"
                         fill={DARK_THEME.textClef}
                     >
@@ -104,35 +107,35 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                     >
                         <text
                             x="0"
-                            y={trebleTopY + 16}
+                            y={(trebleTopY * scaleY) + 16 * scaleY}
                             textAnchor="middle"
                         >
                             {timeSigTop}
                         </text>
                         <text
                             x="0"
-                            y={trebleTopY + 42}
+                            y={(trebleTopY * scaleY) + 42 * scaleY}
                             textAnchor="middle"
                         >
                             {timeSigBottom}
                         </text>
                         <text
                             x="0"
-                            y={bassTopY + 16}
+                            y={(bassTopY * scaleY) + 16 * scaleY}
                             textAnchor="middle"
                         >
                             {timeSigTop}
                         </text>
                         <text
                             x="0"
-                            y={bassTopY + 42}
+                            y={(bassTopY * scaleY) + 42 * scaleY}
                             textAnchor="middle"
                         >
                             {timeSigBottom}
                         </text>
                         <text
                             x="0"
-                            y={tabTopY + 24}
+                            y={(tabTopY * scaleY) + 24 * scaleY}
                             textAnchor="middle"
                             className="text-xl font-sans font-bold"
                             fill={DARK_THEME.textTabLabel}
@@ -141,7 +144,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                         </text>
                         <text
                             x="0"
-                            y={tabTopY + 54}
+                            y={(tabTopY * scaleY) + 54 * scaleY}
                             textAnchor="middle"
                             className="text-xl font-sans font-bold"
                             fill={DARK_THEME.textTabLabel}
@@ -154,24 +157,24 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                         <line
                             key={`t-l-${i}`}
                             x1={paddingX}
-                            y1={tabTopY + i * lineSpacing}
+                            y1={(tabTopY * scaleY) + i * sLineSpacing}
                             x2={rowEndX}
-                            y2={tabTopY + i * lineSpacing}
+                            y2={(tabTopY * scaleY) + i * sLineSpacing}
                             stroke={DARK_THEME.lineTab}
                             strokeWidth="1.2" />
                     ))}
                     <g
-                        transform={`translate(${paddingX - 105}, ${tabTopY + 12})`}
+                        transform={`translate(${paddingX - 105}, ${(tabTopY * scaleY) + 12 * scaleY})`}
                         fill={DARK_THEME.textTabLabel}
                         className="font-black tracking-tighter text-xs"
                     >
                         <text x="0" y="0">
                             T
                         </text>
-                        <text x="0" y="14">
+                        <text x="0" y={14 * scaleY}>
                             A
                         </text>
-                        <text x="0" y="28">
+                        <text x="0" y={28 * scaleY}>
                             B
                         </text>
                     </g>
@@ -179,7 +182,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                         <text
                             key={`string-${i}`}
                             x={paddingX - 15}
-                            y={tabTopY + i * lineSpacing + 4}
+                            y={(tabTopY * scaleY) + i * sLineSpacing + 4 * scaleY}
                             textAnchor="end"
                             className="text-[9px] font-bold"
                             fill={DARK_THEME.textTabString}
@@ -190,16 +193,16 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
 
                     <line
                         x1={paddingX}
-                        y1={trebleTopY}
+                        y1={trebleTopY * scaleY}
                         x2={paddingX}
-                        y2={bassTopY + 4 * lineSpacing}
+                        y2={(bassTopY + 4 * lineSpacing) * scaleY}
                         stroke={DARK_THEME.lineBar}
                         strokeWidth="2" />
                     <line
                         x1={paddingX}
-                        y1={tabTopY}
+                        y1={tabTopY * scaleY}
                         x2={paddingX}
-                        y2={tabTopY + 5 * lineSpacing}
+                        y2={(tabTopY + 5 * lineSpacing) * scaleY}
                         stroke={DARK_THEME.lineTab}
                         strokeWidth="2" />
 
@@ -207,9 +210,9 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                         <g key={`barline-${i}`}>
                             <line
                                 x1={barX}
-                                y1={trebleTopY}
+                                y1={trebleTopY * scaleY}
                                 x2={barX}
-                                y2={bassTopY + 4 * lineSpacing}
+                                y2={(bassTopY + 4 * lineSpacing) * scaleY}
                                 stroke={DARK_THEME.lineBar}
                                 strokeWidth={i ===
                                     barlineXPositions.length - 1
@@ -217,9 +220,9 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                     : "1.6"} />
                             <line
                                 x1={barX}
-                                y1={tabTopY}
+                                y1={tabTopY * scaleY}
                                 x2={barX}
-                                y2={tabTopY + 5 * lineSpacing}
+                                y2={(tabTopY + 5 * lineSpacing) * scaleY}
                                 stroke={DARK_THEME.lineTab}
                                 strokeWidth={i ===
                                     barlineXPositions.length - 1
@@ -241,12 +244,12 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                 {isMeasureInvalid && (
                                     <rect
                                         x={measure.startX}
-                                        y={trebleTopY - 40}
+                                        y={(trebleTopY - 40) * scaleY}
                                         width={measure.endX -
                                             measure.startX}
-                                        height={rhythmTopY -
+                                        height={(rhythmTopY -
                                             trebleTopY +
-                                            85}
+                                            85) * scaleY}
                                         fill={DARK_THEME.bgInvalidMeasure}
                                         stroke="rgba(239, 68, 68, 0.4)"
                                         strokeWidth="1.5"
@@ -255,9 +258,9 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
 
                                 <text
                                     x={measureCenterX}
-                                    y={tabTopY +
+                                    y={(tabTopY +
                                         5 * lineSpacing +
-                                        32}
+                                        32) * scaleY}
                                     textAnchor="middle"
                                     className="text-[10px] font-mono font-bold"
                                     fill={isMeasureInvalid
@@ -292,10 +295,10 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                         return (
                                             <text
                                                 x={measureCenterX}
-                                                y={tabTopY +
+                                                y={(tabTopY +
                                                     5 *
                                                     lineSpacing +
-                                                    48}
+                                                    48) * scaleY}
                                                 textAnchor="middle"
                                                 className="text-[10px] font-mono font-semibold"
                                                 fill="#f87171"
@@ -320,10 +323,10 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                             ? DARK_THEME.fillNoteHover
                             : DARK_THEME.fillNote;
 
-                        const yLane = ev.voice === 2
+                        const yLane = (ev.voice === 2
                             ? rhythm2TopY
-                            : rhythm1TopY;
-                        const restTabOffset = ev.voice === 2 ? 16 : -16;
+                            : rhythm1TopY) * scaleY;
+                        const restTabOffset = (ev.voice === 2 ? 16 : -16) * scaleY;
 
                         return (
                             <g key={`node-${idx}`}>
@@ -331,20 +334,20 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                     <rect
                                         data-active-indicator="true"
                                         x={ev.cx - SLOT_WIDTH / 2 + 2}
-                                        y={trebleTopY - 50}
+                                        y={(trebleTopY - 50) * scaleY}
                                         width={SLOT_WIDTH - 4}
-                                        height={rhythmTopY - trebleTopY + 95}
+                                        height={(rhythmTopY - trebleTopY + 95) * scaleY}
                                         fill={DARK_THEME.fillHoverHighlight}
                                         rx={4} />
                                 )}
 
                                 <rect
                                     x={ev.cx - SLOT_WIDTH / 2}
-                                    y={trebleTopY - 15}
+                                    y={(trebleTopY - 15) * scaleY}
                                     width={SLOT_WIDTH}
-                                    height={rhythmTopY -
+                                    height={(rhythmTopY -
                                         trebleTopY +
-                                        65}
+                                        65) * scaleY}
                                     fill="transparent"
                                     pointerEvents="all"
                                     onMouseEnter={() => {
@@ -364,7 +367,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                     <g>
                                         {ev.rhythm === "r" && (
                                             <path
-                                                d={`M ${ev.cx - 4} ${trebleTopY + 28} L ${ev.cx + 4} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 40} Q ${ev.cx + 6} ${trebleTopY + 44} ${ev.cx} ${trebleTopY + 50}`}
+                                                d={`M ${ev.cx - 4} ${(trebleTopY + 28) * scaleY} L ${ev.cx + 4} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 40) * scaleY} Q ${ev.cx + 6} ${(trebleTopY + 44) * scaleY} ${ev.cx} ${(trebleTopY + 50) * scaleY}`}
                                                 fill="none"
                                                 stroke={DARK_THEME.fillRest}
                                                 strokeWidth="2"
@@ -372,7 +375,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                         )}
                                         {ev.rhythm === "r+" && (
                                             <path
-                                                d={`M ${ev.cx - 3} ${trebleTopY + 32} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${trebleTopY + 34} Q ${ev.cx - 2} ${trebleTopY + 38} ${ev.cx + 4} ${trebleTopY + 30} L ${ev.cx - 3} ${trebleTopY + 50}`}
+                                                d={`M ${ev.cx - 3} ${(trebleTopY + 32) * scaleY} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${(trebleTopY + 34) * scaleY} Q ${ev.cx - 2} ${(trebleTopY + 38) * scaleY} ${ev.cx + 4} ${(trebleTopY + 30) * scaleY} L ${ev.cx - 3} ${(trebleTopY + 50) * scaleY}`}
                                                 fill="none"
                                                 stroke={DARK_THEME.fillRest}
                                                 strokeWidth="2"
@@ -382,12 +385,12 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                         {ev.rhythm === "r=" && (
                                             <g>
                                                 <path
-                                                    d={`M ${ev.cx - 2} ${trebleTopY + 27} A 3 3 0 1 1 ${ev.cx + 3} ${trebleTopY + 29} Q ${ev.cx - 1} ${trebleTopY + 33} ${ev.cx + 5} ${trebleTopY + 25}`}
+                                                    d={`M ${ev.cx - 2} ${(trebleTopY + 27) * scaleY} A 3 3 0 1 1 ${ev.cx + 3} ${(trebleTopY + 29) * scaleY} Q ${ev.cx - 1} ${(trebleTopY + 33) * scaleY} ${ev.cx + 5} ${(trebleTopY + 25) * scaleY}`}
                                                     fill="none"
                                                     stroke={DARK_THEME.fillRest}
                                                     strokeWidth="2" />
                                                 <path
-                                                    d={`M ${ev.cx - 4} ${trebleTopY + 36} A 3 3 0 1 1 ${ev.cx + 1} ${trebleTopY + 38} Q ${ev.cx - 3} ${trebleTopY + 42} ${ev.cx + 3} ${trebleTopY + 34} L ${ev.cx - 4} ${trebleTopY + 52}`}
+                                                    d={`M ${ev.cx - 4} ${(trebleTopY + 36) * scaleY} A 3 3 0 1 1 ${ev.cx + 1} ${(trebleTopY + 38) * scaleY} Q ${ev.cx - 3} ${(trebleTopY + 42) * scaleY} ${ev.cx + 3} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 52) * scaleY}`}
                                                     fill="none"
                                                     stroke={DARK_THEME.fillRest}
                                                     strokeWidth="2"
@@ -398,21 +401,13 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
 
                                         <rect
                                             x={ev.cx - 8}
-                                            y={tabTopY +
-                                                2 *
-                                                lineSpacing -
-                                                4 +
-                                                restTabOffset}
+                                            y={(tabTopY + 2 * lineSpacing - 4) * scaleY + restTabOffset}
                                             width={19}
-                                            height={20}
+                                            height={20 * scaleY}
                                             fill={DARK_THEME.bgTabRect} />
                                         <text
                                             x={ev.cx}
-                                            y={tabTopY +
-                                                3 *
-                                                lineSpacing -
-                                                6 +
-                                                restTabOffset}
+                                            y={(tabTopY + 3 * lineSpacing - 6) * scaleY + restTabOffset}
                                             textAnchor="middle"
                                             className="text-lg font-mono font-bold"
                                             fill={DARK_THEME.fillRest}
@@ -462,6 +457,9 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                     ? "url(#note-glow)"
                                                     : "none";
 
+                                                const currentStaffY = pitch.staffY * scaleY;
+                                                const currentTabY = pitch.tabY * scaleY;
+
                                                 return (
                                                     <g
                                                         key={`p-${pIdx}`}
@@ -470,8 +468,8 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                             <text
                                                                 x={ev.cx +
                                                                     10}
-                                                                y={pitch.staffY +
-                                                                    5}
+                                                                y={currentStaffY +
+                                                                    5 * scaleY}
                                                                 className="text-base font-normal font-serif"
                                                                 fill={activeStrokeColor}
                                                                 filter={glowFilter}
@@ -496,16 +494,16 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                                     key={`up-ledg-${lIdx}`}
                                                                     x1={ev.cx -
                                                                         10}
-                                                                    y1={clefTopY -
+                                                                    y1={(clefTopY * scaleY) -
                                                                         (lIdx +
                                                                             1) *
-                                                                        lineSpacing}
+                                                                        sLineSpacing}
                                                                     x2={ev.cx +
                                                                         10}
-                                                                    y2={clefTopY -
+                                                                    y2={(clefTopY * scaleY) -
                                                                         (lIdx +
                                                                             1) *
-                                                                        lineSpacing}
+                                                                        sLineSpacing}
                                                                     stroke={DARK_THEME.lineStaff}
                                                                     strokeWidth="1.2" />
                                                             )
@@ -526,20 +524,20 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                                     key={`low-ledg-${lIdx}`}
                                                                     x1={ev.cx -
                                                                         10}
-                                                                    y1={bottomStaffEdge +
+                                                                    y1={(bottomStaffEdge * scaleY) +
                                                                         (lIdx +
                                                                             1) *
-                                                                        lineSpacing}
+                                                                        sLineSpacing}
                                                                     x2={ev.cx +
                                                                         10}
-                                                                    y2={bottomStaffEdge +
+                                                                    y2={(bottomStaffEdge * scaleY) +
                                                                         (lIdx +
                                                                             1) *
-                                                                        lineSpacing}
+                                                                        sLineSpacing}
                                                                     stroke={DARK_THEME.lineStaff}
                                                                     strokeWidth="1.2" />
                                                             )
-                                                        )}
+                        )}
 
                                                         {pitch.fret ===
                                                             null ? (
@@ -547,36 +545,36 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                                 <line
                                                                     x1={ev.cx -
                                                                         6}
-                                                                    y1={pitch.staffY -
-                                                                        6}
+                                                                    y1={currentStaffY -
+                                                                        6 * scaleY}
                                                                     x2={ev.cx +
                                                                         6}
-                                                                    y2={pitch.staffY +
-                                                                        6}
+                                                                    y2={currentStaffY +
+                                                                        6 * scaleY}
                                                                     stroke={activeStrokeColor}
                                                                     strokeWidth="1.8"
                                                                     strokeLinecap="round" />
                                                                 <line
                                                                     x1={ev.cx -
                                                                         6}
-                                                                    y1={pitch.staffY +
-                                                                        6}
+                                                                    y1={currentStaffY +
+                                                                        6 * scaleY}
                                                                     x2={ev.cx +
                                                                         6}
-                                                                    y2={pitch.staffY -
-                                                                        6}
+                                                                    y2={currentStaffY -
+                                                                        6 * scaleY}
                                                                     stroke={activeStrokeColor}
                                                                     strokeWidth="1.8"
                                                                     strokeLinecap="round" />
                                                             </g>
                                                         ) : ev.beatValue >=
-                                                            2.0 ? (
+                                                            4.0 ? (
                                                             <ellipse
                                                                 cx={ev.cx}
-                                                                cy={pitch.staffY}
+                                                                cy={currentStaffY}
                                                                 rx={5.5}
-                                                                ry={4}
-                                                                transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`}
+                                                                ry={4 * scaleY}
+                                                                transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
                                                                 fill="none"
                                                                 stroke={activeStrokeColor}
                                                                 strokeWidth="1.8"
@@ -584,10 +582,10 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                         ) : (
                                                             <ellipse
                                                                 cx={ev.cx}
-                                                                cy={pitch.staffY}
+                                                                cy={currentStaffY}
                                                                 rx={5.5}
-                                                                ry={4}
-                                                                transform={`rotate(-22 ${ev.cx} ${pitch.staffY})`}
+                                                                ry={4 * scaleY}
+                                                                transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
                                                                 fill={activeNoteColor}
                                                                 filter={glowFilter} />
                                                         )}
@@ -619,7 +617,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                                     null) {
                                                                     return (
                                                                         <path
-                                                                            d={`M ${ev.cx + 4} ${pitch.staffY + 5} Q ${(ev.cx + nextEv.cx) / 2} ${Math.max(pitch.staffY, targetPitch.staffY) + 16} ${nextEv.cx - 4} ${targetPitch.staffY + 5}`}
+                                                                            d={`M ${ev.cx + 4} ${currentStaffY + 5 * scaleY} Q ${(ev.cx + nextEv.cx) / 2} ${(Math.max(pitch.staffY, targetPitch.staffY) * scaleY) + 16 * scaleY} ${nextEv.cx - 4} ${(targetPitch.staffY * scaleY) + 5 * scaleY}`}
                                                                             fill="none"
                                                                             stroke={DARK_THEME.lineTie}
                                                                             strokeWidth="1.8"
@@ -675,7 +673,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                                     pitch.midi) {
                                                                     return (
                                                                         <path
-                                                                            d={`M ${ev.cx + 4} ${pitch.tabY} Q ${(ev.cx + nextEv.cx) / 2} ${pitch.tabY + 12} ${nextEv.cx - 4} ${targetPitch.tabY}`}
+                                                                            d={`M ${ev.cx + 4} ${currentTabY} Q ${(ev.cx + nextEv.cx) / 2} ${currentTabY + 12 * scaleY} ${nextEv.cx - 4} ${targetPitch.tabY * scaleY}`}
                                                                             fill="none"
                                                                             stroke={tieStrokeColor}
                                                                             strokeWidth={isTieActive
@@ -689,10 +687,10 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                                         <line
                                                                             x1={ev.cx +
                                                                                 12}
-                                                                            y1={pitch.tabY}
+                                                                            y1={currentTabY}
                                                                             x2={nextEv.cx -
                                                                                 12}
-                                                                            y2={targetPitch.tabY}
+                                                                            y2={targetPitch.tabY * scaleY}
                                                                             stroke={tieStrokeColor}
                                                                             strokeWidth={isTieActive
                                                                                 ? "3"
@@ -706,10 +704,10 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                         <rect
                                                             x={ev.cx -
                                                                 13}
-                                                            y={pitch.tabY -
-                                                                11}
+                                                            y={currentTabY -
+                                                                11 * scaleY}
                                                             width={20}
-                                                            height={18}
+                                                            height={18 * scaleY}
                                                             fill="#0f172a"
                                                             stroke={activeStrokeColor}
                                                             strokeWidth={isActive
@@ -721,8 +719,8 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                         <text
                                                             x={ev.cx -
                                                                 3}
-                                                            y={pitch.tabY +
-                                                                3.2}
+                                                            y={currentTabY +
+                                                                3.2 * scaleY}
                                                             textAnchor="middle"
                                                             className="text-xs font-sans font-black tracking-wide"
                                                             fill={isActive
@@ -763,10 +761,10 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                     : ev.cx +
                                                     5.5;
                                                 const extY = stemDown
-                                                    ? lowestY +
-                                                    28
-                                                    : highestY -
-                                                    28;
+                                                    ? (lowestY * scaleY) +
+                                                    28 * scaleY
+                                                    : (highestY * scaleY) -
+                                                    28 * scaleY;
                                                 const numFlags = ev.beatValue <=
                                                     0.25
                                                     ? 2
@@ -781,7 +779,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                     >
                                                         <line
                                                             x1={xPos}
-                                                            y1={highestY}
+                                                            y1={highestY * scaleY}
                                                             x2={xPos}
                                                             y2={extY}
                                                             stroke={activeStrokeColor}
@@ -825,10 +823,10 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                     : ev.cx +
                                                     5.5;
                                                 const extY = stemDown
-                                                    ? lowestY +
-                                                    28
-                                                    : highestY -
-                                                    28;
+                                                    ? (lowestY * scaleY) +
+                                                    28 * scaleY
+                                                    : (highestY * scaleY) -
+                                                    28 * scaleY;
                                                 const numFlags = ev.beatValue <=
                                                     0.25
                                                     ? 2
@@ -843,7 +841,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                     >
                                                         <line
                                                             x1={xPos}
-                                                            y1={highestY}
+                                                            y1={highestY * scaleY}
                                                             x2={xPos}
                                                             y2={extY}
                                                             stroke={activeStrokeColor}
@@ -870,14 +868,14 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                         ) && (
                                                 <circle
                                                     cx={ev.cx + 12}
-                                                    cy={(ev
+                                                    cy={((ev
                                                         .trebleStem
                                                         ?.highestY ||
                                                         ev
                                                             .bassStem
                                                             ?.highestY ||
                                                         trebleTopY) -
-                                                        3}
+                                                        3) * scaleY}
                                                     r={2}
                                                     fill={currentNoteFill} />
                                             )}
@@ -889,9 +887,9 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                         x={ev.cx -
                                             SLOT_WIDTH / 2 +
                                             4}
-                                        y={yLane - 18}
+                                        y={yLane - 18 * scaleY}
                                         width={SLOT_WIDTH - 8}
-                                        height={24}
+                                        height={24 * scaleY}
                                         fill={ev.voice === 2
                                             ? "rgba(236, 72, 153, 0.08)"
                                             : "rgba(96, 165, 250, 0.08)"}
@@ -912,11 +910,11 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                         x1={ev.cx +
                                                             20}
                                                         y1={yLane -
-                                                            4}
+                                                            4 * scaleY}
                                                         x2={nextEv.cx -
                                                             20}
                                                         y2={yLane -
-                                                            4}
+                                                            4 * scaleY}
                                                         stroke={DARK_THEME.lineStaff}
                                                         strokeWidth="2"
                                                         strokeLinecap="round" />

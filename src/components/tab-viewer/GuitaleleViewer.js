@@ -448,31 +448,37 @@ export default function GuitaleleViewer({ scoreData }) {
             >
                 <Table responsive bordered={false} style={{ margin: 0, width: '100%' }}>
                     <tbody>
-                        {computedRows.map((row, index) => (
-                            <tr key={index}>
-                                <td style={{ border: 'none', padding: '0 12px 60px 12px' }}>
-                                    {buildSvg(
-                                        svgHeight,
-                                        paddingX,
-                                        trebleTopY,
-                                        bassTopY,
-                                        lineSpacing,
-                                        timeSigTop,
-                                        timeSigBottom,
-                                        tabTopY,
-                                        measureValidityMap,
-                                        rhythmTopY,
-                                        beatsPerMeasure,
-                                        activeIndices,
-                                        rhythm2TopY,
-                                        rhythm1TopY,
-                                        SLOT_WIDTH,
-                                        isPlaying,
-                                        setHoveredNoteIndex
-                                    )(row, index)}
-                                </td>
-                            </tr>
-                        ))}
+                        {computedRows.map((row, index) => {
+                            // Dynamically adjust padding between layout lines based on screen real estate profile
+                            const rowPaddingBottom = measuresPerRow === 1 ? '16px' : measuresPerRow === 2 ? '32px' : '60px';
+
+                            return (
+                                <tr key={index}>
+                                    <td style={{ border: 'none', padding: `0 12px ${rowPaddingBottom} 12px` }}>
+                                        {buildSvg(
+                                            svgHeight,
+                                            paddingX,
+                                            trebleTopY,
+                                            bassTopY,
+                                            lineSpacing,
+                                            timeSigTop,
+                                            timeSigBottom,
+                                            tabTopY,
+                                            measureValidityMap,
+                                            rhythmTopY,
+                                            beatsPerMeasure,
+                                            activeIndices,
+                                            rhythm2TopY,
+                                            rhythm1TopY,
+                                            SLOT_WIDTH,
+                                            isPlaying,
+                                            setHoveredNoteIndex,
+                                            measuresPerRow // <-- Pass the configuration parameter down
+                                        )(row, index)}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </Table>
             </div>
