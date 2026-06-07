@@ -12,7 +12,7 @@ import {
     startPlaying,
     runScheduler
 } from "././audio";
-import { Table } from "react-bootstrap";
+import { Table, Row, Col, Button, Form } from "react-bootstrap";
 
 import { buildSvg } from "./svgUtils";
 import { useBuildScoreLayout } from "./scoreBuilder";
@@ -332,115 +332,134 @@ export default function GuitaleleViewer({ scoreData }) {
 
     return (
         <div
+            className="d-flex flex-column bg-dark"
             style={{
-                height: `${svgHeight + 80}px`,
-                display: 'flex',
-                flexDirection: 'column',
-                backgroundColor: '#0f172a', // Slate-900 dark theme
-                overflow: 'hidden' // Prevents the outer container from scrolling
+                height: 'calc(100vh - 20px)', // Takes up full screen height minus a small margin
+                overflow: 'hidden'             // Prevents the window scrollbar from appearing
             }}
         >
-            {/* 2. THE LOCKED HEADER: Completely isolated from the scroll mechanics */}
-            <div
-                style={{
-                    flexShrink: 0, // Prevents JavaScript or long tables from shrinking this header
-                    zIndex: 50,
-                    backgroundColor: '#0f172a',
-                    padding: '16px 24px 12px 24px'
-                }}
-            >
-                <div className="max-w-6xl mx-auto flex flex-col gap-3">
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2">
+            <div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0">
+                <Row className="align-items-center g-2">
+
+                    {/* COLUMN 1: Audio Actions & Controls (Takes up 5/12 of the width) */}
+                    <Col xs={12} md={5} className="d-flex align-items-center flex-wrap gap-2 border-end border-secondary">
+
+                        {/* Clean Button Group for Play/Stop */}
+                        <div className="btn-group bg-black p-1 rounded border border-secondary">
                             {!isPlaying ? (
-                                <button
-                                    onClick={() => startPlayback(1)}
-                                    disabled={!isAudioCompiled}
-                                    className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${isAudioCompiled
-                                        ? "bg-emerald-600 hover:bg-emerald-500 cursor-pointer"
-                                        : "bg-slate-700 opacity-60 cursor-not-allowed"
-                                        }`}
+                                <Button
+                                    variant="link"
+                                    onClick={startPlayback}
+                                    className="text-success p-1"
+                                    title="Start Playback"
                                 >
-                                    {isAudioCompiled
-                                        ? "▶ START PLAYBACK"
-                                        : "⏳ COMPILING SCORE..."}
-                                </button>
+                                    <svg className="bi" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                </Button>
+                            ) : isPaused ? (
+                                <Button
+                                    variant="link"
+                                    onClick={resumePlayback}
+                                    className="text-warning p-1"
+                                    title="Resume"
+                                >
+                                    <svg className="bi" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                </Button>
                             ) : (
-                                <>
-                                    <button
-                                        onClick={isPaused ? resumePlayback : pausePlayback}
-                                        className={`px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide text-white transition-all ${isPaused
-                                            ? "bg-amber-600 hover:bg-amber-500"
-                                            : "bg-indigo-600 hover:bg-indigo-500"
-                                            }`}
-                                    >
-                                        {isPaused ? "▶ RESUME" : "⏸ PAUSE"}
-                                    </button>
-                                    <button
-                                        onClick={stopPlayback}
-                                        className="px-5 py-2 rounded-lg text-xs font-mono font-bold tracking-wide bg-rose-600 text-white hover:bg-rose-500 transition-all"
-                                    >
-                                        ⏹ STOP
-                                    </button>
-                                </>
+                                <Button
+                                    variant="link"
+                                    onClick={pausePlayback}
+                                    className="text-warning p-1"
+                                    title="Pause"
+                                >
+                                    <svg className="bi" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                                </Button>
                             )}
+
+                            <Button
+                                variant="link"
+                                onClick={stopPlayback}
+                                disabled={!isPlaying}
+                                className={`p-1 ${isPlaying ? 'text-danger' : 'text-muted'}`}
+                                title="Stop Playback"
+                            >
+                                <svg className="bi" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
+                            </Button>
                         </div>
 
-                        <div className="text-[10px] bg-slate-950 px-3 py-1.5 rounded text-slate-400 font-mono tracking-wider">
-                            LAYOUT Profile:{" "}
-                            <span className="text-cyan-400 font-bold">
-                                {measuresPerRow} MEASURES / ROW
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-6 pt-2 border-t border-slate-800/60">
-                        <span className="text-xs font-mono text-slate-400 whitespace-nowrap min-w-[90px]">
-                            TEMPO: {bpm} BPM
-                        </span>
-                        <div className="flex-1 flex items-center">
-                            <input
-                                type="range"
-                                min="60"
+                        {/* Compact BPM Controller */}
+                        <div className="d-flex align-items-center gap-2 bg-black px-2 py-1 rounded border border-secondary style={{ fontSize: '12px' }}">
+                            <span className="text-muted fw-bold font-monospace">BPM</span>
+                            <span className="text-warning fw-bold font-monospace" style={{ minWidth: '24px', textAlign: 'center' }}>{bpm}</span>
+                            <Form.Range
+                                min="40"
                                 max="240"
                                 value={bpm}
-                                disabled={isPlaying}
-                                onChange={e => setBpm(parseInt(e.target.value))}
-                                className="w-full h-2 accent-cyan-400 bg-slate-950 rounded-lg cursor-pointer disabled:opacity-30"
+                                onChange={(e) => setBpm(parseInt(e.target.value, 10))}
+                                className="mx-1"
+                                style={{ width: '80px' }}
                             />
                         </div>
-                    </div>
+                    </Col>
 
-                    <div className="h-4 flex items-center justify-center pt-0.5 text-center">
-                        {activeDescription ? (
-                            <span className="text-[11px] font-mono text-cyan-400 font-semibold tracking-wide animate-pulse">
-                                🎵 {activeDescription}
-                            </span>
-                        ) : (
-                            <span className="text-[11px] font-mono text-slate-500 italic tracking-wide">
-                                Hover over or tap a note lane or tap segments
-                                below to read real-time properties.
-                            </span>
-                        )}
-                    </div>
-                </div>
+                    {/* COLUMN 2: Scrollable Note Text (Takes up 7/12 of the width) */}
+                    <Col xs={12} md={7}>
+                        <div
+                            className="bg-black border border-secondary rounded p-2 text-info font-monospace"
+                            style={{
+                                height: '42px',
+                                overflowY: 'auto',
+                                fontSize: '12px',
+                                lineHeight: '1.2'
+                            }}
+                        >
+                            {activeDescription ? (
+                                <span>🎵 {activeDescription}</span>
+                            ) : (
+                                <span className="text-muted fst-italic">
+                                    Hover over or tap notes below to read real-time properties.
+                                </span>
+                            )}
+                        </div>
+                    </Col>
+
+                </Row>
             </div>
 
             {/* 3. THE TRUE SCROLL VIEWPORT: Only things inside this box will move or scroll */}
             <div
                 ref={containerRef}
+                className="flex-grow-1"
                 style={{
-                    flex: 1,
                     overflowY: 'auto',
-                    paddingTop: '8px'
+                    paddingTop: '12px',
+                    paddingBottom: '40px', // Extra padding at bottom so the final row rhythm lane is accessible
+                    backgroundColor: '#090d16' // Matches DARK_THEME bgPage/bgScore look
                 }}
             >
                 <Table responsive bordered={false} style={{ margin: 0, width: '100%' }}>
                     <tbody>
                         {computedRows.map((row, index) => (
                             <tr key={index}>
-                                <td style={{ border: 'none', padding: 0 }}>
-                                    {buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, setHoveredNoteIndex)(row, index)}
+                                <td style={{ border: 'none', padding: '0 12px 24px 12px' }}>
+                                    {buildSvg(
+                                        svgHeight,
+                                        paddingX,
+                                        trebleTopY,
+                                        bassTopY,
+                                        lineSpacing,
+                                        timeSigTop,
+                                        timeSigBottom,
+                                        tabTopY,
+                                        measureValidityMap,
+                                        rhythmTopY,
+                                        beatsPerMeasure,
+                                        activeIndices,
+                                        rhythm2TopY,
+                                        rhythm1TopY,
+                                        SLOT_WIDTH,
+                                        isPlaying,
+                                        setHoveredNoteIndex
+                                    )(row, index)}
                                 </td>
                             </tr>
                         ))}
