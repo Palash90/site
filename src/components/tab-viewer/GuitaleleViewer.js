@@ -387,7 +387,7 @@ export default function GuitaleleViewer({ scoreData }) {
                         </div>
 
                         {/* Compact BPM Controller */}
-                        <div className="d-flex align-items-center gap-2 bg-black px-2 py-1 rounded border border-secondary style={{ fontSize: '12px' }}">
+                        <div className="d-flex align-items-center gap-2 bg-black px-2 py-1 rounded border border-secondary" style={{ fontSize: '12px' }}>
                             <span className="text-muted fw-bold font-monospace">BPM</span>
                             <span className="text-warning fw-bold font-monospace" style={{ minWidth: '24px', textAlign: 'center' }}>{bpm}</span>
                             <Form.Range

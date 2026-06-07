@@ -1,4 +1,5 @@
 import { DARK_THEME, getFlagPath } from "./guitaleleViewerUtils";
+
 export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, setHoveredNoteIndex) {
     return (
         {
@@ -6,17 +7,32 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
         },
         rowIdx
     ) => {
+        // 1. Dynamically compute precise vertical bounds based on drawn elements
+        // Top-most element is the highlight glow / invalid measure box (trebleTopY - 50)
+        const minY = trebleTopY - 55;
+
+        // Bottom-most elements are either the rhythm lane 2 background or the measure validity descriptions
+        const maxRhythmY = rhythmTopY + 55; // Covers rhythm text + background rect boundaries
+        const maxValidityTextY = tabTopY + (5 * lineSpacing) + 65; // Covers measure debug details
+        const maxY = Math.max(maxRhythmY, maxValidityTextY);
+
+        // Calculate the exact height needed to fit everything snugly
+        const calculatedHeight = maxY - minY;
+
         return (
             <div
                 key={`row-${rowIdx}`}
                 className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto flex justify-center`}
             >
                 <svg
-                    viewBox={`0 0 ${totalWidth} ${svgHeight}`}
+                    // 2. Adjust viewBox to start exactly where content begins and end exactly where it finishes
+                    viewBox={`0 ${minY} ${totalWidth} ${calculatedHeight}`}
                     style={{
                         width: `${totalWidth}px`,
                         maxWidth: "100%",
-                        height: `${svgHeight * 0.9}px`,
+                        // 3. Changing fixed pixel height to "auto" ensures that when width shrinks 
+                        // responsively on mobile, the height automatically scales down perfectly.
+                        height: "auto",
                         maxHeight: "none"
                     }}
                     className="select-none block shrink-0"
@@ -256,13 +272,11 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                         : ""}
                                 </text>
 
-                                {/* Cleaned up debugging text: dynamically hides absent voices */}
                                 {isMeasureInvalid &&
                                     mv &&
                                     (() => {
                                         const pieces = [];
 
-                                        // Only include Voice 1 string if it's present and invalid
                                         if (mv.present1 &&
                                             !mv.valid1) {
                                             pieces.push(
@@ -270,7 +284,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                             );
                                         }
 
-                                        // Only include Voice 2 string if it's present and invalid
                                         if (mv.present2 &&
                                             !mv.valid2) {
                                             pieces.push(
@@ -303,7 +316,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                         const isActive = activeIndices.includes(
                             ev.globalIndex
                         );
-                        // Ensures the background highlight box is only drawn once per time column
                         const isPrimaryHighlightNode = isActive &&
                             activeIndices[0] === ev.globalIndex;
                         const currentNoteFill = isActive
@@ -648,7 +660,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                                     null)
                                                                     return null;
 
-                                                                // Replace with this to dynamically compute the active state, stroke color, and glow filter:
                                                                 const isTieActive = activeIndices.includes(
                                                                     ev.globalIndex
                                                                 ) ||
@@ -697,7 +708,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                                 }
                                                             })()}
 
-                                                        {/* Bordered Rectangle Box for Fret Numbers */}
                                                         <rect
                                                             x={ev.cx -
                                                                 13}
@@ -713,7 +723,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                             filter={glowFilter}
                                                             rx={3} />
 
-                                                        {/* Fret Number Text */}
                                                         <text
                                                             x={ev.cx -
                                                                 3}
@@ -735,7 +744,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                             }
                                         )}
 
-                                        {/* Treble Voice Stems */}
                                         {ev.trebleStem &&
                                             ev.beatValue <
                                             4.0 &&
@@ -798,7 +806,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                 );
                                             })()}
 
-                                        {/* Bass Voice Stems */}
                                         {ev.bassStem &&
                                             ev.beatValue <
                                             4.0 &&
@@ -861,7 +868,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                                 );
                                             })()}
 
-                                        {/* Rhythm Extension Dot Flags */}
                                         {[
                                             6.0, 3.0, 1.5, 0.75
                                         ].includes(
@@ -883,7 +889,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                                     </g>
                                 )}
 
-                                {/* Polyphonic Rhythm Lane */}
                                 <g>
                                     <rect
                                         x={ev.cx -
