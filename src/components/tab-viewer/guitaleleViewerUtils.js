@@ -13,8 +13,8 @@ export const DARK_THEME = {
     // --- 3. Static UI Text & Symbols ---
     textClef: "#64748b", // Slate 500 - visible but secondary
     textTimeSig: "#fbbf24", // Amber 400 - nice gold accent
-    textTabLabel: "#4b5563", // Slate 600
-    textTabString: "#374151", // Slate 600
+    textTabLabel: "#7a60b6", // Slate 600
+    textTabString: "#911c6e", // Slate 600
     bgTabRect: "#0f172a", // Matches bgScore exactly for seamless masking
     textTabNumber: "#e2e8f0", // Slate 300 - clear baseline readability
 

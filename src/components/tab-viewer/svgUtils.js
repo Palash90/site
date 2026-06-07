@@ -110,35 +110,35 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     >
                         <text
                             x="0"
-                            y={(trebleTopY * scaleY) + 16 * scaleY}
+                            y={(trebleTopY * scaleY) + 1.35 * sLineSpacing}
                             textAnchor="middle"
                         >
                             {timeSigTop}
                         </text>
                         <text
                             x="0"
-                            y={(trebleTopY * scaleY) + 42 * scaleY}
+                            y={(trebleTopY * scaleY) + 3.35 * sLineSpacing}
                             textAnchor="middle"
                         >
                             {timeSigBottom}
                         </text>
                         <text
                             x="0"
-                            y={(bassTopY * scaleY) + 16 * scaleY}
+                            y={(bassTopY * scaleY) + 1.35 * sLineSpacing}
                             textAnchor="middle"
                         >
                             {timeSigTop}
                         </text>
                         <text
                             x="0"
-                            y={(bassTopY * scaleY) + 42 * scaleY}
+                            y={(bassTopY * scaleY) + 3.35 * sLineSpacing}
                             textAnchor="middle"
                         >
                             {timeSigBottom}
                         </text>
                         <text
                             x="0"
-                            y={(tabTopY * scaleY) + 24 * scaleY}
+                            y={(tabTopY * scaleY) + 1.6 * sLineSpacing}
                             textAnchor="middle"
                             className="text-xl font-sans font-bold"
                             fill={DARK_THEME.textTabLabel}
@@ -147,7 +147,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                         </text>
                         <text
                             x="0"
-                            y={(tabTopY * scaleY) + 54 * scaleY}
+                            y={(tabTopY * scaleY) + 4.1 * sLineSpacing}
                             textAnchor="middle"
                             className="text-xl font-sans font-bold"
                             fill={DARK_THEME.textTabLabel}
@@ -167,7 +167,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             strokeWidth="2" />
                     ))}
                     <g
-                        transform={`translate(${leftMargin}, ${(tabTopY * scaleY) + 12 * scaleY})`}
+                        transform={`translate(${leftMargin}, ${(tabTopY * scaleY) + 36 * scaleY})`}
                         fill={DARK_THEME.textTabLabel}
                         style={{ fontSize: `${36 * scaleY}px`, fontWeight: "900", letterSpacing: "-0.1em" }}
                     >
