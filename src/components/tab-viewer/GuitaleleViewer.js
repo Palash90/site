@@ -275,9 +275,7 @@ export default function GuitaleleViewer({ scoreData }) {
     useEffect(() => {
         if (isPlaying && playbackIndex !== null) {
             // 1. Target the highlighted visual node element
-            const activeNode = document.querySelector(
-                `rect[fill="${DARK_THEME.fillHoverHighlight}"]`
-            );
+            const activeNode = document.querySelector('[data-active-indicator="true"]');
             const scrollContainer = containerRef.current;
 
             if (activeNode && scrollContainer) {

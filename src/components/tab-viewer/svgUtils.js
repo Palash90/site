@@ -22,7 +22,7 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
         return (
             <div
                 key={`row-${rowIdx}`}
-                className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto flex justify-center`}
+                className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto flex justify-start md:justify-center`}
             >
                 <svg
                     // 2. Adjust viewBox to start exactly where content begins and end exactly where it finishes
@@ -30,8 +30,6 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                     style={{
                         width: `${totalWidth}px`,
                         maxWidth: "100%",
-                        // 3. Changing fixed pixel height to "auto" ensures that when width shrinks 
-                        // responsively on mobile, the height automatically scales down perfectly.
                         height: "auto",
                         maxHeight: "none"
                     }}
@@ -331,14 +329,11 @@ export function buildSvg(svgHeight, paddingX, trebleTopY, bassTopY, lineSpacing,
                             <g key={`node-${idx}`}>
                                 {isPrimaryHighlightNode && (
                                     <rect
-                                        x={ev.cx -
-                                            SLOT_WIDTH / 2 +
-                                            2}
+                                        data-active-indicator="true"
+                                        x={ev.cx - SLOT_WIDTH / 2 + 2}
                                         y={trebleTopY - 50}
                                         width={SLOT_WIDTH - 4}
-                                        height={rhythmTopY -
-                                            trebleTopY +
-                                            95}
+                                        height={rhythmTopY - trebleTopY + 95}
                                         fill={DARK_THEME.fillHoverHighlight}
                                         rx={4} />
                                 )}
