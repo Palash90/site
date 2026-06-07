@@ -537,7 +537,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                     stroke={DARK_THEME.lineStaff}
                                                                     strokeWidth="1.2" />
                                                             )
-                        )}
+                                                        )}
 
                                                         {pitch.fret ===
                                                             null ? (
