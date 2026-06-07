@@ -51,10 +51,7 @@ export default function GuitaleleViewer({ scoreData }) {
     // Responsive window observer
     useEffect(() => {
         const updateLayoutBoundaries = () => {
-            if (window.innerWidth < 480) {
-                setMeasuresPerRow(1); // Small mobile layout profile
-                setSlotWidth(35);
-            } else if (window.innerWidth < 768) {
+            if (window.innerWidth < 768) {
                 setMeasuresPerRow(2); // Mobile layout profile
                 setSlotWidth(50);
             } else {
@@ -272,7 +269,7 @@ export default function GuitaleleViewer({ scoreData }) {
         return `${baseHeader} • ${voiceDetails}`;
     }, [activeEvents]);
 
-// 1. Find which row index contains the currently playing note index
+    // 1. Find which row index contains the currently playing note index
     const activeRowIndex = useMemo(() => {
         if (playbackIndex === null || !scoreLayout) return -1;
         return scoreLayout.computedRows.findIndex(row =>
