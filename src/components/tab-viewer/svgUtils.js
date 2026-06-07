@@ -541,13 +541,13 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                 <line
                                                                     key={`up-ledg-${lIdx}`}
                                                                     x1={ev.cx -
-                                                                        10}
+                                                                        14}
                                                                     y1={(clefTopY * scaleY) -
                                                                         (lIdx +
                                                                             1) *
                                                                         sLineSpacing}
                                                                     x2={ev.cx +
-                                                                        10}
+                                                                        14}
                                                                     y2={(clefTopY * scaleY) -
                                                                         (lIdx +
                                                                             1) *
@@ -571,13 +571,13 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                 <line
                                                                     key={`low-ledg-${lIdx}`}
                                                                     x1={ev.cx -
-                                                                        10}
+                                                                        14}
                                                                     y1={(bottomStaffEdge * scaleY) +
                                                                         (lIdx +
                                                                             1) *
                                                                         sLineSpacing}
                                                                     x2={ev.cx +
-                                                                        10}
+                                                                        14}
                                                                     y2={(bottomStaffEdge * scaleY) +
                                                                         (lIdx +
                                                                             1) *
