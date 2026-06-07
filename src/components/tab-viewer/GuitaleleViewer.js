@@ -86,7 +86,19 @@ export default function GuitaleleViewer({ scoreData }) {
             const consumedPitches = new Set();
 
             allEvents.forEach((ev, evIdx) => {
-                if (ev.isRest) return;
+                if (ev.isRest) {
+                    // Include rest events in the precompiled timeline so they can be visually highlighted
+                    compiledAudioTimeline.push({
+                        type: "rest",
+                        voice: ev.voice,
+                        startBeat: ev.startBeat,
+                        globalIndex: ev.globalIndex,
+                        preCalculatedJitter: 0,
+                        preCalculatedVelocity: 0,
+                        segments: [{ type: "rest", duration: ev.beatValue }]
+                    });
+                    return;
+                }
 
                 ev.processedPitches.forEach(pitch => {
                     const pitchKey = `${ev.globalIndex}_${pitch.string}`;

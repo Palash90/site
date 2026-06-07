@@ -67,8 +67,15 @@ export const parseToken = (token, capo = 0) => {
         workingToken = workingToken.split("@")[0];
     }
 
-    // Case 1: Rest Item
-    if (workingToken === "-") {
+    // Case 1: Rest Item (support trailing duration like "-h", "-w.")
+    if (workingToken.startsWith("-")) {
+        // Try to parse a trailing duration letter (e.g., -h, -h., -q, -w.)
+        const restDurMatch = workingToken.match(/^-([whqes]\.?)/i);
+        if (restDurMatch) {
+            const durStr = restDurMatch[1].toLowerCase();
+            event.duration = durationMap[durStr] || event.duration;
+        }
+        event.isRest = true;
         return event;
     }
 

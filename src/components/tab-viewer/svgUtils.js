@@ -391,38 +391,62 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
 
                                 {ev.isRest ? (
                                     <g>
-                                        {ev.rhythm === "r" && (
-                                            <path
-                                                d={`M ${ev.cx - 4} ${(trebleTopY + 28) * scaleY} L ${ev.cx + 4} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 40) * scaleY} Q ${ev.cx + 6} ${(trebleTopY + 44) * scaleY} ${ev.cx} ${(trebleTopY + 50) * scaleY}`}
-                                                fill="none"
-                                                stroke={DARK_THEME.fillRest}
-                                                strokeWidth="2"
-                                                strokeLinecap="round" />
-                                        )}
-                                        {ev.rhythm === "r+" && (
-                                            <path
-                                                d={`M ${ev.cx - 3} ${(trebleTopY + 32) * scaleY} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${(trebleTopY + 34) * scaleY} Q ${ev.cx - 2} ${(trebleTopY + 38) * scaleY} ${ev.cx + 4} ${(trebleTopY + 30) * scaleY} L ${ev.cx - 3} ${(trebleTopY + 50) * scaleY}`}
-                                                fill="none"
-                                                stroke={DARK_THEME.fillRest}
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round" />
-                                        )}
-                                        {ev.rhythm === "r=" && (
-                                            <g>
-                                                <path
-                                                    d={`M ${ev.cx - 2} ${(trebleTopY + 27) * scaleY} A 3 3 0 1 1 ${ev.cx + 3} ${(trebleTopY + 29) * scaleY} Q ${ev.cx - 1} ${(trebleTopY + 33) * scaleY} ${ev.cx + 5} ${(trebleTopY + 25) * scaleY}`}
-                                                    fill="none"
-                                                    stroke={DARK_THEME.fillRest}
-                                                    strokeWidth="2" />
-                                                <path
-                                                    d={`M ${ev.cx - 4} ${(trebleTopY + 36) * scaleY} A 3 3 0 1 1 ${ev.cx + 1} ${(trebleTopY + 38) * scaleY} Q ${ev.cx - 3} ${(trebleTopY + 42) * scaleY} ${ev.cx + 3} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 52) * scaleY}`}
-                                                    fill="none"
-                                                    stroke={DARK_THEME.fillRest}
-                                                    strokeWidth="2"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round" />
-                                            </g>
+                                        {/* Whole and Half rest rendering based on beatValue */}
+                                        {ev.beatValue >= 4.0 ? (
+                                            // Whole rest (small rectangle hanging from the staff)
+                                            <rect
+                                                x={ev.cx - 7}
+                                                y={(trebleTopY * scaleY) + 2 * sLineSpacing - (sLineSpacing * 0.4)}
+                                                width={14}
+                                                height={sLineSpacing * 0.6}
+                                                fill={DARK_THEME.fillRest}
+                                                rx={1} />
+                                        ) : ev.beatValue >= 2.0 ? (
+                                            // Half rest (small rectangle sitting on the staff)
+                                            <rect
+                                                x={ev.cx - 7}
+                                                y={(trebleTopY * scaleY) + 1 * sLineSpacing - (sLineSpacing * 0.4)}
+                                                width={14}
+                                                height={sLineSpacing * 0.6}
+                                                fill={DARK_THEME.fillRest}
+                                                rx={1} />
+                                        ) : (
+                                            // Quarter / Eighth / Sixteenth rests (existing shapes)
+                                            <>
+                                                {ev.rhythm === "r" && (
+                                                    <path
+                                                        d={`M ${ev.cx - 4} ${(trebleTopY + 28) * scaleY} L ${ev.cx + 4} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 40) * scaleY} Q ${ev.cx + 6} ${(trebleTopY + 44) * scaleY} ${ev.cx} ${(trebleTopY + 50) * scaleY}`}
+                                                        fill="none"
+                                                        stroke={DARK_THEME.fillRest}
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round" />
+                                                )}
+                                                {ev.rhythm === "r+" && (
+                                                    <path
+                                                        d={`M ${ev.cx - 3} ${(trebleTopY + 32) * scaleY} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${(trebleTopY + 34) * scaleY} Q ${ev.cx - 2} ${(trebleTopY + 38) * scaleY} ${ev.cx + 4} ${(trebleTopY + 30) * scaleY} L ${ev.cx - 3} ${(trebleTopY + 50) * scaleY}`}
+                                                        fill="none"
+                                                        stroke={DARK_THEME.fillRest}
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round" />
+                                                )}
+                                                {ev.rhythm === "r=" && (
+                                                    <g>
+                                                        <path
+                                                            d={`M ${ev.cx - 2} ${(trebleTopY + 27) * scaleY} A 3 3 0 1 1 ${ev.cx + 3} ${(trebleTopY + 29) * scaleY} Q ${ev.cx - 1} ${(trebleTopY + 33) * scaleY} ${ev.cx + 5} ${(trebleTopY + 25) * scaleY}`}
+                                                            fill="none"
+                                                            stroke={DARK_THEME.fillRest}
+                                                            strokeWidth="2" />
+                                                        <path
+                                                            d={`M ${ev.cx - 4} ${(trebleTopY + 36) * scaleY} A 3 3 0 1 1 ${ev.cx + 1} ${(trebleTopY + 38) * scaleY} Q ${ev.cx - 3} ${(trebleTopY + 42) * scaleY} ${ev.cx + 3} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 52) * scaleY}`}
+                                                            fill="none"
+                                                            stroke={DARK_THEME.fillRest}
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round" />
+                                                    </g>
+                                                )}
+                                            </>
                                         )}
 
                                         <rect

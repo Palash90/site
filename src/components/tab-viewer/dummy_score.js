@@ -258,7 +258,7 @@ export const dummyScore = {
         },
         {
             measureNumber: 23,
-            notes: [{ fret: 2, string: 4, duration: 2.0 }, { duration: 2.0 }]
+            notes: [{ duration: 4.0 }]
         },
         {
             measureNumber: 24,
