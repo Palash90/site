@@ -59,7 +59,7 @@ export const dummyScore = {
                     voice: 1,
                     description: "Description from input: C whole note"
                 },
-                { fret: 0, string: 3, duration: 1.0, voice: 2 },
+                { fret: 17, string: 1, duration: 1.0, voice: 2 },
                 { fret: 2, string: 1, duration: 1.0, voice: 2 },
                 { fret: 3, string: 2, duration: 1.0, voice: 2 },
                 { fret: 0, string: 3, duration: 1.0, voice: 2 }
