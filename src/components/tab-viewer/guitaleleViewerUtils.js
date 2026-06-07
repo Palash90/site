@@ -42,22 +42,6 @@ export const DARK_THEME = {
     bgInvalidMeasure: "rgba(225, 29, 72, 0.15)" // Rose 600 transparent
 };
 
-export const RHYTHM_BEAT_VALUES = {
-    o: 4.0,
-    "o.": 6.0,
-    ".": 2.0,
-    "..": 3.0,
-    ":": 1.0,
-    ":.": 1.5,
-    "+": 0.5,
-    "+.": 0.75,
-    "=": 0.25,
-    r: 1.0,
-    "r.": 1.5,
-    "r+": 0.5,
-    "r=": 0.25
-};
-
 export const CHROMATIC_MAP = {
     0: [0, false],
     1: [0, true],
@@ -72,21 +56,6 @@ export const CHROMATIC_MAP = {
     10: [5, true],
     11: [6, false]
 };
-
-export const NOTE_NAMES = [
-    "C",
-    "C#",
-    "D",
-    "D#",
-    "E",
-    "F",
-    "F#",
-    "G",
-    "G#",
-    "A",
-    "A#",
-    "B"
-];
 
 export const DURATION_OPTIONS = [
     { value: 0.25, label: "Sixteenth note" },

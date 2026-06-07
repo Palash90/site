@@ -8,6 +8,37 @@ export const TUNING = {
     6: { baseMidi: 45 }  // A2
 };
 
+export const NOTE_NAMES = [
+    "C",
+    "C#",
+    "D",
+    "D#",
+    "E",
+    "F",
+    "F#",
+    "G",
+    "G#",
+    "A",
+    "A#",
+    "B"
+];
+
+export const RHYTHM_BEAT_VALUES = {
+    o: 4.0,
+    "o.": 6.0,
+    ".": 2.0,
+    "..": 3.0,
+    ":": 1.0,
+    ":.": 1.5,
+    "+": 0.5,
+    "+.": 0.75,
+    "=": 0.25,
+    r: 1.0,
+    "r.": 1.5,
+    "r+": 0.5,
+    "r=": 0.25
+};
+
 // Global Node Manager: Clean audio summation channel with a safety compressor
 const getMasterGain = (ctx) => {
     if (!ctx.masterGain) {
