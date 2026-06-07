@@ -620,8 +620,8 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                             <ellipse
                                                                 cx={ev.cx}
                                                                 cy={currentStaffY}
-                                                                rx={7.5}
-                                                                ry={5.5 * scaleY}
+                                                                rx={6}
+                                                                ry={4 * scaleY}
                                                                 transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
                                                                 fill="none"
                                                                 stroke={activeStrokeColor}
@@ -631,8 +631,8 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                             <ellipse
                                                                 cx={ev.cx}
                                                                 cy={currentStaffY}
-                                                                rx={7.5}
-                                                                ry={5.5 * scaleY}
+                                                                rx={6}
+                                                                ry={4 * scaleY}
                                                                 transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
                                                                 fill={activeNoteColor}
                                                                 filter={glowFilter} />
