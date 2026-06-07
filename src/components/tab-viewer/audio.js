@@ -213,3 +213,112 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     bassSubOsc.stop(stopTime);
     brightTransientOsc.stop(stopTime);
 };
+
+export function stopPlaying(lookaheadTimerRef, playbackTimeoutsRef, setIsPlaying, setIsPaused, setPlaybackIndex, pausedTimeRef, audioCtxRef) {
+    return () => {
+        if (lookaheadTimerRef.current) {
+            clearTimeout(lookaheadTimerRef.current);
+            lookaheadTimerRef.current = null;
+        }
+        playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
+        playbackTimeoutsRef.current = [];
+
+        setIsPlaying(false);
+        setIsPaused(false);
+        setPlaybackIndex(null);
+        pausedTimeRef.current = 0;
+
+        if (audioCtxRef.current) {
+            audioCtxRef.current.close();
+            audioCtxRef.current = null;
+        }
+    };
+}
+
+export function pausePlaying(isPlaying, isPaused, lookaheadTimerRef, playbackTimeoutsRef, audioCtxRef, playbackStartTimeRef, pausedTimeRef, setIsPaused) {
+    return () => {
+        if (!isPlaying || isPaused) return;
+
+        if (lookaheadTimerRef.current) {
+            clearTimeout(lookaheadTimerRef.current);
+            lookaheadTimerRef.current = null;
+        }
+        playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
+        playbackTimeoutsRef.current = [];
+
+        const elapsedSec = audioCtxRef.current.currentTime - playbackStartTimeRef.current;
+        pausedTimeRef.current += elapsedSec;
+
+        setIsPaused(true);
+        if (audioCtxRef.current) {
+            audioCtxRef.current.suspend();
+        }
+    };
+}
+
+export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop) {
+    return (fromMeasure = 1) => {
+        if (isPlaying || !scoreLayout || !isAudioCompiled) return;
+
+        // Sync hook initiation for mobile WebKit audio focus
+        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+            audioCtxRef.current = new (
+                window.AudioContext || window.webkitAudioContext
+            )();
+        }
+
+        setIsPlaying(true);
+        setIsPaused(false);
+        pausedTimeRef.current = 0;
+        playbackStartTimeRef.current = audioCtxRef.current.currentTime;
+
+        const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
+        const targetedEvents = allEvents.filter(
+            ev => ev.measureNumber >= fromMeasure
+        );
+
+        currentPlaybackEventsRef.current = targetedEvents;
+        const startOffsetBeat = targetedEvents.length > 0 ? targetedEvents[0].startBeat : 0;
+        playbackStartBeatRef.current = startOffsetBeat;
+
+        // Group our precompiled notes by their exact startBeat timestamp
+        const notesForRun = preCompiledTimelineRef.current.filter(
+            n => n.startBeat >= startOffsetBeat
+        );
+
+        // Create an ordered timeline map of unique beat moments
+        const uniqueBeatsMap = {};
+        notesForRun.forEach(note => {
+            if (!uniqueBeatsMap[note.startBeat]) {
+                uniqueBeatsMap[note.startBeat] = {
+                    startBeat: note.startBeat,
+                    globalIndex: note.globalIndex, // Map to layout position for UI highlights
+                    notes: []
+                };
+            }
+            uniqueBeatsMap[note.startBeat].notes.push(note);
+        });
+
+        // Sort chronologically
+        currentTimelineBeatsRef.current = Object.values(uniqueBeatsMap).sort(
+            (a, b) => a.startBeat - b.startBeat
+        );
+        nextBeatIndexRef.current = 0;
+
+        runSchedulerLoop(startOffsetBeat);
+    };
+}
+
+export function resumePlaying(isPlaying, isPaused, audioCtxRef, playbackStartTimeRef, setIsPaused, runSchedulerLoop) {
+    return () => {
+        if (!isPlaying || !isPaused) return;
+
+        if (audioCtxRef.current) {
+            audioCtxRef.current.resume();
+            playbackStartTimeRef.current = audioCtxRef.current.currentTime;
+            setIsPaused(false);
+
+            runSchedulerLoop();
+        }
+    };
+}
