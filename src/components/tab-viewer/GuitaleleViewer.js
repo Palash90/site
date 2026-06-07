@@ -280,31 +280,35 @@ export default function GuitaleleViewer({ scoreData }) {
     // 2. Efficiently snap to the top of the row ONLY when changing lines
     const prevRowIndexRef = useRef(-1);
     useEffect(() => {
+        const scrollContainer = containerRef.current;
+        if (!scrollContainer) return;
+
         if (!isPlaying) {
+            scrollContainer.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
             prevRowIndexRef.current = -1;
             return;
         }
 
         if (activeRowIndex !== -1 && activeRowIndex !== prevRowIndexRef.current) {
             prevRowIndexRef.current = activeRowIndex;
-            const scrollContainer = containerRef.current;
 
-            if (scrollContainer) {
-                const rowElements = scrollContainer.querySelectorAll("tbody tr");
-                const targetRow = rowElements[activeRowIndex];
+            const rowElements = scrollContainer.querySelectorAll("tbody tr");
+            const targetRow = rowElements[activeRowIndex];
 
-                if (targetRow) {
-                    const containerRect = scrollContainer.getBoundingClientRect();
-                    const rowRect = targetRow.getBoundingClientRect();
+            if (targetRow) {
+                const containerRect = scrollContainer.getBoundingClientRect();
+                const rowRect = targetRow.getBoundingClientRect();
 
-                    // Calculate the position to line up the row's top edge perfectly with the container's top
-                    const targetScrollTop = rowRect.top - containerRect.top + scrollContainer.scrollTop;
+                // Calculate the position to line up the row's top edge perfectly with the container's top
+                const targetScrollTop = rowRect.top - containerRect.top + scrollContainer.scrollTop;
 
-                    scrollContainer.scrollTo({
-                        top: Math.max(0, targetScrollTop - 4), // 4px padding for a clean aesthetic look
-                        behavior: "smooth"
-                    });
-                }
+                scrollContainer.scrollTo({
+                    top: Math.max(0, targetScrollTop - 4), // 4px padding for a clean aesthetic look
+                    behavior: "smooth"
+                });
             }
         }
     }, [activeRowIndex, isPlaying]);
