@@ -392,20 +392,20 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                 {ev.isRest ? (
                                     <g>
                                         {/* Whole and Half rest rendering based on beatValue */}
-                                        {ev.beatValue >= 4.0 ? (
+                                        {ev.beatValue === 4.0 ? (
                                             // Whole rest (small rectangle hanging from the staff)
                                             <rect
                                                 x={ev.cx - 7}
-                                                y={(trebleTopY * scaleY) + 2 * sLineSpacing - (sLineSpacing * 0.4)}
+                                                y={(trebleTopY * scaleY) + 1 * sLineSpacing - (sLineSpacing * 0.05)}
                                                 width={14}
                                                 height={sLineSpacing * 0.6}
                                                 fill={DARK_THEME.fillRest}
                                                 rx={1} />
-                                        ) : ev.beatValue >= 2.0 ? (
+                                        ) : ev.beatValue === 2.0 ? (
                                             // Half rest (small rectangle sitting on the staff)
                                             <rect
                                                 x={ev.cx - 7}
-                                                y={(trebleTopY * scaleY) + 1 * sLineSpacing - (sLineSpacing * 0.4)}
+                                                y={(trebleTopY * scaleY) + 2 * sLineSpacing + (sLineSpacing * 0.4)}
                                                 width={14}
                                                 height={sLineSpacing * 0.6}
                                                 fill={DARK_THEME.fillRest}

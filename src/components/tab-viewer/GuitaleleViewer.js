@@ -262,7 +262,7 @@ export default function GuitaleleViewer({ scoreData }) {
         const voiceDetails = activeEvents
             .map(ev => {
                 if (ev.isRest) {
-                    return `Voice ${ev.voice}: Rest 𝄾 [${getDurationLabel(ev.beatValue)}]`;
+                    return `Voice ${ev.voice}: Rest 𝄾 [${getDurationLabel(ev.beatValue).replace('note', 'rest')}]`;
                 }
 
                 const pitchDesc = ev.processedPitches
