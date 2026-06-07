@@ -23,7 +23,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const [isPaused, setIsPaused] = useState(false);
     const [playbackIndex, setPlaybackIndex] = useState(null);
     const [bpm, setBpm] = useState(100);
-    const [slotWidth, setSlotWidth] = useState(45);
+    const [slotWidth, setSlotWidth] = useState(6);
     const containerRef = useRef(null);
     const [isAudioCompiled, setIsAudioCompiled] = useState(false);
 

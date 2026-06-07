@@ -2,7 +2,7 @@ export const DARK_THEME = {
     // --- 1. Base Backgrounds ---
     bgPage: "bg-slate-950",
     bgScore: "bg-slate-900",
-    borderScore: "border-slate-800",
+    borderScore: "border-transparent",
 
     // --- 2. Structural Lines (Muted to let notes pop) ---
     lineStaff: "#4a4a83", // Zinc 800 - dark, clean background lines
@@ -133,8 +133,10 @@ export const outerContainerStyle = {
     position: "relative", // Establishes boundary for absolute positioning
     width: "100%", // Adapts to wherever you drop it in the page
     overflow: "hidden", // Prevents content from breaking outside the box
-    border: "1px solid #ccc",
-    boxSizing: "border-box"
+    border: "none",
+    boxSizing: "border-box",
+    padding: "0", // Reset any default padding
+    margin: "0" // Reset any default margin
 };
 
 export const fixedTopRightStyle = {

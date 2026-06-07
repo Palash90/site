@@ -68,7 +68,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     {[0, 1, 2, 3, 4].map(i => (
                         <line
                             key={`treble-${i}`}
-                            x1={paddingX}
+                            x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
                             y1={(trebleTopY * scaleY) + i * sLineSpacing}
                             x2={rowEndX}
                             y2={(trebleTopY * scaleY) + i * sLineSpacing}
@@ -78,7 +78,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <text
                         x={leftMargin}
                         y={(trebleTopY * scaleY) + 3.5 * sLineSpacing}
-                        style={{ fontSize: `${28 * scaleY}px` }}
+                        style={{ fontSize: `${48 * scaleY}px` }}
                         fill={DARK_THEME.textClef}
                     >
                         𝄞
@@ -87,7 +87,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     {[0, 1, 2, 3, 4].map(i => (
                         <line
                             key={`bass-${i}`}
-                            x1={paddingX}
+                            x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
                             y1={(bassTopY * scaleY) + i * sLineSpacing}
                             x2={rowEndX}
                             y2={(bassTopY * scaleY) + i * sLineSpacing}
@@ -97,7 +97,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <text
                         x={leftMargin}
                         y={(bassTopY * scaleY) + 3.2 * sLineSpacing}
-                        style={{ fontSize: `${28 * scaleY}px` }}
+                        style={{ fontSize: `${48 * scaleY}px` }}
                         fill={DARK_THEME.textClef}
                     >
                         𝄢
@@ -159,7 +159,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     {[0, 1, 2, 3, 4, 5].map(i => (
                         <line
                             key={`t-l-${i}`}
-                            x1={paddingX}
+                            x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
                             y1={(tabTopY * scaleY) + i * sLineSpacing}
                             x2={rowEndX}
                             y2={(tabTopY * scaleY) + i * sLineSpacing}
@@ -169,22 +169,22 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <g
                         transform={`translate(${leftMargin}, ${(tabTopY * scaleY) + 12 * scaleY})`}
                         fill={DARK_THEME.textTabLabel}
-                        style={{ fontSize: `${14 * scaleY}px`, fontWeight: "900", letterSpacing: "-0.05em" }}
+                        style={{ fontSize: `${36 * scaleY}px`, fontWeight: "900", letterSpacing: "-0.1em" }}
                     >
                         <text x="0" y="0">
                             T
                         </text>
-                        <text x="0" y={14 * scaleY}>
+                        <text x="0" y={36 * scaleY}>
                             A
                         </text>
-                        <text x="0" y={28 * scaleY}>
+                        <text x="0" y={72 * scaleY}>
                             B
                         </text>
                     </g>
                     {[0, 1, 2, 3, 4, 5].map(i => (
                         <text
                             key={`string-${i}`}
-                            x={paddingX - (30 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9))}
+                            x={paddingX - (60 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9))}
                             y={(tabTopY * scaleY) + i * sLineSpacing + 4 * scaleY}
                             textAnchor="end"
                             fill={DARK_THEME.textTabString}
@@ -195,16 +195,16 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     ))}
 
                     <line
-                        x1={paddingX}
+                        x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
                         y1={trebleTopY * scaleY}
-                        x2={paddingX}
+                        x2={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
                         y2={(bassTopY + 4 * lineSpacing) * scaleY}
                         stroke={DARK_THEME.lineBar}
                         strokeWidth="2" />
                     <line
-                        x1={paddingX}
+                        x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
                         y1={tabTopY * scaleY}
-                        x2={paddingX}
+                        x2={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
                         y2={(tabTopY + 5 * lineSpacing) * scaleY}
                         stroke={DARK_THEME.lineTab}
                         strokeWidth="2" />
@@ -620,19 +620,19 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                             <ellipse
                                                                 cx={ev.cx}
                                                                 cy={currentStaffY}
-                                                                rx={5.5}
-                                                                ry={4 * scaleY}
+                                                                rx={7.5}
+                                                                ry={5.5 * scaleY}
                                                                 transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
                                                                 fill="none"
                                                                 stroke={activeStrokeColor}
-                                                                strokeWidth="1.8"
+                                                                strokeWidth="2.2"
                                                                 filter={glowFilter} />
                                                         ) : (
                                                             <ellipse
                                                                 cx={ev.cx}
                                                                 cy={currentStaffY}
-                                                                rx={5.5}
-                                                                ry={4 * scaleY}
+                                                                rx={7.5}
+                                                                ry={5.5 * scaleY}
                                                                 transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
                                                                 fill={activeNoteColor}
                                                                 filter={glowFilter} />
@@ -925,7 +925,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                             ?.highestY ||
                                                         trebleTopY) -
                                                         3) * scaleY}
-                                                    r={2}
+                                                    r={3 * scaleY}
                                                     fill={currentNoteFill} />
                                             )}
                                     </g>
