@@ -13,7 +13,13 @@ import {
     scrollableContentStyle
 } from "./guitaleleViewerUtils";
 
-import { stopPlaying, pausePlaying, resumePlaying, startPlaying } from "././audio";
+import {
+    stopPlaying,
+    pausePlaying,
+    resumePlaying,
+    startPlaying,
+    runScheduler
+} from "././audio";
 
 export default function GuitaleleViewer({ scoreData }) {
     const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
@@ -545,165 +551,17 @@ export default function GuitaleleViewer({ scoreData }) {
         return () => clearTimeout(timer);
     }, [scoreLayout]);
 
+
     const stopPlayback = stopPlaying(lookaheadTimerRef, playbackTimeoutsRef, setIsPlaying, setIsPaused, setPlaybackIndex, pausedTimeRef, audioCtxRef);
 
     const pausePlayback = pausePlaying(isPlaying, isPaused, lookaheadTimerRef, playbackTimeoutsRef, audioCtxRef, playbackStartTimeRef, pausedTimeRef, setIsPaused);
+
+    const runSchedulerLoop = runScheduler(playbackStartBeatRef, audioCtxRef, bpm, playbackStartTimeRef, pausedTimeRef, nextBeatIndexRef, currentTimelineBeatsRef, scheduleAheadTime, setPlaybackIndex, playbackTimeoutsRef, stopPlayback, lookaheadTimerRef, lookaheadInterval);
 
     const resumePlayback = resumePlaying(isPlaying, isPaused, audioCtxRef, playbackStartTimeRef, setIsPaused, runSchedulerLoop);
 
     const startPlayback = startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop);
 
-    const runSchedulerLoop = (startOffsetBeat = null) => {
-        const offsetBeat =
-            startOffsetBeat !== null
-                ? startOffsetBeat
-                : playbackStartBeatRef.current;
-        const ctx = audioCtxRef.current;
-        const beatDurationSeconds = 60 / bpm;
-        const scheduleOffsetSec = 0.2; // Increased to 200ms to allow smooth audio connection on slow screens
-
-        const scheduleTimelineChunk = () => {
-            if (!ctx || ctx.state === "closed") return;
-
-            const absoluteCurrentPlaybackTime =
-                ctx.currentTime -
-                playbackStartTimeRef.current +
-                pausedTimeRef.current;
-
-            // --- REPLACE INSIDE scheduleTimelineChunk() WITHIN runSchedulerLoop() ---
-            while (
-                nextBeatIndexRef.current <
-                currentTimelineBeatsRef.current.length
-            ) {
-                const beatSlice =
-                    currentTimelineBeatsRef.current[nextBeatIndexRef.current];
-                const eventAbsoluteSec =
-                    (beatSlice.startBeat - offsetBeat) * beatDurationSeconds;
-
-                if (
-                    eventAbsoluteSec <
-                    absoluteCurrentPlaybackTime + scheduleAheadTime
-                ) {
-                    const fallbackNote = beatSlice.notes[0];
-                    const jitter = fallbackNote
-                        ? fallbackNote.preCalculatedJitter
-                        : 0;
-                    const finalPluckTime =
-                        playbackStartTimeRef.current -
-                        pausedTimeRef.current +
-                        scheduleOffsetSec +
-                        eventAbsoluteSec +
-                        jitter;
-
-                    // 1. Dispatch audio nodes instantly to the Web Audio timeline queue
-                    beatSlice.notes.forEach(note => {
-                        const runtimeSegments = note.segments.map(seg => ({
-                            ...seg,
-                            duration: seg.duration * beatDurationSeconds
-                        }));
-
-                        playHumanizedGuitaleleNote(
-                            ctx,
-                            runtimeSegments,
-                            finalPluckTime,
-                            null,
-                            note.type === "mute"
-                                ? 0
-                                : note.preCalculatedVelocity
-                        );
-                    });
-
-                    // 2. High-precision visual state synchronization tracking
-                    const timeUntilVisualMs = Math.max(
-                        0,
-                        (eventAbsoluteSec -
-                            absoluteCurrentPlaybackTime +
-                            scheduleOffsetSec) *
-                        1000
-                    );
-                    const visualTimeout = setTimeout(() => {
-                        setPlaybackIndex(beatSlice.globalIndex);
-                    }, timeUntilVisualMs);
-
-                    playbackTimeoutsRef.current.push(visualTimeout);
-                    beatSlice.notes.forEach(note => {
-                        note.segments.forEach(seg => {
-                            if (seg.tiedEventIndices) {
-                                seg.tiedEventIndices.forEach(tiedEvent => {
-                                    const tiedAbsoluteSec =
-                                        eventAbsoluteSec +
-                                        tiedEvent.beatOffset *
-                                        beatDurationSeconds;
-                                    const timeUntilTiedVisualMs = Math.max(
-                                        0,
-                                        (tiedAbsoluteSec -
-                                            absoluteCurrentPlaybackTime +
-                                            scheduleOffsetSec) *
-                                        1000
-                                    );
-
-                                    const tiedVisualTimeout = setTimeout(() => {
-                                        setPlaybackIndex(tiedEvent.globalIndex);
-                                    }, timeUntilTiedVisualMs);
-
-                                    playbackTimeoutsRef.current.push(
-                                        tiedVisualTimeout
-                                    );
-                                });
-                            }
-                        });
-                    });
-                    nextBeatIndexRef.current++;
-                } else {
-                    break;
-                }
-            }
-
-            // End tracking termination
-            if (
-                nextBeatIndexRef.current >=
-                currentTimelineBeatsRef.current.length
-            ) {
-                const lastSlice =
-                    currentTimelineBeatsRef.current[
-                    currentTimelineBeatsRef.current.length - 1
-                    ];
-                if (lastSlice) {
-                    const maxSustainBeats = Math.max(
-                        ...lastSlice.notes.map(n =>
-                            n.segments.reduce((acc, s) => acc + s.duration, 0)
-                        ),
-                        1.0
-                    );
-
-                    const totalDurationSec =
-                        (lastSlice.startBeat - offsetBeat + maxSustainBeats) *
-                        beatDurationSeconds;
-                    const timeUntilEndMs =
-                        (totalDurationSec -
-                            absoluteCurrentPlaybackTime +
-                            scheduleOffsetSec) *
-                        1000;
-
-                    const endTimeout = setTimeout(
-                        () => {
-                            stopPlayback();
-                        },
-                        Math.max(0, timeUntilEndMs)
-                    );
-                    playbackTimeoutsRef.current.push(endTimeout);
-                }
-                return;
-            }
-
-            lookaheadTimerRef.current = setTimeout(
-                scheduleTimelineChunk,
-                lookaheadInterval
-            );
-        };
-
-        scheduleTimelineChunk();
-    };
 
     useEffect(() => {
         return () => stopPlayback();
