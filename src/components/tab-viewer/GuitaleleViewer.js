@@ -300,6 +300,7 @@ export default function GuitaleleViewer({ scoreData }) {
             }
         }
     }, [playbackIndex, isPlaying]);
+    
 
     if (!scoreLayout) {
         return (
@@ -430,7 +431,7 @@ export default function GuitaleleViewer({ scoreData }) {
                 style={{
                     overflowY: 'auto',
                     paddingTop: '12px',
-                    paddingBottom: '40px', // Extra padding at bottom so the final row rhythm lane is accessible
+                    paddingBottom: '150px', // Extra padding at bottom so the final row rhythm lane is accessible
                     backgroundColor: '#090d16' // Matches DARK_THEME bgPage/bgScore look
                 }}
             >
@@ -438,7 +439,7 @@ export default function GuitaleleViewer({ scoreData }) {
                     <tbody>
                         {computedRows.map((row, index) => (
                             <tr key={index}>
-                                <td style={{ border: 'none', padding: '0 12px 24px 12px' }}>
+                                <td style={{ border: 'none', padding: '0 12px 60px 12px' }}>
                                     {buildSvg(
                                         svgHeight,
                                         paddingX,
