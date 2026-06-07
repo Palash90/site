@@ -1,6 +1,6 @@
 import { DARK_THEME, getFlagPath } from "./guitaleleViewerUtils";
 
-export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, setHoveredNoteIndex, measuresPerRow) {
+export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, measuresPerRow) {
     return (
         {
             rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX
@@ -344,6 +344,21 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                         rx={4} />
                                 )}
 
+                                {isPaused && playbackIndex === ev.globalIndex && (
+                                    <rect
+                                        data-paused-indicator="true"
+                                        x={ev.cx - SLOT_WIDTH / 2 + 2}
+                                        y={(trebleTopY - 50) * scaleY}
+                                        width={SLOT_WIDTH - 4}
+                                        height={(rhythmTopY - trebleTopY + 95) * scaleY}
+                                        fill="none"
+                                        stroke={DARK_THEME.textTabNumberHover}
+                                        strokeDasharray="5 4"
+                                        strokeWidth={1.6}
+                                        rx={4}
+                                        pointerEvents="none" />
+                                )}
+
                                 <rect
                                     x={ev.cx - SLOT_WIDTH / 2}
                                     y={(trebleTopY - 15) * scaleY}
@@ -353,17 +368,25 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                         65) * scaleY}
                                     fill="transparent"
                                     pointerEvents="all"
-                                    onMouseEnter={() => {
-                                        if (!isPlaying)
-                                            setHoveredNoteIndex(
-                                                ev.globalIndex
-                                            );
+                                    onPointerEnter={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(ev.globalIndex);
                                     }}
-                                    onMouseLeave={() => {
-                                        if (!isPlaying)
-                                            setHoveredNoteIndex(
-                                                null
-                                            );
+                                    onPointerLeave={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(null);
+                                    }}
+                                    onPointerDown={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(ev.globalIndex);
+                                    }}
+                                    onPointerUp={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(null);
+                                    }}
+                                    onClick={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(ev.globalIndex);
                                     }} />
 
                                 {ev.isRest ? (

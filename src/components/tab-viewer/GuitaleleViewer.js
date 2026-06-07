@@ -207,7 +207,7 @@ export default function GuitaleleViewer({ scoreData }) {
         return () => stopPlayback();
     }, []);
 
-    const activeTargetIndex = isPlaying ? playbackIndex : hoveredNoteIndex;
+    const activeTargetIndex = (isPlaying && !isPaused) ? playbackIndex : hoveredNoteIndex;
 
     // Replace `activeEvent` with `activeEvents` and `activeIndices`
     const activeEvents = useMemo(() => {
@@ -474,6 +474,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                             rhythm1TopY,
                                             SLOT_WIDTH,
                                             isPlaying,
+                                            isPaused,
+                                            playbackIndex,
                                             setHoveredNoteIndex,
                                             measuresPerRow // <-- Pass the configuration parameter down
                                         )(row, index)}
