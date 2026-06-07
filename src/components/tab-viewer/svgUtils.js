@@ -73,7 +73,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             x2={rowEndX}
                             y2={(trebleTopY * scaleY) + i * sLineSpacing}
                             stroke={DARK_THEME.lineStaff}
-                            strokeWidth="1" />
+                            strokeWidth="1.6" />
                     ))}
                     <text
                         x={leftMargin}
@@ -164,7 +164,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             x2={rowEndX}
                             y2={(tabTopY * scaleY) + i * sLineSpacing}
                             stroke={DARK_THEME.lineTab}
-                            strokeWidth="1.2" />
+                            strokeWidth="2" />
                     ))}
                     <g
                         transform={`translate(${leftMargin}, ${(tabTopY * scaleY) + 12 * scaleY})`}
