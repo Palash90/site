@@ -85,6 +85,10 @@ export default function Content() {
         default: {
             if (tab) {
                 return <>
+                    <Row>
+                        {publishDate ? <Col><b>{window.findProp("labels.publishedOn")}</b>{publishDate}</Col> : <></>}
+                        {lastUpdated ? <Col><b>{window.findProp("labels.lastUpdated")}</b>{lastUpdated}</Col> : <></>}
+                    </Row>
                     <TabViewer tab={tab} />
                 </>
             }
