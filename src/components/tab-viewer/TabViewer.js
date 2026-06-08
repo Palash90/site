@@ -36,6 +36,7 @@ export default function TabViewer(props) {
 
     return props.tab && data ? (
         <div className="bg-slate-950 min-h-screen text-slate-100 p-6 flex flex-col gap-4">
+            <span>{window.innerWidth} x {window.innerHeight}</span>
             <div className="mt-2">
                 <h3 className="text-lg font-bold tracking-tight text-slate-300">Score Viewer</h3>
                 <GuitaleleViewer scoreData={data} editorMode={false} />

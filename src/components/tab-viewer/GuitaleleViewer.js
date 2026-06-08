@@ -14,7 +14,7 @@ import {
 } from "./audio1";
 import { Table, Row, Col, Button, Form } from "react-bootstrap";
 
-import { buildSvg } from "./svgUtils1";
+import { buildSvg } from "./svgUtils";
 import { useBuildScoreLayout } from "./scoreBuilder";
 
 export default function GuitaleleViewer({ scoreData }) {
@@ -253,6 +253,7 @@ const activeDescription = useMemo(() => {
 
     return (
         <div className="d-flex flex-column" style={{ gap: '6px' }}>
+
             <div style={{ color: '#8892b0', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Measure {activeEvents[0].measureNumber}
             </div>
