@@ -245,60 +245,60 @@ export default function GuitaleleViewer({ scoreData }) {
         [activeEvents]
     );
 
-const activeDescription = useMemo(() => {
-    if (!activeEvents || activeEvents.length === 0) return null;
+    const activeDescription = useMemo(() => {
+        if (!activeEvents || activeEvents.length === 0) return null;
 
-    // Define a subtle palette for voices
-    const voiceColors = ['#00b894', '#0984e3', '#6c5ce7', '#e17055'];
+        // Define a subtle palette for voices
+        const voiceColors = ['#00b894', '#0984e3', '#6c5ce7', '#e17055'];
 
-    return (
-        <div className="d-flex flex-column" style={{ gap: '6px' }}>
+        return (
+            <div className="d-flex flex-column" style={{ gap: '6px' }}>
 
-            <div style={{ color: '#8892b0', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                Measure {activeEvents[0].measureNumber}
-            </div>
+                <div style={{ color: '#8892b0', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Measure {activeEvents[0].measureNumber}
+                </div>
 
-            <div className="d-flex flex-column" style={{ gap: '4px' }}>
-                {activeEvents.map((ev, idx) => {
-                    const color = voiceColors[ev.voice % voiceColors.length];
-                    
-                    return (
-                        <div key={idx} className="d-flex align-items-start" style={{ 
-                            borderLeft: `3px solid ${color}`, 
-                            paddingLeft: '12px' 
-                        }}>
-                            {ev.isRest ? (
-                                <span style={{ color: '#636e72', fontSize: '11px', fontStyle: 'italic' }}>
-                                    <span style={{ color }}>V{ev.voice}</span> • Rest • {getDurationLabel(ev.beatValue)}
-                                </span>
-                            ) : (
-                                <div className="d-flex flex-column">
-                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                        {/* Duration now at the front */}
-                                        <span style={{ color: '#fdcb6e', fontSize: '10px', fontWeight: 'bold', minWidth: '40px' }}>
-                                            {getDurationLabel(ev.beatValue).toUpperCase()}
-                                        </span>
-                                        <span style={{ color, fontSize: '10px', fontWeight: 'bold' }}>VOICE {ev.voice}</span>
+                <div className="d-flex flex-column" style={{ gap: '4px' }}>
+                    {activeEvents.map((ev, idx) => {
+                        const color = voiceColors[ev.voice % voiceColors.length];
+
+                        return (
+                            <div key={idx} className="d-flex align-items-start" style={{
+                                borderLeft: `3px solid ${color}`,
+                                paddingLeft: '12px'
+                            }}>
+                                {ev.isRest ? (
+                                    <span style={{ color: '#636e72', fontSize: '11px', fontStyle: 'italic' }}>
+                                        <span style={{ color }}>V{ev.voice}</span> • Rest • {getDurationLabel(ev.beatValue)}
+                                    </span>
+                                ) : (
+                                    <div className="d-flex flex-column">
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            {/* Duration now at the front */}
+                                            <span style={{ color: '#fdcb6e', fontSize: '10px', fontWeight: 'bold', minWidth: '40px' }}>
+                                                {getDurationLabel(ev.beatValue).toUpperCase()}
+                                            </span>
+                                            <span style={{ color, fontSize: '10px', fontWeight: 'bold' }}>VOICE {ev.voice}</span>
+                                        </div>
+
+                                        {/* Indented/Tabbed note list */}
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px', paddingLeft: '8px' }}>
+                                            {ev.processedPitches.map((p, pIdx) => (
+                                                <div key={pIdx} style={{ fontSize: '11px', color: '#dfe6e9' }}>
+                                                    • {p.noteName}
+                                                    <span style={{ color: '#636e72', marginLeft: '4px' }}>S{p.string}F{p.fret}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                    
-                                    {/* Indented/Tabbed note list */}
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px', paddingLeft: '8px' }}>
-                                        {ev.processedPitches.map((p, pIdx) => (
-                                            <div key={pIdx} style={{ fontSize: '11px', color: '#dfe6e9' }}>
-                                                • {p.noteName} 
-                                                <span style={{ color: '#636e72', marginLeft: '4px' }}>S{p.string}F{p.fret}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
-        </div>
-    );
-}, [activeEvents]);
+        );
+    }, [activeEvents]);
 
     // 1. Find which row index contains the currently playing note index
     const activeRowIndex = useMemo(() => {
@@ -337,8 +337,8 @@ const activeDescription = useMemo(() => {
                 const targetScrollTop = rowRect.top - containerRect.top + scrollContainer.scrollTop;
 
                 scrollContainer.scrollTo({
-                    top: Math.max(0, targetScrollTop - 4), // 4px padding for a clean aesthetic look
-                    behavior: "smooth"
+                    top: Math.max(0, targetScrollTop - 20), // 4px padding for a clean aesthetic look
+                    behavior: "auto"
                 });
             }
         }
@@ -420,16 +420,16 @@ const activeDescription = useMemo(() => {
                 </div>
 
                 <div
-    className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
-    style={{
-        height: '100px',        // Fixed vertical length
-        overflowY: 'auto',       // Only the description scrolls
-        fontSize: '12px',
-        lineHeight: '1.2'
-    }}
->
-    {activeDescription || <span className="text-muted fst-italic">Select a note to view properties.</span>}
-</div>
+                    className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
+                    style={{
+                        height: '100px',        // Fixed vertical length
+                        overflowY: 'auto',       // Only the description scrolls
+                        fontSize: '12px',
+                        lineHeight: '1.2'
+                    }}
+                >
+                    {activeDescription || <span className="text-muted fst-italic">Select a note to view properties.</span>}
+                </div>
             </div>
 
             {/* 3. THE TRUE SCROLL VIEWPORT: Only things inside this box will move or scroll */}

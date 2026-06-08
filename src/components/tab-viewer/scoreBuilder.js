@@ -339,5 +339,5 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
             measureValidityMap,
             beatsPerMeasure
         };
-    }, [scoreData, measuresPerRow]);
+    }, [scoreData, slotWidth, measuresPerRow]);
 }
