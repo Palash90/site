@@ -396,7 +396,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                             x1={ev.cx}
                                             y1={(trebleTopY - 30) * scaleY} // Starts slightly above the treble staff
                                             x2={ev.cx}
-                                            y2={(rhythmTopY + 45) * scaleY}  // Extends down to the rhythm lane base
+                                            y2={(rhythmTopY - 50) * scaleY}  // Extends down to the rhythm lane base
                                             stroke={ev.isDownbeat ? DARK_THEME.metronomeDownBeat : DARK_THEME.metronomeUpBeat} // Orange for downbeat (1), neutral gray for other beats
                                             strokeWidth={ev.isDownbeat ? "2" : "1.5"}
                                             strokeDasharray="4 4" // Creates the dotted/dashed effect
