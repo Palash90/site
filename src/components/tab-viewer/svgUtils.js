@@ -48,10 +48,10 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <defs>
                         <filter
                             id="note-glow"
-                            filterUnits="userSpaceOnUse" 
-                            x="-20"                      
+                            filterUnits="userSpaceOnUse"
+                            x="-20"
                             y="-20"
-                            width="100%"                 
+                            width="100%"
                             height="100%"
                         >
                             <feGaussianBlur
@@ -352,20 +352,50 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     })}
 
                     {rowEvents.map((ev, idx) => {
-                        const isActive = activeIndices.includes(
-                            ev.globalIndex
-                        );
-                        const isPrimaryHighlightNode = isActive &&
-                            activeIndices[0] === ev.globalIndex;
-                        const currentNoteFill = isActive
-                            ? DARK_THEME.fillNoteHover
-                            : DARK_THEME.fillNote;
+                        const isExplicitlyActive = activeIndices.includes(ev.globalIndex);
 
-                        const yLane = (ev.voice === 2
-                            ? rhythm2TopY
-                            : rhythm1TopY) * scaleY;
+                        const isNoteCurrentlySustaining =
+                            isPlaying &&
+                            activePlaybackEvent &&
+                            activePlaybackEvent.measureNumber === ev.measureNumber &&
+                            activePlaybackEvent.startBeat >= ev.startBeat &&
+                            activePlaybackEvent.startBeat < (ev.startBeat + (ev.beatValue || 1.0));
+
+
+                        const isTiedToSustaining = ev.isTiedToNext && (() => {
+                            const nextEv = rowEvents
+                                .slice(idx + 1)
+                                .find(e => e.voice === ev.voice && !e.isRest);
+                            if (!nextEv) return false;
+
+                            return activeIndices.includes(nextEv.globalIndex) ||
+                                (isPlaying && activePlaybackEvent &&
+                                    activePlaybackEvent.measureNumber === nextEv.measureNumber &&
+                                    activePlaybackEvent.startBeat >= nextEv.startBeat &&
+                                    activePlaybackEvent.startBeat < (nextEv.startBeat + (nextEv.beatValue || 1.0)));
+                        })();
+
+                        const isActive = isExplicitlyActive || isNoteCurrentlySustaining || isTiedToSustaining;
+
+                        let highlightOpacity = 0;
+                        if (isExplicitlyActive) {
+                            highlightOpacity = 1.0; // Full brightness when strictly active
+                        } else if (isNoteCurrentlySustaining) {
+                            const elapsed = activePlaybackEvent.startBeat - ev.startBeat;
+                            const duration = ev.beatValue || 1.0;
+                            // Fades smoothly down from 0.70 to an elegant 0.15 across its beat value duration
+                            highlightOpacity = Math.max(0.15, 0.70 * (1 - (elapsed / duration)));
+                        } else if (isTiedToSustaining) {
+                            highlightOpacity = 0.25; // Gentle persistent holding glow for old tied roots
+                        }
+
+                        const isPrimaryHighlightNode = isActive && (activeIndices[0] === ev.globalIndex || isNoteCurrentlySustaining);
+                        const currentNoteFill = isActive ? DARK_THEME.fillNoteHover : DARK_THEME.fillNote;
+
+                        const yLane = (ev.voice === 2 ? rhythm2TopY : rhythm1TopY) * scaleY;
                         const restTabOffset = (ev.voice === 2 ? 16 : -16) * scaleY;
                         const isMuted = (ev.voice === 1 && !voice1Enabled) || (ev.voice === 2 && !voice2Enabled);
+
                         const isActiveMetronomeTick = ev.isMetronomeTick &&
                             metronomeEnabled &&
                             isPlaying &&
@@ -376,6 +406,22 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
 
                         return (
                             <g key={`node-${idx}`}>
+                                {isActive && (
+                                    <rect
+                                        data-active-indicator="true"
+                                        x={ev.cx - SLOT_WIDTH / 2 + 2}
+                                        y={(trebleTopY - 50) * scaleY}
+                                        width={SLOT_WIDTH - 4}
+                                        height={(rhythmTopY - trebleTopY + 95) * scaleY}
+                                        fill={isExplicitlyActive ? DARK_THEME.fillHoverHighlight : DARK_THEME.sustainedNoteHighlight}
+                                        opacity={highlightOpacity} // Apply the timed decay factor here
+                                        rx={4}
+                                        filter={isNoteCurrentlySustaining || isTiedToSustaining ? "url(#note-glow)" : "none"}
+                                        style={{ transition: "fill 0.2s ease" }}
+                                    />
+
+                                )}
+
                                 {isPrimaryHighlightNode && (
                                     <rect
                                         data-active-indicator="true"
@@ -384,6 +430,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                         width={SLOT_WIDTH - 4}
                                         height={(rhythmTopY - trebleTopY + 95) * scaleY}
                                         fill={DARK_THEME.fillHoverHighlight}
+                                        opacity={highlightOpacity}
                                         rx={4} />
                                 )}
 
@@ -669,7 +716,13 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                 if (!targetPitch || targetPitch.fret === null)
                                                                     return null;
 
-                                                                const isTieActive = !isMuted && (activeIndices.includes(ev.globalIndex) || activeIndices.includes(nextEv.globalIndex));
+                                                                const isTieActive = !isMuted && (
+                                                                    activeIndices.includes(ev.globalIndex) ||
+                                                                    activeIndices.includes(nextEv.globalIndex) ||
+                                                                    isNoteCurrentlySustaining ||
+                                                                    isTiedToSustaining
+                                                                );
+
                                                                 const tieStrokeColor = isTieActive ? ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color : DARK_THEME.lineTie;
                                                                 const tieGlow = isTieActive ? "url(#note-glow)" : "none";
 

@@ -34,6 +34,7 @@ export const DARK_THEME = {
     strokeNoteHover: "#ffffff",
     textTabNumberHover: "#ffffff",
     textRhythmHover: "#f8fafc",
+    sustainedNoteHighlight: "#6e899933",
 
     bgInvalidMeasure: "rgba(225, 29, 72, 0.15)",
 
