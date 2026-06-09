@@ -522,7 +522,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                             return (
                                 <tr key={index}>
-                                    <td style={{ border: 'none', padding: `0 12px ${rowPaddingBottom} 12px` }}>
+                                    <td style={{ border:"0", padding: `0 12px ${rowPaddingBottom} 12px` }}>
                                         {buildSvg(
                                             paddingX,
                                             trebleTopY,

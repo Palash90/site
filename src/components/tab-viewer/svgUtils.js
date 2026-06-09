@@ -28,7 +28,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
         return (
             <div
                 key={`row-${rowIdx}`}
-                className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} border rounded-lg shadow-xl p-4 w-full overflow-x-auto flex justify-start md:justify-center`}
+                className={`${DARK_THEME.bgScore} ${DARK_THEME.borderScore} rounded-lg shadow-xl p-4 w-full overflow-x-auto flex justify-start md:justify-center`}
             >
                 <svg
                     // 2. Adjust viewBox to start exactly where content begins and end exactly where it finishes
