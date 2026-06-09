@@ -6,8 +6,6 @@ export default function TabViewerDemo(props) {
 
     const [data, setData] = useState(null);
 
-    console.log("selected score:", data?.title);
-
     return (
         <div className="bg-slate-950 min-h-screen text-slate-100 p-6 flex flex-col gap-4">
 

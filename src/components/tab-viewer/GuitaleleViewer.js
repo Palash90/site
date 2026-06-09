@@ -93,7 +93,6 @@ export default function GuitaleleViewer({ scoreData }) {
 
             allEvents.forEach((ev, evIdx) => {
                 if (ev.isMetronomeTick) {
-                    console.log(ev)
                     compiledAudioTimeline.push({
                         ...ev,
                         type: "metronome",

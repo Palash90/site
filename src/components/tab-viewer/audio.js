@@ -571,7 +571,6 @@ export function runScheduler(
                 beatSlice.notes.forEach(note => {
                     // This is the correct, safely timed metronome handler:
                     if (note.isMetronomeTick && metronomeEnabled) {
-                            console.log(`🔊 Metronome Tick - Beat: ${note.startBeat} at AudioTime: ${finalPluckTime} with downbeag ${note.isDownbeat}`);
                             playMetronomeClick(ctx, finalPluckTime, note.isDownbeat);
                         return;
                     }
