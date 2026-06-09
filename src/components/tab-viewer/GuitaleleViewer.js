@@ -452,7 +452,7 @@ export default function GuitaleleViewer({ scoreData }) {
                 <div
                     className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
                     style={{
-                        height: '150px',        // Fixed vertical length
+                        height: '100px',        // Fixed vertical length
                         overflowY: 'auto',       // Only the description scrolls
                         fontSize: '12px',
                         lineHeight: '1.2'
@@ -469,15 +469,14 @@ export default function GuitaleleViewer({ scoreData }) {
                 style={{
                     overflowY: 'auto',
                     paddingTop: '12px',
-                    paddingBottom: '150px', // Extra padding at bottom so the final row rhythm lane is accessible
-                    backgroundColor: '#090d16' // Matches DARK_THEME bgPage/bgScore look
+                    paddingBottom: '150px',
                 }}
             >
                 <Table responsive bordered={false} style={{ margin: 0, width: '100%' }}>
                     <tbody>
                         {computedRows.map((row, index) => {
                             // Dynamically adjust padding between layout lines based on screen real estate profile
-                            const rowPaddingBottom = measuresPerRow === 1 ? '16px' : measuresPerRow === 2 ? '32px' : '60px';
+                            const rowPaddingBottom = measuresPerRow === 1 ? '20px' : measuresPerRow === 2 ? '32px' : '500px';
 
                             return (
                                 <tr key={index}>
