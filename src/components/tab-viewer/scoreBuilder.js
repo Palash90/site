@@ -36,6 +36,26 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
             // We'll use a temporary map for this measure to merge notes sharing the same startBeat and voice
             const beatMergeMap = {};
 
+            // --- METRONOME LINE GENERATION ---
+            for (let click = 0; click < numerator; click++) {
+                const clickBeatSpacing = 4 / denominator; 
+                const clickStartBeat = absoluteMeasureStartBeat + (click * clickBeatSpacing);
+                const clickMergeKey = `0_${clickStartBeat}`;
+
+                beatMergeMap[clickMergeKey] = {
+                    globalIndex: null, // Assigned sequentially during final flattening
+                    measureNumber: mNum,
+                    voice: 0,
+                    startBeat: clickStartBeat,
+                    beatValue: clickBeatSpacing,
+                    isRest: false,
+                    isMetronomeTick: true,
+                    isDownbeat: click === 0, // Useful for adding visual accent to beat 1
+                    pitches: [],
+                    descriptions: []
+                };
+            }
+
             measure.notes.forEach(event => {
                 let detectedRhythm = event.rhythm;
                 let pitches = event.pitches || [];

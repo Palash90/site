@@ -89,7 +89,20 @@ export default function GuitaleleViewer({ scoreData }) {
             const compiledAudioTimeline = [];
             const consumedPitches = new Set();
 
+
+
             allEvents.forEach((ev, evIdx) => {
+                if (ev.isMetronomeTick) {
+                    compiledAudioTimeline.push({
+                        absoluteBeat: ev.startBeat,
+                        voice: 0,
+                        isDownbeat: ev.isDownbeat,
+                        isMetronomeTick: true,
+                        pitches: [] // Metronome doesn't need standard pitch arrays
+                    });
+                    return; // Skip standard pitch processing for this event
+                }
+
                 if (ev.isRest) {
                     // Include rest events in the precompiled timeline so they can be visually highlighted
                     compiledAudioTimeline.push({
@@ -217,8 +230,6 @@ export default function GuitaleleViewer({ scoreData }) {
         // Using a Set eliminates duplicates, then Array.from turns it back into a sorted array
         return Array.from(new Set(voiceIds)).sort((a, b) => a - b);
     }, [scoreLayout]);
-
-    console.log("Available voices in score:", availableVoices, voice1Enabled, voice2Enabled);
 
     const stopPlayback = stopPlaying(lookaheadTimerRef, playbackTimeoutsRef, setIsPlaying, setIsPaused, setPlaybackIndex, pausedTimeRef, audioCtxRef);
 
@@ -522,7 +533,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                             return (
                                 <tr key={index}>
-                                    <td style={{ border:"0", padding: `0 12px ${rowPaddingBottom} 12px` }}>
+                                    <td style={{ border: "0", padding: `0 12px ${rowPaddingBottom} 12px` }}>
                                         {buildSvg(
                                             paddingX,
                                             trebleTopY,
