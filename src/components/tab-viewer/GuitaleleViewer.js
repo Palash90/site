@@ -29,6 +29,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
     const [voice1Enabled, setVoice1Enabled] = useState(true);
     const [voice2Enabled, setVoice2Enabled] = useState(true);
+    const [metronomeEnabled, setMetronomeEnabled] = useState(false);
 
     const lookaheadTimerRef = useRef(null);
 
@@ -398,6 +399,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
                 <div className="d-flex flex-column gap-1" style={{ width: '140px', flexShrink: 0 }}>
 
+                    {/* Row 1: Playback Controls */}
                     <div className="btn-group bg-black p-1 rounded border border-secondary">
                         {!isPlaying ? (
                             <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start">
@@ -417,6 +419,7 @@ export default function GuitaleleViewer({ scoreData }) {
                         </Button>
                     </div>
 
+                    {/* Row 2: BPM Slider */}
                     <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center gap-2">
                         <Form.Range
                             min="40"
@@ -428,30 +431,28 @@ export default function GuitaleleViewer({ scoreData }) {
                         />
                         <span className="text-warning fw-bold font-monospace" style={{ fontSize: '10px', minWidth: '24px' }}>{bpm}</span>
                     </div>
-                    <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center gap-2">
-                        <Form.Check
-                            type="switch"
-                            id="voice-toggle-0"
-                            label="V 1"
-                            checked={voice1Enabled}
-                            disabled={isPlaying || !availableVoices.includes(1)}
-                            onChange={(e) => { setVoice1Enabled(e.target.checked) }}
-                        />
-                        <Form.Check
-                            type="switch"
-                            id="voice-toggle-1"
-                            label="V 2"
-                            checked={voice2Enabled}
-                            disabled={isPlaying || !availableVoices.includes(2)}
-                            onChange={(e) => { setVoice2Enabled(e.target.checked) }}
-                        />
+
+                    <div className="bg-black px-2 py-1.5 rounded border border-secondary d-flex flex-column gap-1.5">
+                        <div className="d-flex align-items-center justify-content-between">
+                            <span className="text-white-50 small fw-bold">V 1</span>
+                            <Form.Check type="switch" id="voice-toggle-0" label="" className="m-0" checked={voice1Enabled} disabled={isPlaying || !availableVoices.includes(1)} onChange={(e) => setVoice1Enabled(e.target.checked)} />
+                        </div>
+                        <div className="d-flex align-items-center justify-content-between">
+                            <span className="text-white-50 small fw-bold">V 2</span>
+                            <Form.Check type="switch" id="voice-toggle-1" label="" className="m-0" checked={voice2Enabled} disabled={isPlaying || !availableVoices.includes(2)} onChange={(e) => setVoice2Enabled(e.target.checked)} />
+                        </div>
+                        <div className="d-flex align-items-center justify-content-between">
+                            <span className="text-white-50 small fw-bold">M</span>
+                            <Form.Check type="switch" id="metronome-toggle" label="" className="m-0" checked={metronomeEnabled} disabled={isPlaying} onChange={(e) => setMetronomeEnabled(e.target.checked)} />
+                        </div>
                     </div>
+
                 </div>
 
                 <div
                     className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
                     style={{
-                        height: '100px',        // Fixed vertical length
+                        height: '150px',        // Fixed vertical length
                         overflowY: 'auto',       // Only the description scrolls
                         fontSize: '12px',
                         lineHeight: '1.2'
