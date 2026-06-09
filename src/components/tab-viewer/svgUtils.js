@@ -653,7 +653,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                 if (!targetPitch || targetPitch.fret === null)
                                                                     return null;
 
-                                                                const isTieActive = activeIndices.includes(ev.globalIndex) || activeIndices.includes(nextEv.globalIndex);
+                                                                const isTieActive = !isMuted && (activeIndices.includes(ev.globalIndex) || activeIndices.includes(nextEv.globalIndex));
                                                                 const tieStrokeColor = isTieActive ? ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color : DARK_THEME.lineTie;
                                                                 const tieGlow = isTieActive ? "url(#note-glow)" : "none";
 
