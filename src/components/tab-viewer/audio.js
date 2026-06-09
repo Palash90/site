@@ -245,14 +245,41 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     brightTransientOsc.stop(stopTime);
 };
 
+const clearPlaybackCallbacks = playbackTimeoutsRef => {
+    playbackTimeoutsRef.current.forEach(cancelScheduledWork => {
+        cancelScheduledWork();
+    });
+    playbackTimeoutsRef.current = [];
+};
+
+const registerManagedTimeout = (playbackTimeoutsRef, callback, delayMs) => {
+    let timeoutId = null;
+    const cancelScheduledWork = () => {
+        if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+    };
+
+    timeoutId = setTimeout(() => {
+        cancelScheduledWork();
+        playbackTimeoutsRef.current = playbackTimeoutsRef.current.filter(
+            cancel => cancel !== cancelScheduledWork
+        );
+        callback();
+    }, delayMs);
+
+    playbackTimeoutsRef.current.push(cancelScheduledWork);
+    return cancelScheduledWork;
+};
+
 export function stopPlaying(lookaheadTimerRef, playbackTimeoutsRef, setIsPlaying, setIsPaused, setPlaybackIndex, pausedTimeRef, audioCtxRef) {
     return () => {
         if (lookaheadTimerRef.current) {
             clearTimeout(lookaheadTimerRef.current);
             lookaheadTimerRef.current = null;
         }
-        playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
-        playbackTimeoutsRef.current = [];
+        clearPlaybackCallbacks(playbackTimeoutsRef);
 
         setIsPlaying(false);
         setIsPaused(false);
@@ -274,8 +301,7 @@ export function pausePlaying(isPlaying, isPaused, lookaheadTimerRef, playbackTim
             clearTimeout(lookaheadTimerRef.current);
             lookaheadTimerRef.current = null;
         }
-        playbackTimeoutsRef.current.forEach(t => clearTimeout(t));
-        playbackTimeoutsRef.current = [];
+        clearPlaybackCallbacks(playbackTimeoutsRef);
 
         const elapsedSec = audioCtxRef.current.currentTime - playbackStartTimeRef.current;
         pausedTimeRef.current += elapsedSec;
@@ -287,7 +313,7 @@ export function pausePlaying(isPlaying, isPaused, lookaheadTimerRef, playbackTim
     };
 }
 
-export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop) {
+export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop, voice1Enabled, voice2Enabled) {
     return (fromMeasure = 1) => {
         if (isPlaying || !scoreLayout || !isAudioCompiled) return;
 
@@ -312,11 +338,19 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
         const startOffsetBeat = targetedEvents.length > 0 ? targetedEvents[0].startBeat : 0;
         playbackStartBeatRef.current = startOffsetBeat;
 
+        console.log(preCompiledTimelineRef.current);
+
         // Group our precompiled notes by their exact startBeat timestamp
         const notesForRun = preCompiledTimelineRef.current.filter(
             n => n.startBeat >= startOffsetBeat
-        );
+        ).filter(n => {
+            if (n.voice === 1 && !voice1Enabled) return false;
+            if (n.voice === 2 && !voice2Enabled) return false;
+            return true;
+        });
 
+        console.log("Scheduling notes for playback run:", notesForRun);
+        
         // Create an ordered timeline map of unique beat moments
         const uniqueBeatsMap = {};
         notesForRun.forEach(note => {
@@ -376,6 +410,66 @@ export function runScheduler(
         const ctx = audioCtxRef.current;
         const beatDurationSeconds = 60 / bpm;
         const scheduleOffsetSec = 0.2; // 200ms padding for smooth scheduling on heavy layouts
+        const visualQueue = [];
+        let visualFrameId = null;
+
+        const cancelVisualQueue = () => {
+            if (visualFrameId !== null) {
+                cancelAnimationFrame(visualFrameId);
+                visualFrameId = null;
+            }
+            visualQueue.length = 0;
+        };
+
+        playbackTimeoutsRef.current.push(cancelVisualQueue);
+
+        const insertVisualUpdate = visualUpdate => {
+            const insertIndex = visualQueue.findIndex(
+                queuedUpdate => queuedUpdate.audioTime > visualUpdate.audioTime
+            );
+
+            if (insertIndex === -1) {
+                visualQueue.push(visualUpdate);
+            } else {
+                visualQueue.splice(insertIndex, 0, visualUpdate);
+            }
+        };
+
+        const startVisualQueue = () => {
+            if (visualFrameId !== null) return;
+
+            const runVisualFrame = () => {
+                if (!ctx || ctx.state === "closed") {
+                    visualFrameId = null;
+                    return;
+                }
+
+                let nextPlaybackIndex = null;
+                const currentAudioTime = ctx.currentTime;
+
+                while (
+                    visualQueue.length > 0 &&
+                    visualQueue[0].audioTime <= currentAudioTime
+                ) {
+                    nextPlaybackIndex = visualQueue.shift().globalIndex;
+                }
+
+                if (nextPlaybackIndex !== null) {
+                    setPlaybackIndex(nextPlaybackIndex);
+                }
+
+                visualFrameId = visualQueue.length > 0
+                    ? requestAnimationFrame(runVisualFrame)
+                    : null;
+            };
+
+            visualFrameId = requestAnimationFrame(runVisualFrame);
+        };
+
+        const queueVisualUpdate = (audioTime, globalIndex) => {
+            insertVisualUpdate({ audioTime, globalIndex });
+            startVisualQueue();
+        };
 
         const scheduleTimelineChunk = () => {
             if (!ctx || ctx.state === "closed") return;
@@ -429,16 +523,11 @@ export function runScheduler(
                 });
 
                 // 2. High-precision visual state synchronization tracking
-                const timeUntilVisualMs = Math.max(
-                    0,
-                    (eventAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000
-                );
-
-                const visualTimeout = setTimeout(() => {
-                    setPlaybackIndex(beatSlice.globalIndex);
-                }, timeUntilVisualMs);
-
-                playbackTimeoutsRef.current.push(visualTimeout);
+                const visualAudioTime = playbackStartTimeRef.current -
+                    pausedTimeRef.current +
+                    scheduleOffsetSec +
+                    eventAbsoluteSec;
+                queueVisualUpdate(visualAudioTime, beatSlice.globalIndex);
 
                 // Process tied notes visual tracking efficiently
                 beatSlice.notes.forEach(note => {
@@ -446,16 +535,11 @@ export function runScheduler(
                         if (seg.tiedEventIndices) {
                             seg.tiedEventIndices.forEach(tiedEvent => {
                                 const tiedAbsoluteSec = eventAbsoluteSec + tiedEvent.beatOffset * beatDurationSeconds;
-                                const timeUntilTiedVisualMs = Math.max(
-                                    0,
-                                    (tiedAbsoluteSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000
-                                );
-
-                                const tiedVisualTimeout = setTimeout(() => {
-                                    setPlaybackIndex(tiedEvent.globalIndex);
-                                }, timeUntilTiedVisualMs);
-
-                                playbackTimeoutsRef.current.push(tiedVisualTimeout);
+                                const tiedVisualAudioTime = playbackStartTimeRef.current -
+                                    pausedTimeRef.current +
+                                    scheduleOffsetSec +
+                                    tiedAbsoluteSec;
+                                queueVisualUpdate(tiedVisualAudioTime, tiedEvent.globalIndex);
                             });
                         }
                     });
@@ -474,10 +558,9 @@ export function runScheduler(
                     const totalDurationSec = (lastSlice.startBeat - offsetBeat + maxSustainBeats) * beatDurationSeconds;
                     const timeUntilEndMs = (totalDurationSec - absoluteCurrentPlaybackTime + scheduleOffsetSec) * 1000;
 
-                    const endTimeout = setTimeout(() => {
+                    registerManagedTimeout(playbackTimeoutsRef, () => {
                         stopPlayback();
                     }, Math.max(0, timeUntilEndMs));
-                    playbackTimeoutsRef.current.push(endTimeout);
                 }
                 return;
             }
