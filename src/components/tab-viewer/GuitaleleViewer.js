@@ -400,9 +400,9 @@ export default function GuitaleleViewer({ scoreData }) {
                 <div className="d-flex flex-column gap-1" style={{ width: '140px', flexShrink: 0 }}>
 
                     {/* Row 1: Playback Controls */}
-                    <div className="btn-group bg-black p-1 rounded border border-secondary">
+                    <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '32px', alignItems: 'center' }}>
                         {!isPlaying ? (
-                            <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start">
+                            <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start" disabled={!(voice1Enabled || voice2Enabled || metronomeEnabled)}>
                                 <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                             </Button>
                         ) : isPaused ? (
@@ -419,8 +419,7 @@ export default function GuitaleleViewer({ scoreData }) {
                         </Button>
                     </div>
 
-                    {/* Row 2: BPM Slider */}
-                    <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center gap-2">
+                    <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center gap-2" style={{ height: '32px' }}>
                         <Form.Range
                             min="40"
                             max="240"
@@ -432,19 +431,62 @@ export default function GuitaleleViewer({ scoreData }) {
                         <span className="text-warning fw-bold font-monospace" style={{ fontSize: '10px', minWidth: '24px' }}>{bpm}</span>
                     </div>
 
-                    <div className="bg-black px-2 py-1.5 rounded border border-secondary d-flex flex-column gap-1.5">
-                        <div className="d-flex align-items-center justify-content-between">
-                            <span className="text-white-50 small fw-bold">V 1</span>
-                            <Form.Check type="switch" id="voice-toggle-0" label="" className="m-0" checked={voice1Enabled} disabled={isPlaying || !availableVoices.includes(1)} onChange={(e) => setVoice1Enabled(e.target.checked)} />
+                    <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
+
+                        {/* Line 1: V1 and V2 side-by-side */}
+                        <div className="d-flex align-items-center gap-2">
+                            {/* V1 - Takes up 50% width */}
+                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
+                                <span className="text-white-50 fw-bold font-monospace" style={{ fontSize: '10px' }}>V1</span>
+                                <Form.Check
+                                    type="switch"
+                                    id="voice-toggle-0"
+                                    label=""
+                                    className="m-0 d-flex align-items-center"
+                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
+                                    checked={voice1Enabled}
+                                    disabled={isPlaying || !availableVoices.includes(1)}
+                                    onChange={(e) => setVoice1Enabled(e.target.checked)}
+                                />
+                            </div>
+
+                            {/* Divider line between V1 and V2 */}
+                            <div className="border-start border-secondary" style={{ height: '12px' }}></div>
+
+                            {/* V2 - Takes up 50% width */}
+                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
+                                <span className="text-white-50 fw-bold font-monospace" style={{ fontSize: '10px' }}>V2</span>
+                                <Form.Check
+                                    type="switch"
+                                    id="voice-toggle-1"
+                                    label=""
+                                    className="m-0 d-flex align-items-center"
+                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
+                                    checked={voice2Enabled}
+                                    disabled={isPlaying || !availableVoices.includes(2)}
+                                    onChange={(e) => setVoice2Enabled(e.target.checked)}
+                                />
+                            </div>
                         </div>
-                        <div className="d-flex align-items-center justify-content-between">
-                            <span className="text-white-50 small fw-bold">V 2</span>
-                            <Form.Check type="switch" id="voice-toggle-1" label="" className="m-0" checked={voice2Enabled} disabled={isPlaying || !availableVoices.includes(2)} onChange={(e) => setVoice2Enabled(e.target.checked)} />
+
+                        {/* Thin divider between the voice row and metronome row */}
+                        <div className="border-top border-secondary-subtle opacity-25" style={{ margin: '2px 0' }}></div>
+
+                        {/* Line 2: Full Metronome spanning across the bottom */}
+                        <div className="d-flex align-items-center justify-content-between" style={{ height: '18px' }}>
+                            <span className="text-white-50 fw-bold font-monospace" style={{ fontSize: '10px' }}>Metronome</span>
+                            <Form.Check
+                                type="switch"
+                                id="metronome-toggle"
+                                label=""
+                                className="m-0 d-flex align-items-center"
+                                style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
+                                checked={metronomeEnabled}
+                                disabled={isPlaying}
+                                onChange={(e) => setMetronomeEnabled(e.target.checked)}
+                            />
                         </div>
-                        <div className="d-flex align-items-center justify-content-between">
-                            <span className="text-white-50 small fw-bold">M</span>
-                            <Form.Check type="switch" id="metronome-toggle" label="" className="m-0" checked={metronomeEnabled} disabled={isPlaying} onChange={(e) => setMetronomeEnabled(e.target.checked)} />
-                        </div>
+
                     </div>
 
                 </div>
@@ -452,7 +494,7 @@ export default function GuitaleleViewer({ scoreData }) {
                 <div
                     className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
                     style={{
-                        height: '100px',        // Fixed vertical length
+                        height: '135px',        // Fixed vertical length
                         overflowY: 'auto',       // Only the description scrolls
                         fontSize: '12px',
                         lineHeight: '1.2'
