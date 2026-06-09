@@ -8,11 +8,11 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
         if (!scoreData || !scoreData.measures) return null;
 
         const paddingX = 130;
-        const lineSpacing = 22;
-        const trebleTopY = 130;
-        const bassTopY = 270;
-        const tabTopY = 410;
-        const rhythmTopY = 590;
+        const lineSpacing = 18;
+        const trebleTopY = 100;
+        const bassTopY = trebleTopY + 120;
+        const tabTopY = bassTopY + 120;
+        const rhythmTopY = tabTopY + 180;
 
         const timeSigTop = scoreData.timeSignature?.split("/")[0] || "4";
         const timeSigBottom = scoreData.timeSignature?.split("/")[1] || "4";

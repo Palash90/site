@@ -518,7 +518,7 @@ export default function GuitaleleViewer({ scoreData }) {
                     <tbody>
                         {computedRows.map((row, index) => {
                             // Dynamically adjust padding between layout lines based on screen real estate profile
-                            const rowPaddingBottom = measuresPerRow === 1 ? '20px' : measuresPerRow === 2 ? '32px' : '500px';
+                            const rowPaddingBottom = measuresPerRow === 1 ? '20px' : measuresPerRow === 2 ? '32px' : '48px';
 
                             return (
                                 <tr key={index}>
