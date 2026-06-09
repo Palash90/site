@@ -331,7 +331,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                 {ev.processedPitches.map((p, pIdx) => (
                                                     <div key={pIdx} style={{ fontSize: '11px', color: '#dfe6e9' }}>
                                                         • {p.noteName} - 
-                                                        <span style={{ color: '#a1d1e2', marginLeft: '4px' }}>String {p.string} Fret{p.fret}</span>
+                                                        <span style={{ color: '#a1d1e2', marginLeft: '4px' }}>String {p.string} Fret {p.fret}</span>
                                                     </div>
                                                 ))}
                                             </div>
