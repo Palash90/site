@@ -697,9 +697,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                 const numFlags = ev.beatValue <= 0.25 ? 2 : ev.beatValue <= 0.75 ? 1 : 0;
 
                                                 return (
-                                                    <g
-                                                        filter={glowFilter}
-                                                    >
+                                                    <g>
                                                         <line
                                                             x1={xPos}
                                                             y1={highestY * scaleY}
@@ -729,7 +727,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                 const numFlags = ev.beatValue <= 0.25 ? 2 : ev.beatValue <= 0.75 ? 1 : 0;
 
                                                 return (
-                                                    <g filter={glowFilter}                                                    >
+                                                    <g>
                                                         <line
                                                             x1={xPos}
                                                             y1={highestY * scaleY}
