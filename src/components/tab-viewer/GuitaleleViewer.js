@@ -263,11 +263,12 @@ export default function GuitaleleViewer({ scoreData }) {
 
         if (!targetEvent) return [];
 
-        // Fetch ALL events occurring at this exact measure and beat slice across all voices
+        // Fetch all playable events at this beat. Metronome-only beats should not drive note highlighting.
         return allEvents.filter(
             ev =>
                 ev.measureNumber === targetEvent.measureNumber &&
-                ev.startBeat === targetEvent.startBeat
+                ev.startBeat === targetEvent.startBeat &&
+                !ev.isMetronomeTick
         );
     }, [activeTargetIndex, scoreLayout]);
 
@@ -572,5 +573,4 @@ export default function GuitaleleViewer({ scoreData }) {
         </div>
     );
 }
-
 

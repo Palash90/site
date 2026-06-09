@@ -25,6 +25,10 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
         const calculatedHeight = maxY - minY;
 
         const fretFontSize = 16 * scaleY + 'px';
+        const activePlaybackEvent = rowEvents.find(
+            ev => ev.globalIndex === playbackIndex
+        );
+
         return (
             <div
                 key={`row-${rowIdx}`}
@@ -331,6 +335,13 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             : rhythm1TopY) * scaleY;
                         const restTabOffset = (ev.voice === 2 ? 16 : -16) * scaleY;
                         const isMuted = (ev.voice === 1 && !voice1Enabled) || (ev.voice === 2 && !voice2Enabled);
+                        const isActiveMetronomeTick = ev.isMetronomeTick &&
+                            metronomeEnabled &&
+                            isPlaying &&
+                            !isPaused &&
+                            activePlaybackEvent &&
+                            activePlaybackEvent.measureNumber === ev.measureNumber &&
+                            activePlaybackEvent.startBeat === ev.startBeat;
 
                         return (
                             <g key={`node-${idx}`}>
@@ -345,7 +356,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                         rx={4} />
                                 )}
 
-                                {isPaused && playbackIndex === ev.globalIndex && (
+                                {isPaused && playbackIndex === ev.globalIndex && !ev.isMetronomeTick && (
                                     <rect
                                         data-paused-indicator="true"
                                         x={ev.cx - SLOT_WIDTH / 2 + 2}
@@ -398,9 +409,10 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                             x2={ev.cx}
                                             y2={(rhythmTopY - 50) * scaleY}  // Extends down to the rhythm lane base
                                             stroke={ev.isDownbeat ? DARK_THEME.metronomeDownBeat : DARK_THEME.metronomeUpBeat} // Orange for downbeat (1), neutral gray for other beats
-                                            strokeWidth={ev.isDownbeat ? "2" : "1.5"}
+                                            strokeWidth={isActiveMetronomeTick ? "3" : ev.isDownbeat ? "2" : "1.5"}
                                             strokeDasharray="4 4" // Creates the dotted/dashed effect
-                                            opacity={ev.isDownbeat ? "0.7" : "0.4"} // Subtly blends it into the background
+                                            opacity={isActiveMetronomeTick ? "1" : ev.isDownbeat ? "0.7" : "0.4"} // Subtly blends it into the background
+                                            filter={isActiveMetronomeTick ? "url(#note-glow)" : "none"}
                                         />
                                     </g>
                                 )}
