@@ -126,7 +126,7 @@ export const calculateSchedulerBoundaries = bpm => {
     );
 
     // Schedule Ahead Time: The safety padding window (in seconds).
-    const scheduleAheadTime = (lookaheadInterval * 3.5) / 1000;
+    const scheduleAheadTime = (lookaheadInterval * 10) / 1000;
 
     return { lookaheadInterval, scheduleAheadTime };
 };
