@@ -313,7 +313,7 @@ export function pausePlaying(isPlaying, isPaused, lookaheadTimerRef, playbackTim
     };
 }
 
-export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop, voice1Enabled, voice2Enabled) {
+export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop, voice1Enabled, voice2Enabled, metronomeEnabled) {
     return (fromMeasure = 1) => {
         if (isPlaying || !scoreLayout || !isAudioCompiled) return;
 
@@ -322,6 +322,11 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
             audioCtxRef.current = new (
                 window.AudioContext || window.webkitAudioContext
             )();
+        }
+
+        // Ensure the AudioContext is running (some browsers start it suspended)
+        if (audioCtxRef.current.state === "suspended") {
+            audioCtxRef.current.resume();
         }
 
         setIsPlaying(true);
@@ -338,10 +343,8 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
         const startOffsetBeat = targetedEvents.length > 0 ? targetedEvents[0].startBeat : 0;
         playbackStartBeatRef.current = startOffsetBeat;
 
-        console.log(preCompiledTimelineRef.current);
-
         // Group our precompiled notes by their exact startBeat timestamp
-        const notesForRun = preCompiledTimelineRef.current.filter(
+        const instrumentNotes = preCompiledTimelineRef.current.filter(
             n => n.startBeat >= startOffsetBeat
         ).filter(n => {
             if (n.voice === 1 && !voice1Enabled) return false;
@@ -349,11 +352,42 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
             return true;
         });
 
-        console.log("Scheduling notes for playback run:", notesForRun);
-        
+        const metronomeTicks = [];
+        if (metronomeEnabled) {
+            // Map structural positions explicitly based on real, parsed metric positions
+            // or find layout entries that designate standard musical beats
+            targetedEvents.forEach(ev => {
+                // Procedural generation fallback: if explicit tags are absent, 
+                // look for chord/note events or raw layout elements to latch ticks onto, 
+                // or fall back to checking if it lands directly on whole integer timestamps.
+                const isExplicitTick = ev.isMetronomeTick;
+                const isIntegerBeat = ev.beatOffset !== undefined && (ev.beatOffset % 1.0 === 0);
+
+                if (isExplicitTick || isIntegerBeat) {
+                    // Prevent duplicate metronome ticks at the exact same startBeat moment
+                    const isDuplicate = metronomeTicks.some(tick => tick.startBeat === ev.startBeat);
+                    if (!isDuplicate) {
+                        metronomeTicks.push({
+                            startBeat: ev.startBeat,
+                            globalIndex: ev.globalIndex,
+                            voice: 0,
+                            isMetronomeTick: true,
+                            // Identify downbeats (beat 1 of a measure) safely
+                            isDownbeat: ev.isDownbeat || (ev.beatOffset === 0),
+                            segments: [],
+                            preCalculatedJitter: 0,
+                            preCalculatedVelocity: 1.0
+                        });
+                    }
+                }
+            });
+        }
+
+        const combinedTimeline = [...instrumentNotes, ...metronomeTicks];
+
         // Create an ordered timeline map of unique beat moments
         const uniqueBeatsMap = {};
-        notesForRun.forEach(note => {
+        combinedTimeline.forEach(note => {
             if (!uniqueBeatsMap[note.startBeat]) {
                 uniqueBeatsMap[note.startBeat] = {
                     startBeat: note.startBeat,
@@ -388,6 +422,34 @@ export function resumePlaying(isPlaying, isPaused, audioCtxRef, playbackStartTim
     };
 }
 
+/**
+ * Synthesizes a clean metronome click to keep structural timing clear.
+ */
+export const playMetronomeClick = (ctx, startTime, isDownbeat = false) => {
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    // High accent on beat 1 (e.g., 1200Hz), lower click on subsequent beats (800Hz)
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(isDownbeat ? 1200 : 800, startTime);
+
+    // Ultra-snappy volume envelope to minimize bleed-over
+    gainNode.gain.setValueAtTime(0.0, startTime);
+    gainNode.gain.linearRampToValueAtTime(isDownbeat ? 0.35 : 0.22, startTime + 0.002);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
+
+    osc.connect(gainNode);
+    // Connect into your centralized master channels
+    if (ctx.masterGain) {
+        gainNode.connect(ctx.masterGain);
+    } else {
+        gainNode.connect(ctx.destination);
+    }
+
+    osc.start(startTime);
+    osc.stop(startTime + 0.06);
+};
+
 export function runScheduler(
     playbackStartBeatRef,
     audioCtxRef,
@@ -401,7 +463,8 @@ export function runScheduler(
     playbackTimeoutsRef,
     stopPlayback,
     lookaheadTimerRef,
-    lookaheadInterval
+    lookaheadInterval,
+    metronomeEnabled
 ) {
     return (startOffsetBeat = null) => {
         const offsetBeat = startOffsetBeat !== null
@@ -508,6 +571,13 @@ export function runScheduler(
                 // 1. Dispatch audio nodes instantly to the Web Audio timeline queue
                 // (Using your exact, pristine playHumanizedGuitaleleNote implementation)
                 beatSlice.notes.forEach(note => {
+                    console.log(note)
+                    if (note.isMetronomeTick) {
+
+                        playMetronomeClick(ctx, finalPluckTime, note.isDownbeat);
+                        return; // Skip guitalele modeling logic for this event block
+                    }
+
                     const runtimeSegments = note.segments.map(seg => ({
                         ...seg,
                         duration: seg.duration * beatDurationSeconds
@@ -531,6 +601,9 @@ export function runScheduler(
 
                 // Process tied notes visual tracking efficiently
                 beatSlice.notes.forEach(note => {
+                    if (note.isMetronomeTick) {
+                        return
+                    }
                     note.segments.forEach(seg => {
                         if (seg.tiedEventIndices) {
                             seg.tiedEventIndices.forEach(tiedEvent => {

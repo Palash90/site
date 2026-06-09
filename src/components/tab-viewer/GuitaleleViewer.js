@@ -93,14 +93,10 @@ export default function GuitaleleViewer({ scoreData }) {
 
             allEvents.forEach((ev, evIdx) => {
                 if (ev.isMetronomeTick) {
-                    compiledAudioTimeline.push({
-                        absoluteBeat: ev.startBeat,
-                        voice: 0,
-                        isDownbeat: ev.isDownbeat,
-                        isMetronomeTick: true,
-                        pitches: [] // Metronome doesn't need standard pitch arrays
-                    });
-                    return; // Skip standard pitch processing for this event
+                    // Metronome ticks are scheduled separately by the player scheduler;
+                    // don't include them in the precompiled instrument timeline to avoid
+                    // duplicate scheduling or shape mismatches.
+                    return;
                 }
 
                 if (ev.isRest) {
@@ -235,11 +231,11 @@ export default function GuitaleleViewer({ scoreData }) {
 
     const pausePlayback = pausePlaying(isPlaying, isPaused, lookaheadTimerRef, playbackTimeoutsRef, audioCtxRef, playbackStartTimeRef, pausedTimeRef, setIsPaused);
 
-    const runSchedulerLoop = runScheduler(playbackStartBeatRef, audioCtxRef, bpm, playbackStartTimeRef, pausedTimeRef, nextBeatIndexRef, currentTimelineBeatsRef, scheduleAheadTime, setPlaybackIndex, playbackTimeoutsRef, stopPlayback, lookaheadTimerRef, lookaheadInterval);
+    const runSchedulerLoop = runScheduler(playbackStartBeatRef, audioCtxRef, bpm, playbackStartTimeRef, pausedTimeRef, nextBeatIndexRef, currentTimelineBeatsRef, scheduleAheadTime, setPlaybackIndex, playbackTimeoutsRef, stopPlayback, lookaheadTimerRef, lookaheadInterval, metronomeEnabled);
 
     const resumePlayback = resumePlaying(isPlaying, isPaused, audioCtxRef, playbackStartTimeRef, setIsPaused, runSchedulerLoop);
 
-    const startPlayback = startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop, voice1Enabled, voice2Enabled);
+    const startPlayback = startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop, voice1Enabled, voice2Enabled, metronomeEnabled);
 
 
     useEffect(() => {
@@ -555,7 +551,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                             setHoveredNoteIndex,
                                             measuresPerRow,
                                             voice1Enabled,
-                                            voice2Enabled
+                                            voice2Enabled,
+                                            metronomeEnabled
                                         )(row, index)}
                                     </td>
                                 </tr>

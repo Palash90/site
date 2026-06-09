@@ -390,6 +390,29 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                             setHoveredNoteIndex(ev.globalIndex);
                                     }} />
 
+                                {/* Metronome visual marker for voice 0 */}
+                                {ev.isMetronomeTick && (
+                                    <g>
+                                        <circle
+                                            cx={ev.cx}
+                                            cy={(trebleTopY - 12) * scaleY}
+                                            r={5 * scaleY}
+                                            fill="#f97316"
+                                            stroke="#ffedd5"
+                                            strokeWidth={1}
+                                        />
+                                        <text
+                                            x={ev.cx}
+                                            y={(trebleTopY - 4) * scaleY}
+                                            textAnchor="middle"
+                                            className="text-xs font-mono"
+                                            fill="#ffe8c5"
+                                        >
+                                            {ev.isDownbeat ? "1" : "•"}
+                                        </text>
+                                    </g>
+                                )}
+
                                 {ev.isRest ? (
                                     <g style={{ opacity: isMuted ? 0.4 : 1 }}>
                                         {/* Whole and Half rest rendering based on beatValue */}
@@ -449,6 +472,8 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                 )}
                                             </>
                                         )}
+
+
 
                                         <rect
                                             x={ev.cx - 8}

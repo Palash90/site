@@ -51,8 +51,9 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
                     isRest: false,
                     isMetronomeTick: true,
                     isDownbeat: click === 0, // Useful for adding visual accent to beat 1
+                    rhythm: ":", // Default rhythm label for metronome ticks
                     pitches: [],
-                    descriptions: []
+                    descriptions: ["Metronome"]
                 };
             }
 
