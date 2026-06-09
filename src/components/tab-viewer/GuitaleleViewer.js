@@ -434,7 +434,7 @@ export default function GuitaleleViewer({ scoreData }) {
                             id="voice-toggle-0"
                             label="V 1"
                             checked={voice1Enabled}
-                            disabled={!availableVoices.includes(1)}
+                            disabled={isPlaying || !availableVoices.includes(1)}
                             onChange={(e) => { setVoice1Enabled(e.target.checked) }}
                         />
                         <Form.Check
@@ -442,7 +442,7 @@ export default function GuitaleleViewer({ scoreData }) {
                             id="voice-toggle-1"
                             label="V 2"
                             checked={voice2Enabled}
-                            disabled={!availableVoices.includes(2)}
+                            disabled={isPlaying || !availableVoices.includes(2)}
                             onChange={(e) => { setVoice2Enabled(e.target.checked) }}
                         />
                     </div>
@@ -500,7 +500,9 @@ export default function GuitaleleViewer({ scoreData }) {
                                             isPaused,
                                             playbackIndex,
                                             setHoveredNoteIndex,
-                                            measuresPerRow // <-- Pass the configuration parameter down
+                                            measuresPerRow,
+                                            voice1Enabled,
+                                            voice2Enabled
                                         )(row, index)}
                                     </td>
                                 </tr>

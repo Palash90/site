@@ -1,45 +1,43 @@
 export const DARK_THEME = {
-    // --- 1. Base Backgrounds ---
     bgPage: "bg-slate-950",
     bgScore: "bg-slate-900",
     borderScore: "border-transparent",
 
-    // --- 2. Structural Lines (Muted to let notes pop) ---
-    lineStaff: "#4a4a83", // Zinc 800 - dark, clean background lines
-    lineTab: "#57576e", // Slightly darker zinc so it doesn't fight the notes
-    lineBar: "#103466", // Gray 600 - subtle but distinct division
-    lineTie: "#8aa8d1", // Slate 500
+    lineStaff: "#4a4a83",
+    lineTab: "#57576e",
+    lineBar: "#103466",
+    lineTie: "#8aa8d1",
 
-    // --- 3. Static UI Text & Symbols ---
-    textClef: "#64748b", // Slate 500 - visible but secondary
-    textTimeSig: "#fbbf24", // Amber 400 - nice gold accent
-    textTabLabel: "#7a60b6", // Slate 600
-    textTabString: "#911c6e", // Slate 600
-    bgTabRect: "#0f172a", // Matches bgScore exactly for seamless masking
-    textTabNumber: "#e2e8f0", // Slate 300 - clear baseline readability
+    textClef: "#64748b",
+    textTimeSig: "#fbbf24",
+    textTabLabel: "#7a60b6",
+    textTabString: "#911c6e",
+    bgTabRect: "#0f172a",
+    textTabNumber: "#e2e8f0",
 
-    // --- 4. Core Musical Elements (Voice 1 Default) ---
-    lineStem: "#38bdf8", // Sky 400
-    fillNote: "#38bdf8", // Sky 400
-    fillRest: "#f43f5e", // Rose 500 - distinctly different from playable notes
-    textRhythm: "#94a3b8", // Slate 400
+    lineStem: "#38bdf8",
+    fillNote: "#38bdf8",
+    fillRest: "#f43f5e",
+    textRhythm: "#94a3b8",
+    inactiveVoiceColor: "#8395af",
 
-    // --- 5. Polyphonic Voices (High Contrast) ---
-    voice1Color: "#21cea3", // Sky 400 (Cool)
-    voice1Rhythm: "#818cf8", // Indigo 400 (Cool contrast)
+    voice1Color: "#21cea3",
+    voice1Rhythm: "#818cf8",
+    voice1RhytmBg: "rgba(149, 165, 128, 0.08)",
 
-    voice2Color: "#fb923c", // Orange 400 (Warm)
-    voice2Rhythm: "#f472b6", // Pink 400 (Warm contrast)
+    voice2Color: "#fb923c",
+    voice2Rhythm: "#f472b6",
+    voice2RhythmBg: "rgba(244, 114, 182, 0.08)",
 
-    // --- 6. Hover & Interaction (The Glow) ---
-    fillHoverHighlight: "rgba(56, 189, 248, 0.08)", // Very subtle sky-blue glass effect
-    fillNoteHover: "#7dd3fc", // Sky 300
-    strokeNoteHover: "#ffffff", // Pure white for maximum pop when hovered
+    fillHoverHighlight: "rgba(56, 189, 248, 0.08)",
+    fillNoteHover: "#7dd3fc",
+    strokeNoteHover: "#ffffff",
     textTabNumberHover: "#ffffff",
-    textRhythmHover: "#f8fafc", // Slate 50
+    textRhythmHover: "#f8fafc",
 
-    // --- 7. System States ---
-    bgInvalidMeasure: "rgba(225, 29, 72, 0.15)" // Rose 600 transparent
+    bgInvalidMeasure: "rgba(225, 29, 72, 0.15)",
+
+
 };
 
 export const CHROMATIC_MAP = {
