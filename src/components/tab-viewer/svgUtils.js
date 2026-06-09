@@ -1,6 +1,6 @@
 import { DARK_THEME, getFlagPath } from "./guitaleleViewerUtils";
 
-export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, measuresPerRow, voice1Enabled, voice2Enabled, metronomeEnabled) {
+export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, handleNoteClick, measuresPerRow, voice1Enabled, voice2Enabled, metronomeEnabled) {
     return (
         {
             rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX
@@ -429,7 +429,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                     }}
                                     onClick={() => {
                                         if (!isPlaying || isPaused)
-                                            setHoveredNoteIndex(ev.globalIndex);
+                                            handleNoteClick(ev.globalIndex);
                                     }} />
 
 

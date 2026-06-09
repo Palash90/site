@@ -19,6 +19,7 @@ import { useBuildScoreLayout } from "./scoreBuilder";
 
 export default function GuitaleleViewer({ scoreData }) {
     const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
+    const [clickedNoteIndex, setClickedNoteIndex] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [playbackIndex, setPlaybackIndex] = useState(null);
@@ -72,6 +73,12 @@ export default function GuitaleleViewer({ scoreData }) {
         return () =>
             window.removeEventListener("resize", updateLayoutBoundaries);
     }, []);
+
+    useEffect(() => {
+        if (!isPlaying) {
+            setClickedNoteIndex(null);
+        }
+    }, [isPlaying]);
 
     const scoreLayout = useBuildScoreLayout(scoreData, slotWidth, measuresPerRow);
 
@@ -250,7 +257,16 @@ export default function GuitaleleViewer({ scoreData }) {
         return () => stopPlayback();
     }, []);
 
-    const activeTargetIndex = (isPlaying && !isPaused) ? playbackIndex : hoveredNoteIndex;
+    const activeTargetIndex = (isPlaying && !isPaused) ? playbackIndex : (hoveredNoteIndex !== null ? hoveredNoteIndex : clickedNoteIndex);
+
+    const handleNoteClick = (globalIndex) => {
+        if (isPlaying) return; // Do nothing if the score is playing
+
+        setClickedNoteIndex(prevIndex => {
+            // If they click the already selected note, toggle it off
+            return prevIndex === globalIndex ? null : globalIndex;
+        });
+    };
 
     // Replace `activeEvent` with `activeEvents` and `activeIndices`
     const activeEvents = useMemo(() => {
@@ -586,6 +602,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                             isPaused,
                                             playbackIndex,
                                             setHoveredNoteIndex,
+                                            handleNoteClick,
                                             measuresPerRow,
                                             voice1Enabled && availableVoices.includes(1),
                                             voice2Enabled && availableVoices.includes(2),
