@@ -418,7 +418,8 @@ export default function GuitaleleViewer({ scoreData }) {
                     {/* Row 1: Playback Controls */}
                     <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '32px', alignItems: 'center' }}>
                         {!isPlaying ? (
-                            <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start" disabled={!(voice1Enabled || voice2Enabled || metronomeEnabled)}>
+                            <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start"
+                                disabled={!((voice1Enabled && availableVoices.includes(1)) || (voice2Enabled && availableVoices.includes(2)) || metronomeEnabled)}>
                                 <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                             </Button>
                         ) : isPaused ? (
@@ -460,7 +461,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                     label=""
                                     className="m-0 d-flex align-items-center"
                                     style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                    checked={voice1Enabled}
+                                    checked={voice1Enabled && availableVoices.includes(1)}
                                     disabled={isPlaying || !availableVoices.includes(1)}
                                     onChange={(e) => setVoice1Enabled(e.target.checked)}
                                 />
@@ -478,7 +479,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                     label=""
                                     className="m-0 d-flex align-items-center"
                                     style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                    checked={voice2Enabled}
+                                    checked={voice2Enabled && availableVoices.includes(2)}
                                     disabled={isPlaying || !availableVoices.includes(2)}
                                     onChange={(e) => setVoice2Enabled(e.target.checked)}
                                 />
@@ -559,8 +560,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                             playbackIndex,
                                             setHoveredNoteIndex,
                                             measuresPerRow,
-                                            voice1Enabled,
-                                            voice2Enabled,
+                                            voice1Enabled && availableVoices.includes(1),
+                                            voice2Enabled && availableVoices.includes(2),
                                             metronomeEnabled
                                         )(row, index)}
                                     </td>

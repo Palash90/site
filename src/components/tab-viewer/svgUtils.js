@@ -48,14 +48,14 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <defs>
                         <filter
                             id="note-glow"
-                            filterUnits="userSpaceOnUse" // <--- CRITICAL FIX
-                            x="-20"                      // Fixed pixel padding around the line
+                            filterUnits="userSpaceOnUse" 
+                            x="-20"                      
                             y="-20"
-                            width="100%"                 // Spans the full space comfortably
+                            width="100%"                 
                             height="100%"
                         >
                             <feGaussianBlur
-                                stdDeviation="3"
+                                stdDeviation="2"
                                 result="blur" />
                             <feMerge>
                                 <feMergeNode in="blur" />
@@ -63,6 +63,36 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             </feMerge>
                         </filter>
                     </defs>
+
+                    {metronomeEnabled && (
+                        <g id="metronome-tick-layer" pointerEvents="none">
+                            {rowEvents
+                                .filter(ev => ev.isMetronomeTick)
+                                .map((ev, mIdx) => {
+                                    const isActiveMetronomeTick =
+                                        isPlaying &&
+                                        !isPaused &&
+                                        activePlaybackEvent &&
+                                        activePlaybackEvent.measureNumber === ev.measureNumber &&
+                                        activePlaybackEvent.startBeat === ev.startBeat;
+
+                                    return (
+                                        <line
+                                            key={`metro-tick-${mIdx}`}
+                                            x1={ev.cx}
+                                            y1={(trebleTopY - 30) * scaleY}
+                                            x2={ev.cx + 0.01} // Keep the filter mobile-fix clip tweak
+                                            y2={(rhythmTopY - 50) * scaleY}
+                                            stroke={ev.isDownbeat ? DARK_THEME.metronomeDownBeat : DARK_THEME.metronomeUpBeat}
+                                            strokeWidth={isActiveMetronomeTick ? "3" : ev.isDownbeat ? "2" : "1.5"}
+                                            strokeDasharray="4 4"
+                                            opacity={isActiveMetronomeTick ? "1" : ev.isDownbeat ? "0.7" : "0.4"}
+                                            filter={isActiveMetronomeTick ? "url(#note-glow)" : "none"}
+                                        />
+                                    );
+                                })}
+                        </g>
+                    )}
 
                     <path
                         d={`M ${paddingX - 115} ${trebleTopY * scaleY} L ${paddingX - 122} ${trebleTopY * scaleY} L ${paddingX - 122} ${(bassTopY + 4 * lineSpacing) * scaleY} L ${paddingX - 115} ${(bassTopY + 4 * lineSpacing) * scaleY}`}
@@ -402,21 +432,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                             setHoveredNoteIndex(ev.globalIndex);
                                     }} />
 
-                                {ev.isMetronomeTick && metronomeEnabled && (
-                                    <g pointerEvents="none">
-                                        <line
-                                            x1={ev.cx}
-                                            y1={(trebleTopY - 30) * scaleY} // Starts slightly above the treble staff
-                                            x2={ev.cx + 0.01}
-                                            y2={(rhythmTopY - 50) * scaleY}  // Extends down to the rhythm lane base
-                                            stroke={ev.isDownbeat ? DARK_THEME.metronomeDownBeat : DARK_THEME.metronomeUpBeat} // Orange for downbeat (1), neutral gray for other beats
-                                            strokeWidth={isActiveMetronomeTick ? "3" : ev.isDownbeat ? "2" : "1.5"}
-                                            strokeDasharray="4 4" // Creates the dotted/dashed effect
-                                            opacity={isActiveMetronomeTick ? "1" : ev.isDownbeat ? "0.7" : "0.4"} // Subtly blends it into the background
-                                            filter={isActiveMetronomeTick ? "url(#note-glow)" : "none"}
-                                        />
-                                    </g>
-                                )}
+
 
                                 {ev.isRest ? (
                                     <g style={{ opacity: isMuted ? 0.4 : 1 }}>
