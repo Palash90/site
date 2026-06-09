@@ -611,46 +611,21 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                             })()}
 
                                                         {ev.isTiedToNext &&
-                                                            pitch.fret !==
-                                                            null &&
+                                                            pitch.fret !== null &&
                                                             (() => {
                                                                 const nextEv = rowEvents
-                                                                    .slice(
-                                                                        idx +
-                                                                        1
-                                                                    )
-                                                                    .find(
-                                                                        e => e.voice ===
-                                                                            ev.voice &&
-                                                                            !e.isRest
-                                                                    );
+                                                                    .slice(idx + 1)
+                                                                    .find(e => e.voice === ev.voice && !e.isRest);
                                                                 if (!nextEv)
                                                                     return null;
 
-                                                                const targetPitch = nextEv.processedPitches.find(
-                                                                    np => np.string ===
-                                                                        pitch.string
-                                                                );
-                                                                if (!targetPitch ||
-                                                                    targetPitch.fret ===
-                                                                    null)
+                                                                const targetPitch = nextEv.processedPitches.find(np => np.string === pitch.string);
+                                                                if (!targetPitch || targetPitch.fret === null)
                                                                     return null;
 
-                                                                const isTieActive = activeIndices.includes(
-                                                                    ev.globalIndex
-                                                                ) ||
-                                                                    activeIndices.includes(
-                                                                        nextEv.globalIndex
-                                                                    );
-                                                                const tieStrokeColor = isTieActive
-                                                                    ? ev.voice ===
-                                                                        2
-                                                                        ? DARK_THEME.voice2Color
-                                                                        : DARK_THEME.voice1Color
-                                                                    : DARK_THEME.lineTie;
-                                                                const tieGlow = isTieActive
-                                                                    ? "url(#note-glow)"
-                                                                    : "none";
+                                                                const isTieActive = activeIndices.includes(ev.globalIndex) || activeIndices.includes(nextEv.globalIndex);
+                                                                const tieStrokeColor = isTieActive ? ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color : DARK_THEME.lineTie;
+                                                                const tieGlow = isTieActive ? "url(#note-glow)" : "none";
 
                                                                 if (targetPitch.midi ===
                                                                     pitch.midi) {
@@ -659,25 +634,19 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                             d={`M ${ev.cx + 4} ${currentTabY} Q ${(ev.cx + nextEv.cx) / 2} ${currentTabY + 12 * scaleY} ${nextEv.cx - 4} ${targetPitch.tabY * scaleY}`}
                                                                             fill="none"
                                                                             stroke={tieStrokeColor}
-                                                                            strokeWidth={isTieActive
-                                                                                ? "2.5"
-                                                                                : "1.8"}
+                                                                            strokeWidth={isTieActive ? "2.5" : "1.8"}
                                                                             strokeLinecap="round"
                                                                             filter={tieGlow} />
                                                                     );
                                                                 } else {
                                                                     return (
                                                                         <line
-                                                                            x1={ev.cx +
-                                                                                12}
+                                                                            x1={ev.cx + 12}
                                                                             y1={currentTabY}
-                                                                            x2={nextEv.cx -
-                                                                                12}
+                                                                            x2={nextEv.cx - 12}
                                                                             y2={targetPitch.tabY * scaleY}
                                                                             stroke={tieStrokeColor}
-                                                                            strokeWidth={isTieActive
-                                                                                ? "3"
-                                                                                : "2"}
+                                                                            strokeWidth={isTieActive ? "3" : "2"}
                                                                             strokeLinecap="round"
                                                                             filter={tieGlow} />
                                                                     );
@@ -685,25 +654,19 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                             })()}
 
                                                         <rect
-                                                            x={ev.cx -
-                                                                13}
-                                                            y={currentTabY -
-                                                                11 * scaleY}
+                                                            x={ev.cx - 13}
+                                                            y={currentTabY - 11 * scaleY}
                                                             width={20}
                                                             height={18 * scaleY}
                                                             fill="#0f172a"
                                                             stroke={activeStrokeColor}
-                                                            strokeWidth={isActive
-                                                                ? "2"
-                                                                : "1.5"}
+                                                            strokeWidth={isActive ? "2" : "1.5"}
                                                             filter={glowFilter}
                                                             rx={3} />
 
                                                         <text
-                                                            x={ev.cx -
-                                                                3}
-                                                            y={currentTabY +
-                                                                3.2 * scaleY}
+                                                            x={ev.cx - 3}
+                                                            y={currentTabY + 3.2 * scaleY}
                                                             textAnchor="middle"
                                                             className="font-sans tracking-wide"
                                                             style={{ fontSize: fretFontSize, fontWeight: "600" }}
@@ -747,12 +710,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                         {numFlags >
                                                             0 && (
                                                                 <path
-                                                                    d={getFlagPath(
-                                                                        xPos,
-                                                                        extY,
-                                                                        stemDown,
-                                                                        numFlags
-                                                                    )}
+                                                                    d={getFlagPath(xPos, extY, stemDown, numFlags)}
                                                                     fill={activeStrokeColor} />
                                                             )}
                                                     </g>
@@ -778,17 +736,12 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                             x2={xPos}
                                                             y2={extY}
                                                             stroke={activeStrokeColor}
-                                                            strokeWidth={9 * scaleY}
+                                                            strokeWidth={1.6 * scaleY}
                                                         />
                                                         {numFlags >
                                                             0 && (
                                                                 <path
-                                                                    d={getFlagPath(
-                                                                        xPos,
-                                                                        extY,
-                                                                        stemDown,
-                                                                        numFlags
-                                                                    )}
+                                                                    d={getFlagPath(xPos, extY, stemDown, numFlags)}
                                                                     fill={activeStrokeColor} />
                                                             )}
                                                     </g>
