@@ -313,7 +313,7 @@ export function pausePlaying(isPlaying, isPaused, lookaheadTimerRef, playbackTim
     };
 }
 
-export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop) {
+export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop, voice1Enabled, voice2Enabled) {
     return (fromMeasure = 1) => {
         if (isPlaying || !scoreLayout || !isAudioCompiled) return;
 
@@ -338,11 +338,19 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
         const startOffsetBeat = targetedEvents.length > 0 ? targetedEvents[0].startBeat : 0;
         playbackStartBeatRef.current = startOffsetBeat;
 
+        console.log(preCompiledTimelineRef.current);
+
         // Group our precompiled notes by their exact startBeat timestamp
         const notesForRun = preCompiledTimelineRef.current.filter(
             n => n.startBeat >= startOffsetBeat
-        );
+        ).filter(n => {
+            if (n.voice === 1 && !voice1Enabled) return false;
+            if (n.voice === 2 && !voice2Enabled) return false;
+            return true;
+        });
 
+        console.log("Scheduling notes for playback run:", notesForRun);
+        
         // Create an ordered timeline map of unique beat moments
         const uniqueBeatsMap = {};
         notesForRun.forEach(note => {

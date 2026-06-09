@@ -27,6 +27,9 @@ export default function GuitaleleViewer({ scoreData }) {
     const containerRef = useRef(null);
     const [isAudioCompiled, setIsAudioCompiled] = useState(false);
 
+    const [voice1Enabled, setVoice1Enabled] = useState(true);
+    const [voice2Enabled, setVoice2Enabled] = useState(true);
+
     const lookaheadTimerRef = useRef(null);
 
     const { lookaheadInterval, scheduleAheadTime } = useMemo(() => {
@@ -203,6 +206,18 @@ export default function GuitaleleViewer({ scoreData }) {
         return () => clearTimeout(timer);
     }, [scoreLayout]);
 
+    // Extract an array of all unique voice IDs present in the score
+    const availableVoices = useMemo(() => {
+        if (!scoreLayout || !scoreLayout.computedRows) return [];
+
+        const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
+        const voiceIds = allEvents.map(ev => ev.voice);
+
+        // Using a Set eliminates duplicates, then Array.from turns it back into a sorted array
+        return Array.from(new Set(voiceIds)).sort((a, b) => a - b);
+    }, [scoreLayout]);
+
+    console.log("Available voices in score:", availableVoices, voice1Enabled, voice2Enabled);
 
     const stopPlayback = stopPlaying(lookaheadTimerRef, playbackTimeoutsRef, setIsPlaying, setIsPaused, setPlaybackIndex, pausedTimeRef, audioCtxRef);
 
@@ -212,7 +227,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
     const resumePlayback = resumePlaying(isPlaying, isPaused, audioCtxRef, playbackStartTimeRef, setIsPaused, runSchedulerLoop);
 
-    const startPlayback = startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop);
+    const startPlayback = startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRef, setIsPlaying, setIsPaused, pausedTimeRef, playbackStartTimeRef, currentPlaybackEventsRef, playbackStartBeatRef, preCompiledTimelineRef, currentTimelineBeatsRef, nextBeatIndexRef, runSchedulerLoop, voice1Enabled, voice2Enabled);
 
 
     useEffect(() => {
@@ -381,11 +396,8 @@ export default function GuitaleleViewer({ scoreData }) {
         >
             <div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
 
-                {/* LEFT SIDEBAR: Controls */}
-                {/* Using a grid to keep items compact and equal in height to the desc area */}
                 <div className="d-flex flex-column gap-1" style={{ width: '140px', flexShrink: 0 }}>
 
-                    {/* Row 1: Buttons */}
                     <div className="btn-group bg-black p-1 rounded border border-secondary">
                         {!isPlaying ? (
                             <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start">
@@ -405,7 +417,6 @@ export default function GuitaleleViewer({ scoreData }) {
                         </Button>
                     </div>
 
-                    {/* Row 2: Compact BPM Control */}
                     <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center gap-2">
                         <Form.Range
                             min="40"
@@ -416,6 +427,24 @@ export default function GuitaleleViewer({ scoreData }) {
                             className="flex-grow-1"
                         />
                         <span className="text-warning fw-bold font-monospace" style={{ fontSize: '10px', minWidth: '24px' }}>{bpm}</span>
+                    </div>
+                    <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center gap-2">
+                        <Form.Check
+                            type="switch"
+                            id="voice-toggle-0"
+                            label="V 1"
+                            checked={voice1Enabled}
+                            disabled={!availableVoices.includes(1)}
+                            onChange={(e) => { setVoice1Enabled(e.target.checked) }}
+                        />
+                        <Form.Check
+                            type="switch"
+                            id="voice-toggle-1"
+                            label="V 2"
+                            checked={voice2Enabled}
+                            disabled={!availableVoices.includes(2)}
+                            onChange={(e) => { setVoice2Enabled(e.target.checked) }}
+                        />
                     </div>
                 </div>
 
