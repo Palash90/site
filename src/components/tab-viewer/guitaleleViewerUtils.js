@@ -37,6 +37,9 @@ export const DARK_THEME = {
 
     bgInvalidMeasure: "rgba(225, 29, 72, 0.15)",
 
+    metronomeDownBeat: "red",
+    metronomeUpBeat: "green"
+
 
 };
 

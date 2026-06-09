@@ -417,33 +417,54 @@ export function resumePlaying(isPlaying, isPaused, audioCtxRef, playbackStartTim
 }
 
 /**
- * Synthesizes a clean metronome click to keep structural timing clear.
+ * Synthesizes a highly prominent, punchy metronome click that cuts through the guitar layers.
  */
 export const playMetronomeClick = (ctx, startTime, isDownbeat = false) => {
-    const osc = ctx.createOscillator();
-    const gainNode = ctx.createGain();
+    // 1. The Core Woodblock/Clave Body (Thump)
+    const bodyOsc = ctx.createOscillator();
+    const bodyGain = ctx.createGain();
 
-    // High accent on beat 1 (e.g., 1200Hz), lower click on subsequent beats (800Hz)
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(isDownbeat ? 1200 : 800, startTime);
+    // Use a triangle wave for crisp harmonic presence instead of a soft sine wave
+    bodyOsc.type = "triangle";
+    // Pitch it up significantly so it sits in a different frequency range than the guitalele
+    bodyOsc.frequency.setValueAtTime(isDownbeat ? 1400 : 950, startTime);
 
-    // Ultra-snappy volume envelope to minimize bleed-over
-    gainNode.gain.setValueAtTime(0.0, startTime);
-    gainNode.gain.linearRampToValueAtTime(isDownbeat ? 0.35 : 0.22, startTime + 0.002);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
+    // Ultra-snappy volume decay envelope to create a percussive "pop"
+    bodyGain.gain.setValueAtTime(0.0, startTime);
+    bodyGain.gain.linearRampToValueAtTime(isDownbeat ? 0.55 : 0.38, startTime + 0.002);
+    bodyGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.035);
 
-    osc.connect(gainNode);
-    // Connect into your centralized master channels
+    // 2. The Transient Crack Layer (The high-frequency snap of a wood stick)
+    const snapOsc = ctx.createOscillator();
+    const snapGain = ctx.createGain();
+
+    snapOsc.type = "sine";
+    // Extreme high pitch creates an immediate piercing audio spike to catch the ear
+    snapOsc.frequency.setValueAtTime(isDownbeat ? 3200 : 2600, startTime);
+
+    snapGain.gain.setValueAtTime(0.0, startTime);
+    snapGain.gain.linearRampToValueAtTime(isDownbeat ? 0.30 : 0.18, startTime + 0.001);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.012); // Instant decay
+
+    // Routing all elements to the output matrix
+    bodyOsc.connect(bodyGain);
+    snapOsc.connect(snapGain);
+
     if (ctx.masterGain) {
-        gainNode.connect(ctx.masterGain);
+        bodyGain.connect(ctx.masterGain);
+        snapGain.connect(ctx.masterGain);
     } else {
-        gainNode.connect(ctx.destination);
+        bodyGain.connect(ctx.destination);
+        snapGain.connect(ctx.destination);
     }
 
-    osc.start(startTime);
-    osc.stop(startTime + 0.06);
-};
+    // Fire nodes simultaneously
+    bodyOsc.start(startTime);
+    snapOsc.start(startTime);
 
+    bodyOsc.stop(startTime + 0.05);
+    snapOsc.stop(startTime + 0.02);
+};
 export function runScheduler(
     playbackStartBeatRef,
     audioCtxRef,

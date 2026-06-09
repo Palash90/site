@@ -1,6 +1,6 @@
 import { DARK_THEME, getFlagPath } from "./guitaleleViewerUtils";
 
-export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, measuresPerRow, voice1Enabled, voice2Enabled) {
+export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, measuresPerRow, voice1Enabled, voice2Enabled, metronomeEnabled) {
     return (
         {
             rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX
@@ -390,26 +390,18 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                             setHoveredNoteIndex(ev.globalIndex);
                                     }} />
 
-                                {/* Metronome visual marker for voice 0 */}
-                                {ev.isMetronomeTick && (
-                                    <g>
-                                        <circle
-                                            cx={ev.cx}
-                                            cy={(trebleTopY - 12) * scaleY}
-                                            r={5 * scaleY}
-                                            fill="#f97316"
-                                            stroke="#ffedd5"
-                                            strokeWidth={1}
+                                {ev.isMetronomeTick  && metronomeEnabled && (
+                                    <g pointerEvents="none">
+                                        <line
+                                            x1={ev.cx}
+                                            y1={(trebleTopY - 30) * scaleY} // Starts slightly above the treble staff
+                                            x2={ev.cx}
+                                            y2={(rhythmTopY + 45) * scaleY}  // Extends down to the rhythm lane base
+                                            stroke={ev.isDownbeat ? DARK_THEME.metronomeDownBeat : DARK_THEME.metronomeUpBeat} // Orange for downbeat (1), neutral gray for other beats
+                                            strokeWidth={ev.isDownbeat ? "2" : "1.5"}
+                                            strokeDasharray="4 4" // Creates the dotted/dashed effect
+                                            opacity={ev.isDownbeat ? "0.7" : "0.4"} // Subtly blends it into the background
                                         />
-                                        <text
-                                            x={ev.cx}
-                                            y={(trebleTopY - 4) * scaleY}
-                                            textAnchor="middle"
-                                            className="text-xs font-mono"
-                                            fill="#ffe8c5"
-                                        >
-                                            {ev.isDownbeat ? "1" : "•"}
-                                        </text>
                                     </g>
                                 )}
 
