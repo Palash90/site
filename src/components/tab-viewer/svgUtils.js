@@ -48,10 +48,11 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     <defs>
                         <filter
                             id="note-glow"
-                            x="-50%"
-                            y="-50%"
-                            width="200%"
-                            height="200%"
+                            filterUnits="userSpaceOnUse" // <--- CRITICAL FIX
+                            x="-20"                      // Fixed pixel padding around the line
+                            y="-20"
+                            width="100%"                 // Spans the full space comfortably
+                            height="100%"
                         >
                             <feGaussianBlur
                                 stdDeviation="3"
@@ -401,12 +402,12 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                             setHoveredNoteIndex(ev.globalIndex);
                                     }} />
 
-                                {ev.isMetronomeTick  && metronomeEnabled && (
+                                {ev.isMetronomeTick && metronomeEnabled && (
                                     <g pointerEvents="none">
                                         <line
                                             x1={ev.cx}
                                             y1={(trebleTopY - 30) * scaleY} // Starts slightly above the treble staff
-                                            x2={ev.cx}
+                                            x2={ev.cx + 0.01}
                                             y2={(rhythmTopY - 50) * scaleY}  // Extends down to the rhythm lane base
                                             stroke={ev.isDownbeat ? DARK_THEME.metronomeDownBeat : DARK_THEME.metronomeUpBeat} // Orange for downbeat (1), neutral gray for other beats
                                             strokeWidth={isActiveMetronomeTick ? "3" : ev.isDownbeat ? "2" : "1.5"}
