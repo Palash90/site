@@ -37,9 +37,9 @@ export const DARK_THEME = {
 
     bgInvalidMeasure: "rgba(225, 29, 72, 0.15)",
 
-    metronomeDownBeat: "red",
-    metronomeUpBeat: "green"
-
+    metronomeControlMedium: "#a78bfa", // Medium purple text and track slider control
+    metronomeDownBeat: "#ff2a5f",      // Deep/Dark Intense ruby pink-red for Downbeats (Beat 1)
+    metronomeUpBeat: "#2ae8b2",
 
 };
 

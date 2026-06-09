@@ -13,7 +13,7 @@ export const two_voice_test = {
                     description:
                         "Voice 1: Sustained C major chord (C3, E3, G3, C4, E4, C5) held for a whole note duration.",
                     pitches: [
-                        { fret: null, string: 6 },
+                        { fret: null, string: 6, description: "Note inside chord" },
                         { fret: 2, string: 5 },
                         { fret: 0, string: 4 },
                         { fret: 0, string: 3 },
@@ -21,9 +21,9 @@ export const two_voice_test = {
                         { fret: 14, string: 1 }
                     ]
                 },
-                { fret: 0, string: 1, duration: 1.0, voice: 2 },
+                { fret: 0, string: 1, duration: 1.0, voice: 2, description: "A general note" },
                 { fret: null, string: 1, duration: 1.0, voice: 2 },
-                { fret: 3, string: 2, duration: 0.5, voice: 2 },
+                { fret: 3, string: 2, duration: 0.5, voice: 2, description: "Another note" },
                 { fret: 1, string: 2, duration: 0.5, voice: 2 },
                 { fret: 0, string: 3, duration: 1.0, voice: 2 }
             ]

@@ -280,50 +280,63 @@ export default function GuitaleleViewer({ scoreData }) {
     const activeDescription = useMemo(() => {
         if (!activeEvents || activeEvents.length === 0) return null;
 
-        // Define a subtle palette for voices
-        const voiceColors = ['#00b894', '#0984e3', '#6c5ce7', '#e17055'];
+        const voiceColors = ['#21cea3', '#fb923c', '#6c5ce7', '#e17055']; // Match theme colors
 
         return (
             <div className="d-flex flex-column" style={{ gap: '6px' }}>
-
                 <div style={{ color: '#8892b0', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                     Measure {activeEvents[0].measureNumber}
                 </div>
 
-                <div className="d-flex flex-column" style={{ gap: '4px' }}>
+                <div className="d-flex flex-column" style={{ gap: '8px' }}>
                     {activeEvents.map((ev, idx) => {
-                        const color = voiceColors[ev.voice % voiceColors.length];
+                        const color = voiceColors[(ev.voice - 1) % voiceColors.length] || voiceColors[0];
 
                         return (
                             <div key={idx} className="d-flex align-items-start" style={{
                                 borderLeft: `3px solid ${color}`,
                                 paddingLeft: '12px'
                             }}>
-                                {ev.isRest ? (
-                                    <span style={{ color: '#636e72', fontSize: '11px', fontStyle: 'italic' }}>
-                                        <span style={{ color }}>V{ev.voice}</span> • Rest • {getDurationLabel(ev.beatValue)}
-                                    </span>
-                                ) : (
-                                    <div className="d-flex flex-column">
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            {/* Duration now at the front */}
-                                            <span style={{ color: '#fdcb6e', fontSize: '10px', fontWeight: 'bold', minWidth: '40px' }}>
-                                                {getDurationLabel(ev.beatValue).toUpperCase()}
-                                            </span>
-                                            <span style={{ color, fontSize: '10px', fontWeight: 'bold' }}>VOICE {ev.voice}</span>
-                                        </div>
+                                <div className="d-flex flex-column flex-grow-1">
+                                    {ev.isRest ? (
+                                        <span style={{ color: '#636e72', fontSize: '11px', fontStyle: 'italic' }}>
+                                            <span style={{ color }}>V{ev.voice}</span> • Rest • {getDurationLabel(ev.beatValue)}
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <span style={{ color: '#fdcb6e', fontSize: '10px', fontWeight: 'bold', minWidth: '40px' }}>
+                                                    {getDurationLabel(ev.beatValue).toUpperCase()}
+                                                </span>
+                                                <span style={{ color, fontSize: '10px', fontWeight: 'bold' }}>VOICE {ev.voice}</span>
+                                            </div>
 
-                                        {/* Indented/Tabbed note list */}
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px', paddingLeft: '8px' }}>
-                                            {ev.processedPitches.map((p, pIdx) => (
-                                                <div key={pIdx} style={{ fontSize: '11px', color: '#dfe6e9' }}>
-                                                    • {p.noteName}
-                                                    <span style={{ color: '#636e72', marginLeft: '4px' }}>S{p.string}F{p.fret}</span>
-                                                </div>
-                                            ))}
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px', paddingLeft: '8px' }}>
+                                                {ev.processedPitches.map((p, pIdx) => (
+                                                    <div key={pIdx} style={{ fontSize: '11px', color: '#dfe6e9' }}>
+                                                        • {p.noteName}
+                                                        <span style={{ color: '#636e72', marginLeft: '4px' }}>S{p.string}F{p.fret}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* --- FIXED: DISPLAY BEAT DESCRIPTIONS --- */}
+                                    {ev.description && (
+                                        <div style={{
+                                            fontSize: '11px',
+                                            color: '#aaccff',
+                                            fontStyle: 'italic',
+                                            marginTop: '4px',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            padding: '4px 6px',
+                                            borderRadius: '3px'
+                                        }}>
+                                            {ev.description}
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         );
                     })}
@@ -454,7 +467,11 @@ export default function GuitaleleViewer({ scoreData }) {
                         <div className="d-flex align-items-center gap-2">
                             {/* V1 - Takes up 50% width */}
                             <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
-                                <span className="text-white-50 fw-bold font-monospace" style={{ fontSize: '10px' }}>V1</span>
+                                <span style={{
+                                    fontSize: '10px',
+                                    color: voice1Enabled ? DARK_THEME.voice1Color : '#8892b0',
+                                    fontWeight: 'bold'
+                                }}>V1</span>
                                 <Form.Check
                                     type="switch"
                                     id="voice-toggle-0"
@@ -472,7 +489,11 @@ export default function GuitaleleViewer({ scoreData }) {
 
                             {/* V2 - Takes up 50% width */}
                             <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
-                                <span className="text-white-50 fw-bold font-monospace" style={{ fontSize: '10px' }}>V2</span>
+                                <span style={{
+                                    fontSize: '10px',
+                                    color: voice2Enabled ? DARK_THEME.voice2Color : '#8892b0',
+                                    fontWeight: 'bold'
+                                }}>V2</span>
                                 <Form.Check
                                     type="switch"
                                     id="voice-toggle-1"
@@ -491,7 +512,13 @@ export default function GuitaleleViewer({ scoreData }) {
 
                         {/* Line 2: Full Metronome spanning across the bottom */}
                         <div className="d-flex align-items-center justify-content-between" style={{ height: '18px' }}>
-                            <span className="text-white-50 fw-bold font-monospace" style={{ fontSize: '10px' }}>Metronome</span>
+                            <span style={{
+                                fontSize: '10px',
+                                color: metronomeEnabled ? DARK_THEME.metronomeControlMedium : '#8892b0',
+                                fontWeight: 'bold'
+                            }}>
+                                Metronome
+                            </span>
                             <Form.Check
                                 type="switch"
                                 id="metronome-toggle"
