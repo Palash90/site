@@ -93,9 +93,18 @@ export default function GuitaleleViewer({ scoreData }) {
 
             allEvents.forEach((ev, evIdx) => {
                 if (ev.isMetronomeTick) {
-                    // Metronome ticks are scheduled separately by the player scheduler;
-                    // don't include them in the precompiled instrument timeline to avoid
-                    // duplicate scheduling or shape mismatches.
+                    console.log(ev)
+                    compiledAudioTimeline.push({
+                        ...ev,
+                        type: "metronome",
+                        isMetronomeTick: true,
+                        voice: 0,
+                        startBeat: ev.startBeat,
+                        globalIndex: ev.globalIndex,
+                        preCalculatedJitter: 0,
+                        preCalculatedVelocity: 0,
+                        segments: [{ type: "rest", duration: ev.beatValue }]
+                    });
                     return;
                 }
 

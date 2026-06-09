@@ -335,11 +335,14 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
         playbackStartTimeRef.current = audioCtxRef.current.currentTime;
 
         const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
+
         const targetedEvents = allEvents.filter(
             ev => ev.measureNumber >= fromMeasure
         );
 
+
         currentPlaybackEventsRef.current = targetedEvents;
+
         const startOffsetBeat = targetedEvents.length > 0 ? targetedEvents[0].startBeat : 0;
         playbackStartBeatRef.current = startOffsetBeat;
 
@@ -353,39 +356,30 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
         });
 
         const metronomeTicks = [];
-        if (metronomeEnabled) {
-            // Map structural positions explicitly based on real, parsed metric positions
-            // or find layout entries that designate standard musical beats
-            targetedEvents.forEach(ev => {
-                // Procedural generation fallback: if explicit tags are absent, 
-                // look for chord/note events or raw layout elements to latch ticks onto, 
-                // or fall back to checking if it lands directly on whole integer timestamps.
-                const isExplicitTick = ev.isMetronomeTick;
-                const isIntegerBeat = ev.beatOffset !== undefined && (ev.beatOffset % 1.0 === 0);
+        targetedEvents.forEach(ev => {
+            const isExplicitTick = ev.isMetronomeTick;
+            const isIntegerBeat = ev.beatOffset !== undefined && (ev.beatOffset % 1.0 === 0);
 
-                if (isExplicitTick || isIntegerBeat) {
-                    // Prevent duplicate metronome ticks at the exact same startBeat moment
-                    const isDuplicate = metronomeTicks.some(tick => tick.startBeat === ev.startBeat);
-                    if (!isDuplicate) {
-                        metronomeTicks.push({
-                            startBeat: ev.startBeat,
-                            globalIndex: ev.globalIndex,
-                            voice: 0,
-                            isMetronomeTick: true,
-                            // Identify downbeats (beat 1 of a measure) safely
-                            isDownbeat: ev.isDownbeat || (ev.beatOffset === 0),
-                            segments: [],
-                            preCalculatedJitter: 0,
-                            preCalculatedVelocity: 1.0
-                        });
-                    }
+            if (isExplicitTick || isIntegerBeat) {
+                const isDuplicate = metronomeTicks.some(tick => tick.startBeat === ev.startBeat);
+                if (!isDuplicate) {
+                    metronomeTicks.push({
+                        startBeat: ev.startBeat,
+                        globalIndex: ev.globalIndex,
+                        voice: 0,
+                        isMetronomeTick: true,
+                        isDownbeat: ev.isDownbeat || (ev.beatOffset === 0),
+                        segments: [],
+                        preCalculatedJitter: 0,
+                        preCalculatedVelocity: 1.0
+                    });
                 }
-            });
-        }
+            }
+        });
+
 
         const combinedTimeline = [...instrumentNotes, ...metronomeTicks];
 
-        // Create an ordered timeline map of unique beat moments
         const uniqueBeatsMap = {};
         combinedTimeline.forEach(note => {
             if (!uniqueBeatsMap[note.startBeat]) {
@@ -541,14 +535,19 @@ export function runScheduler(
                 playbackStartTimeRef.current +
                 pausedTimeRef.current;
 
-            // --- PERFORMANCE OPTIMIZATION: BATCH BOUNDARIES ---
             let iterations = 0;
-            const MAX_ITERATIONS_PER_TICK = 32; // Prevents the main thread from locking up 
+            const MAX_ITERATIONS_PER_TICK = 32;
             const timelineLength = currentTimelineBeatsRef.current.length;
             const targetHorizonTime = absoluteCurrentPlaybackTime + scheduleAheadTime;
 
             while (nextBeatIndexRef.current < timelineLength && iterations < MAX_ITERATIONS_PER_TICK) {
                 const beatSlice = currentTimelineBeatsRef.current[nextBeatIndexRef.current];
+
+                if (!beatSlice) {
+                    nextBeatIndexRef.current++;
+                    continue;
+                }
+
                 const eventAbsoluteSec = (beatSlice.startBeat - offsetBeat) * beatDurationSeconds;
 
                 // If this note's execution window is in the future, stop checking completely.
@@ -556,7 +555,7 @@ export function runScheduler(
                     break;
                 }
 
-                // Increment tracking immediately to prevent infinite loops on error
+                // Increment tracking immediately to prevent infinite loops
                 nextBeatIndexRef.current++;
                 iterations++;
 
@@ -569,13 +568,12 @@ export function runScheduler(
                     jitter;
 
                 // 1. Dispatch audio nodes instantly to the Web Audio timeline queue
-                // (Using your exact, pristine playHumanizedGuitaleleNote implementation)
                 beatSlice.notes.forEach(note => {
-                    console.log(note)
-                    if (note.isMetronomeTick) {
-
-                        playMetronomeClick(ctx, finalPluckTime, note.isDownbeat);
-                        return; // Skip guitalele modeling logic for this event block
+                    // This is the correct, safely timed metronome handler:
+                    if (note.isMetronomeTick && metronomeEnabled) {
+                            console.log(`🔊 Metronome Tick - Beat: ${note.startBeat} at AudioTime: ${finalPluckTime} with downbeag ${note.isDownbeat}`);
+                            playMetronomeClick(ctx, finalPluckTime, note.isDownbeat);
+                        return;
                     }
 
                     const runtimeSegments = note.segments.map(seg => ({
@@ -601,9 +599,7 @@ export function runScheduler(
 
                 // Process tied notes visual tracking efficiently
                 beatSlice.notes.forEach(note => {
-                    if (note.isMetronomeTick) {
-                        return
-                    }
+                    if (note.isMetronomeTick) return;
                     note.segments.forEach(seg => {
                         if (seg.tiedEventIndices) {
                             seg.tiedEventIndices.forEach(tiedEvent => {
@@ -624,7 +620,7 @@ export function runScheduler(
                 const lastSlice = currentTimelineBeatsRef.current[timelineLength - 1];
                 if (lastSlice) {
                     const maxSustainBeats = Math.max(
-                        ...lastSlice.notes.map(n => n.segments.reduce((acc, s) => acc + s.duration, 0)),
+                        ...lastSlice.notes.map(n => n.segments ? n.segments.reduce((acc, s) => acc + s.duration, 0) : 1.0),
                         1.0
                     );
 
