@@ -1,7 +1,7 @@
 import "./ContentList.css"
 function ContentLink(props) {
     var b = props.content
-    var link = process.env.PUBLIC_URL + "#/content/" + b.id;
+    var link = process.env.PUBLIC_URL + "/content/" + b.id;
     return <li key={b.id}>
 
         {b.publishDate && props.showDate ?
