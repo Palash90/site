@@ -33,11 +33,12 @@ export default function TabViewer(props) {
 
     if (loading) return <p className="text-slate-400 p-6 font-mono text-xs">Loading context elements...</p>;
     if (error) return <p className="text-rose-500 p-6 font-mono text-xs">Error loading score structure: {error.message}</p>;
+    console.log(data)
 
     return props.tab && data ? (
         <div className="bg-slate-950 min-h-screen text-slate-100 p-6 flex flex-col gap-4">
             <div className="mt-2">
-                <h3 className="text-lg font-bold tracking-tight text-slate-300">Score Viewer</h3>
+                <h3 className="text-lg font-bold tracking-tight text-slate-300">Score Viewer - {data.title}</h3>
                 <GuitaleleViewer scoreData={data} editorMode={false} />
             </div>
         </div>
