@@ -147,6 +147,29 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
                 }
             });
 
+            // 1. Find all beatslices in this measure that contain a real note
+            const activeBeatsInMeasure = new Set(
+                Object.values(beatMergeMap)
+                    .filter(event => !event.isRest && !event.isMetronomeTick)
+                    .map(event => event.startBeat)
+            );
+
+            // 2. Suppress rest rendering properties if an active note shares the same beat slice
+            Object.values(beatMergeMap).forEach(event => {
+                if (event.isRest && activeBeatsInMeasure.has(event.startBeat)) {
+                    // Turn off structural flags so svgUtils skips rendering the symbols
+                    event.isRest = false; 
+                    event.rhythm = ""; // Empties the text string label in the rhythm lane
+                    event.pitches = []; // Ensures no phantom pitches exist
+                    
+                    // Optional: keep a label for debug tools if necessary
+                    if(event.descriptions) {
+                        event.descriptions.push("Suppressed Rest");
+                    }
+                }
+            });
+            // --- END PASSTHROUGH ---
+
             // Push the merged beats into our processedEvents array
             Object.values(beatMergeMap).forEach(mergedEvent => {
                 // Join descriptions array into a clean single string for your UI display components
@@ -154,6 +177,7 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
                     mergedEvent.descriptions.length > 0) {
                     mergedEvent.description =
                         mergedEvent.descriptions.join(" | ");
+                    mergedEvent.description = mergedEvent.description.replaceAll("_", " ")
                 } else if (!mergedEvent.description) {
                     mergedEvent.description = "";
                 }
