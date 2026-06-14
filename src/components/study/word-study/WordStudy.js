@@ -1,26 +1,8 @@
 import { useState } from "react";
 import { Button, Container, Row, Col, Form } from "react-bootstrap";
 import WordQuiz from "./WordQuiz";
+import SUPPORTED_LANGUAGES from "./vocab";
 
-// Language configuration data
-const SUPPORTED_LANGUAGES = {
-  English: {
-    code: 'en-US',
-    vocabs: ['hello', 'world', 'thank', 'you', 'please', 'good', 'morning', 'night', 'friend', 'family', 'home', 'food', 'water', 'happy', 'love', 'time', 'day', 'work', 'life', 'school', 'book', 'city', 'money', 'help', 'smile', 'today']
-  },
-  Hindi: {
-    code: 'hi-IN',
-    vocabs: ['नमस्ते', 'धन्यवाद', 'स्वागत', 'दोस्त', 'परिवार', 'घर', 'खाना', 'पानी', 'खुश', 'प्यार', 'समय', 'दिन', 'काम', 'जिंदगी', 'स्कूल', 'किताब', 'शहर', 'मदद', 'सुबह', 'रात']
-  },
-  Kannada: {
-    code: 'kn-IN',
-    vocabs: ['ನಮಸ್ಕಾರ', 'ಧನ್ಯವಾದ', 'ಸ್ವಾಗತ', 'ಸ್ನೇಹಿತ', 'ಕುಟುಂಬ', 'ಮನೆ', 'ಊಟ', 'ನೀರು', 'ಸಂತೋಷ', 'ಪ್ರೀತಿ', 'ಸಮಯ', 'ದಿನ', 'ಕೆಲಸ', 'ಜೀವನ', 'ಶಾಲೆ', 'ಪುಸ್ತಕ', 'ನಗರ', 'ಸಹಾಯ', 'ಬೆಳಗ್ಗೆ', 'ರಾತ್ರಿ']
-  },
-  Bengali: {
-    code: 'bn-IN',
-    vocabs: ['নমস্কার', 'ধন্যবাদ', 'স্বাগতম', 'বন্ধু', 'পরিবার', 'বাড়ি', 'খাবার', 'জল', 'খুশি', 'ভালোবাসা', 'সময়', 'দিন', 'কাজ', 'জীবন', 'স্কুল', 'বই', 'শহর', 'সাহায্য', 'সকাল', 'রাত']
-  }
-};
 
 export default function WordStudy() {
   const [screen, setScreen] = useState(1);
