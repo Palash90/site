@@ -62,7 +62,7 @@ export default function WordQuiz(props) {
 
   // Auto-update answer when speech recognition captures text
   useEffect(() => {
-    if (transcript && !isListening) {
+    if (transcript) {
       setAnswer(transcript);
     }
   }, [transcript, isListening]);

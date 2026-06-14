@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useSpeechRecognition = () => {
+export const useSpeechRecognition = (langCode = 'en-US') => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
@@ -15,11 +15,21 @@ export const useSpeechRecognition = () => {
     }
 
     recognitionRef.current = new SpeechRecognition();
-    const recognition = recognitionRef.current;
 
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!recognitionRef.current) return;
+
+    const recognition = recognitionRef.current;
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'en-US'; // Configurable
+    recognition.lang = langCode;
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -29,11 +39,11 @@ export const useSpeechRecognition = () => {
     recognition.onresult = (event) => {
       let interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
+        const resultTranscript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          setTranscript(transcript.toLowerCase().trim());
+          setTranscript(resultTranscript.toLowerCase().trim());
         } else {
-          interimTranscript += transcript;
+          interimTranscript += resultTranscript;
         }
       }
     };
@@ -43,7 +53,7 @@ export const useSpeechRecognition = () => {
       switch (event.error) {
         case 'not-allowed':
         case 'permission-denied':
-          setError('Microphone access blocked. Please enable microphone permissions in your browser settings.');
+          setError('Microphone access blocked. Please enable microphone permissions.');
           break;
         case 'no-speech':
           setError('No speech was detected. Please try again.');
@@ -59,13 +69,7 @@ export const useSpeechRecognition = () => {
     recognition.onend = () => {
       setIsListening(false);
     };
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-      }
-    };
-  }, []);
+  }, [langCode]);
 
   const startListening = () => {
     if (recognitionRef.current) {
