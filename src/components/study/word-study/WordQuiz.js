@@ -129,7 +129,7 @@ export default function WordQuiz(props) {
               <Form.Control
                 size="lg"
                 type="text"
-                placeholder="Type your answer here..."
+                placeholder= {isListening?"Recognizing":"Start Speaking"}
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 className="border-3 text-center fw-bold text-success"
