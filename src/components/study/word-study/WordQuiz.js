@@ -1,108 +1,101 @@
-import { useEffect, useState } from "react";
+// WordQuiz.js
+import { useEffect } from "react";
 import { Button, Col, Container, Row, Alert, Card } from "react-bootstrap";
 import Form from 'react-bootstrap/Form';
 import { useSpeechRecognition } from "./useSpeechRecognition";
 import ScorePanel from "../ScorePanel";
 import Score from "../IndividualScoreElement";
+import { useP2P } from "../P2PContext";
 
-export default function WordQuiz(props) {
-  const [words, setWords] = useState([]);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [currentWord, setCurrentWord] = useState('');
-  const [answer, setAnswer] = useState('');
-  const [score, setScore] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [correct, setCorrect] = useState(0);
-  const [wrong, setWrong] = useState(0);
-  const [quizEnded, setQuizEnded] = useState(false);
+export default function WordQuiz() {
+  const { quizState, sendStateUpdate } = useP2P();
+  
+  // Extract lifted state from global context including answer
+  const { 
+    words, 
+    currentWordIndex, 
+    score, 
+    total, 
+    correct, 
+    wrong, 
+    quizEnded,
+    answer // 🌟 Added answer here
+  } = quizState;
 
   const cardThemes = [
-    {
-      start: "#E8A7A1",
-      end: "#9A7BB5",
-      front: "#331E43"
-    },
-
-    {
-      start: "#E39A77",
-      end: "#E0C368",
-      front: "#2B2214"
-    },
-
-    {
-      start: "#88C9A1",
-      end: "#65A6A3",
-      front: "#152D2C"
-    },
-    {
-      start: "#ECA191",
-      end: "#D496A7",
-      front: "#251216"
-    },
-
-    {
-      start: "#9FA8DA",
-      end: "#80DEEA",
-      front: "#0D1B2A"
-    }
+    { start: "#E8A7A1", end: "#9A7BB5", front: "#331E43" },
+    { start: "#E39A77", end: "#E0C368", front: "#2B2214" },
+    { start: "#88C9A1", end: "#65A6A3", front: "#152D2C" },
+    { start: "#ECA191", end: "#D496A7", front: "#251216" },
+    { start: "#9FA8DA", end: "#80DEEA", front: "#0D1B2A" }
   ];
 
-
-  const random = Math.floor(Math.random() * cardThemes.length);
-
-  const chosenTheme = cardThemes[random];
-
-
+  const chosenTheme = cardThemes[currentWordIndex % cardThemes.length];
+  const currentWord = words[currentWordIndex] || null;
   const activeLangCode = currentWord ? currentWord.langCode : 'en-US';
 
   const { transcript, isListening, error, startListening, stopListening } = useSpeechRecognition(activeLangCode);
 
-  // Generate quiz words based on props (No 10-word limit!)
-  useEffect(() => {
-    const generateWords = () => {
-      const wordList = props.words || ['apple', 'banana', 'cherry', 'dog', 'elephant'];
-      // Shuffle all words completely without slicing it to a specific limit
-      const shuffledWords = [...wordList].sort(() => 0.5 - Math.random());
-      setWords(shuffledWords);
-      if (shuffledWords.length > 0) {
-        setCurrentWord(shuffledWords[0]);
-      }
-    };
-    generateWords();
-  }, [props.words]);
-
-  const checkAnswer = (skip = false, end = false) => {
-    let isCorrect = false;
+const checkAnswer = (skip = false, end = false) => {
+    let nextScore = score;
+    let nextCorrect = correct;
+    let nextWrong = wrong;
     
-    if (!skip && !end) {
-      isCorrect = answer.toLowerCase().trim() === currentWord.text.toLowerCase().trim();
+    // Only increment total if we are actually checking an answer or skipping a valid word
+    let nextTotal = currentWord ? total + 1 : total; 
+    let nextIndex = currentWordIndex;
+    let nextQuizEnded = quizEnded;
+
+    // 1. If ending the game early manually
+    if (end) {
+      nextQuizEnded = true;
+    } 
+    // 2. If processing a normal answer check (Not skipping, Not ending)
+    else if (!skip && currentWord) {
+      // Ensure we have a string fallback to prevent .toLowerCase() crashes
+      const currentAnswer = (answer || '').toLowerCase().trim();
+      const targetWord = (currentWord.text || '').toLowerCase().trim();
+      const isCorrect = currentAnswer === targetWord;
 
       if (isCorrect) {
-        setScore(score + 1);
-        setCorrect(correct + 1);
+        nextScore = score + 1;
+        nextCorrect = correct + 1;
       } else {
-        // Kids don't like losing points! Optional: change to score - 0 to keep it positive
-        setScore(score - 1);
-        setWrong(wrong + 1);
+        nextScore = score - 1;
+        nextWrong = wrong + 1;
       }
     }
-
-    setTotal(total + 1);
-    setAnswer('');
-
-    if (!end && currentWordIndex < words.length - 1) {
-      setCurrentWordIndex(currentWordIndex + 1);
-      setCurrentWord(words[currentWordIndex + 1]);
-    } else {
-      setQuizEnded(true);
+    // 3. If skipping (Next Word button clicked)
+    else if (skip) {
+      // Optional: You can choose to count a skip as 'wrong' or just track it in total.
+      // Right now it just increments total and moves on.
     }
+
+    // Determine if we should move to the next index or end the quiz
+    if (!end && currentWordIndex < words.length - 1) {
+      nextIndex = currentWordIndex + 1;
+    } else {
+      nextQuizEnded = true;
+    }
+
+    // Broadcast state update across P2P and reset the answer field
+    sendStateUpdate({
+      score: nextScore,
+      correct: nextCorrect,
+      wrong: nextWrong,
+      total: nextTotal,
+      currentWordIndex: nextIndex,
+      quizEnded: nextQuizEnded,
+      status: nextQuizEnded ? 'Completed' : 'In Progress',
+      answer: '' // Clean slate for the next word
+    });
   };
 
   useEffect(() => {
     if (transcript && transcript.trim() !== "") {
-      setAnswer(transcript);
+      sendStateUpdate({ answer: transcript }); // 🌟 Sync speech input globally
     }
-  }, [transcript]);
+  }, [transcript, sendStateUpdate]);
 
   if (quizEnded) {
     return (
@@ -116,7 +109,7 @@ export default function WordQuiz(props) {
               <Col><h3>⭐ Stars</h3><p className="display-4 fw-bold text-warning">{score}</p></Col>
               <Col><h3>✅ Correct</h3><p className="display-4 fw-bold text-light">{correct}</p></Col>
             </Row>
-            <Button variant="light" size="lg" className="rounded-pill fw-bold text-danger px-4 py-2" onClick={() => props.setScreen(1)}>
+            <Button variant="light" size="lg" className="rounded-pill fw-bold text-danger px-4 py-2" onClick={() => sendStateUpdate({ wordScreen: 1, answer: '' })}>
               Play Again! 🚀
             </Button>
           </Card.Body>
@@ -125,9 +118,11 @@ export default function WordQuiz(props) {
     );
   }
 
+  if (!currentWord) return null;
+
   return (
     <Container className="py-4" style={{ maxWidth: '650px' }}>
-      {/* Top Header stats with friendly layout */}
+      {/* Top Header stats */}
       <Row className="align-items-center mb-4">
         <Col xs={6}>
           <Score elem='Total' score={total} correct={correct} wrong={wrong} />
@@ -137,7 +132,7 @@ export default function WordQuiz(props) {
         </Col>
       </Row>
 
-      {/* The Flashy Kid-Friendly Word Card */}
+      {/* Word Card */}
       <Card
         className="text-center shadow-lg border-0 mb-4 text-white"
         style={{
@@ -160,7 +155,7 @@ export default function WordQuiz(props) {
 
       {error && <Row className="mb-3"><Col><Alert variant="warning" className="text-center rounded-pill fw-bold">{error}</Alert></Col></Row>}
 
-      {/* Interactive Controls Panel */}
+      {/* Controls */}
       <Card className="shadow border-0 bg-dark p-3 mb-4" style={{ borderRadius: '20px' }}>
         <Card.Body>
           <Row className="g-3 align-items-center">
@@ -170,9 +165,9 @@ export default function WordQuiz(props) {
                 type="text"
                 placeholder={isListening ? "Listening... Speak now!" : "Click Speak 🎤"}
                 value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
+                onChange={(e) => sendStateUpdate({ answer: e.target.value })} // 🌟 Sync manual changes globally
                 className="border-3 text-center fw-bold text-success"
-                readOnly // Changed from disabled to readOnly
+                readOnly
                 style={{ borderRadius: '15px', fontSize: '1.3rem', backgroundColor: '#fff' }}
               />
             </Col>
@@ -210,7 +205,7 @@ export default function WordQuiz(props) {
         </Card.Body>
       </Card>
 
-      {/* Action Controls for skip / ending quiz */}
+      {/* Action Controls */}
       <Row className="g-3">
         <Col xs={6}>
           <Button variant="outline-secondary" size="md" className="w-100 rounded-pill fw-bold" onClick={() => checkAnswer(true)}>
