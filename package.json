@@ -6,6 +6,8 @@
   "dependencies": {
     "bootstrap": "^5.3.8",
     "new_site": "file:",
+    "peerjs": "^1.5.5",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
