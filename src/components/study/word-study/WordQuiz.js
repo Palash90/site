@@ -73,9 +73,9 @@ export default function WordQuiz(props) {
 
   const checkAnswer = (skip = false, end = false) => {
     let isCorrect = false;
-
+    
     if (!skip && !end) {
-      isCorrect = answer.toLowerCase().trim() === currentWord.toLowerCase().trim();
+      isCorrect = answer.toLowerCase().trim() === currentWord.text.toLowerCase().trim();
 
       if (isCorrect) {
         setScore(score + 1);
