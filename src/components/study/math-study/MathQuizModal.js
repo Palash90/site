@@ -1,5 +1,5 @@
 import { Container, Modal, Row, Col, Button, Table } from "react-bootstrap";
-import Score from "./IndividualScoreElement";
+import Score from "../IndividualScoreElement";
 
 export default function MathQuizModal(props) {
     var operation = '';

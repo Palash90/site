@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Button, Col, Container, Modal, Row } from "react-bootstrap";
 import Form from 'react-bootstrap/Form';
 import { IoRefreshCircleOutline } from "react-icons/io5";
-import ScorePanel from "./ScorePanel";
-import Score from "./IndividualScoreElement";
+import ScorePanel from "../ScorePanel";
+import Score from "../IndividualScoreElement";
 import MathQuizModal from "./MathQuizModal";
 
 export default function MathQuiz(props) {

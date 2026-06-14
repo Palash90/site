@@ -1,14 +1,12 @@
 import { useParams } from "react-router-dom";
 import { Col, Container, Row } from "react-bootstrap";
 import GridApp from "./tic-tac-slide/App";
-import MathStudy from "./math-study/MathStudy";
-import WordStudy from "./word-study/WordStudy";
+import StudyApp from "./study/Study";
 
 export default function CustomComponent() {
     const componentMap = {
         "tic-tac-slide": <GridApp />,
-        "math-study": <MathStudy />,
-        "word-study": <WordStudy />
+        "study": <StudyApp />,
     }
     let params = useParams()
 

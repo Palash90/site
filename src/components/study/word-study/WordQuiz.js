@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Button, Col, Container, Row, Alert } from "react-bootstrap";
 import Form from 'react-bootstrap/Form';
 import { useSpeechRecognition } from "./useSpeechRecognition";
-import ScorePanel from "../math-study/ScorePanel";
-import Score from "../math-study/IndividualScoreElement";
+import ScorePanel from "../ScorePanel";
+import Score from "../IndividualScoreElement";
 
 export default function WordQuiz(props) {
   const [words, setWords] = useState([]);
