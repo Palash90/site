@@ -15,7 +15,7 @@ export default function StudyApp() {
         <div className="p-3 bg-dark border-bottom d-flex justify-content-between align-items-center">
           <h4 className="m-0 text-primary">🔢 Math Practice Mode</h4>
           <Button variant="outline-secondary" size="sm" onClick={() => setActiveApp('menu')}>
-            ← Main Menu
+            ← Study App Menu
           </Button>
         </div>
         {/* <MathStudy /> */}
