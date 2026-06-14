@@ -16,7 +16,41 @@ export default function WordQuiz(props) {
   const [wrong, setWrong] = useState(0);
   const [quizEnded, setQuizEnded] = useState(false);
 
-  const cardThemes = [[], [], [], [], [], [], []];
+  const cardThemes = [
+    {
+      start: "#E8A7A1",
+      end: "#9A7BB5",
+      front: "#331E43"
+    },
+
+    {
+      start: "#E39A77",
+      end: "#E0C368",
+      front: "#2B2214"
+    },
+
+    {
+      start: "#88C9A1",
+      end: "#65A6A3",
+      front: "#152D2C"
+    },
+    {
+      start: "#ECA191",
+      end: "#D496A7",
+      front: "#251216"
+    },
+
+    {
+      start: "#9FA8DA",
+      end: "#80DEEA",
+      front: "#0D1B2A"
+    }
+  ];
+
+
+  const random = Math.floor(Math.random() * cardThemes.length);
+
+  const chosenTheme = cardThemes[random];
 
 
   const activeLangCode = currentWord ? currentWord.langCode : 'en-US';
@@ -73,7 +107,7 @@ export default function WordQuiz(props) {
   if (quizEnded) {
     return (
       <Container className="py-5 text-center" style={{ maxWidth: '600px' }}>
-        <Card className="shadow-lg border-0 bg-gradient text-white p-4" style={{ background: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)', borderRadius: '24px' }}>
+        <Card className="shadow-lg border-0 bg-gradient text-white p-4" style={{ background: `linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)`, borderRadius: '24px' }}>
           <Card.Body>
             <h2 className="display-4 mb-4 fw-bold">🌟 Super Job! 🌟</h2>
             <p className="fs-4">You practice so hard!</p>
@@ -107,7 +141,7 @@ export default function WordQuiz(props) {
       <Card
         className="text-center shadow-lg border-0 mb-4 text-white"
         style={{
-          background: 'linear-gradient(135deg, #7ed3cd 0%, #d47c2a 100%)',
+          background: `linear-gradient(135deg, ${chosenTheme.start} 0%, ${chosenTheme.end}  100%)`,
           borderRadius: '30px'
         }}
       >
@@ -118,7 +152,7 @@ export default function WordQuiz(props) {
           <p className="text-uppercase fw-bold text-white mb-2 mt-2" style={{ letterSpacing: '1.5px', opacity: 0.9, fontSize: '1.1rem' }}>
             Can you say or spell:
           </p>
-          <h1 className="display-2 my-2" style={{ color: "blue", wordBreak: 'break-word', textShadow: '2px 4px 0px rgba(0,0,0,0.15)', fontWeight: '900' }}>
+          <h1 className="display-2 my-2" style={{ color: chosenTheme.front, wordBreak: 'break-word', textShadow: '2px 4px 0px rgba(0,0,0,0.15)', fontWeight: '900' }}>
             {currentWord.text}
           </h1>
         </Card.Body>
