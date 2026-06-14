@@ -16,7 +16,12 @@ export default function WordQuiz(props) {
   const [wrong, setWrong] = useState(0);
   const [quizEnded, setQuizEnded] = useState(false);
 
-  const { transcript, isListening, error, startListening, stopListening } = useSpeechRecognition(props.langCode || 'en-US');
+  const cardThemes = [[], [], [], [], [], [], []];
+
+
+  const activeLangCode = currentWord ? currentWord.langCode : 'en-US';
+
+  const { transcript, isListening, error, startListening, stopListening } = useSpeechRecognition(activeLangCode);
 
   // Generate quiz words based on props (No 10-word limit!)
   useEffect(() => {
@@ -37,7 +42,7 @@ export default function WordQuiz(props) {
 
     if (!skip && !end) {
       isCorrect = answer.toLowerCase().trim() === currentWord.toLowerCase().trim();
-      
+
       if (isCorrect) {
         setScore(score + 1);
         setCorrect(correct + 1);
@@ -60,10 +65,10 @@ export default function WordQuiz(props) {
   };
 
   useEffect(() => {
-    if (transcript) {
+    if (transcript && transcript.trim() !== "") {
       setAnswer(transcript);
     }
-  }, [transcript, isListening]);
+  }, [transcript]);
 
   if (quizEnded) {
     return (
@@ -99,10 +104,10 @@ export default function WordQuiz(props) {
       </Row>
 
       {/* The Flashy Kid-Friendly Word Card */}
-      <Card 
-        className="text-center shadow-lg border-0 mb-4 text-white" 
-        style={{ 
-          background: 'linear-gradient(135deg, #7ed3cd 0%, #d47c2a 100%)', 
+      <Card
+        className="text-center shadow-lg border-0 mb-4 text-white"
+        style={{
+          background: 'linear-gradient(135deg, #7ed3cd 0%, #d47c2a 100%)',
           borderRadius: '30px'
         }}
       >
@@ -114,7 +119,7 @@ export default function WordQuiz(props) {
             Can you say or spell:
           </p>
           <h1 className="display-2 my-2" style={{ color: "blue", wordBreak: 'break-word', textShadow: '2px 4px 0px rgba(0,0,0,0.15)', fontWeight: '900' }}>
-            {currentWord}
+            {currentWord.text}
           </h1>
         </Card.Body>
       </Card>
@@ -122,22 +127,22 @@ export default function WordQuiz(props) {
       {error && <Row className="mb-3"><Col><Alert variant="warning" className="text-center rounded-pill fw-bold">{error}</Alert></Col></Row>}
 
       {/* Interactive Controls Panel */}
-      <Card className="shadow border-0 bg-dark p-3 mb-4" style={{ borderRadius: '20px'}}>
+      <Card className="shadow border-0 bg-dark p-3 mb-4" style={{ borderRadius: '20px' }}>
         <Card.Body>
           <Row className="g-3 align-items-center">
             <Col xs={12} md={6}>
               <Form.Control
                 size="lg"
                 type="text"
-                placeholder= {isListening?"Recognizing":"Start Speaking"}
+                placeholder={isListening ? "Listening... Speak now!" : "Click Speak 🎤"}
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 className="border-3 text-center fw-bold text-success"
-                disabled
-                style={{ borderRadius: '15px', fontSize: '1.3rem' }}
+                readOnly // Changed from disabled to readOnly
+                style={{ borderRadius: '15px', fontSize: '1.3rem', backgroundColor: '#fff' }}
               />
             </Col>
-            
+
             <Col xs={6} md={3}>
               <Button
                 size="lg"
@@ -156,12 +161,12 @@ export default function WordQuiz(props) {
             </Col>
 
             <Col xs={6} md={3}>
-              <Button 
-                size="lg" 
-                className="w-100 fw-bold rounded-pill py-2 shadow-sm" 
-                variant="warning" 
+              <Button
+                size="lg"
+                className="w-100 fw-bold rounded-pill py-2 shadow-sm"
+                variant="warning"
                 style={{ backgroundColor: '#ff9f43', borderColor: 'transparent', color: 'white' }}
-                onClick={() => checkAnswer()} 
+                onClick={() => checkAnswer()}
                 disabled={!answer.trim()}
               >
                 Check ✨
