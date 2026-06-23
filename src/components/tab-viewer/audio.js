@@ -44,15 +44,14 @@ const getMasterGain = (ctx) => {
     if (!ctx.masterGain) {
         // Global mix gain with proper headroom for multi-note polyphony
         const masterGain = ctx.createGain();
-        masterGain.gain.value = 0.65;
+        masterGain.gain.value = 0.50;
 
-        // Intelligent limiter: threshold higher to avoid over-compression, faster attack for safety
         const limiter = ctx.createDynamicsCompressor();
-        limiter.threshold.setValueAtTime(-8.0, ctx.currentTime);  // -8dB allows more headroom before limiting
-        limiter.knee.setValueAtTime(6.0, ctx.currentTime);        // Increased knee for smoother onset
-        limiter.ratio.setValueAtTime(8.0, ctx.currentTime);       // Reduced ratio for gentler compression
-        limiter.attack.setValueAtTime(0.003, ctx.currentTime);    // Faster attack to catch peaks
-        limiter.release.setValueAtTime(0.15, ctx.currentTime);    // Longer release for musical decay
+        limiter.threshold.setValueAtTime(-12.0, ctx.currentTime);
+        limiter.knee.setValueAtTime(12.0, ctx.currentTime);
+        limiter.ratio.setValueAtTime(6.0, ctx.currentTime);
+        limiter.attack.setValueAtTime(0.002, ctx.currentTime);
+        limiter.release.setValueAtTime(0.10, ctx.currentTime);
 
         masterGain.connect(limiter);
         limiter.connect(ctx.destination);
@@ -131,32 +130,30 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     const mainGain = ctx.createGain();
     const nylonDampFilter = ctx.createBiquadFilter();
     nylonDampFilter.type = 'lowpass';
-    nylonDampFilter.frequency.setValueAtTime(Math.min(1800, initialFundamental * 3.0), startTime);
-    nylonDampFilter.frequency.exponentialRampToValueAtTime(Math.min(350, initialFundamental * 1.0), startTime + Math.min(totalDuration, 0.8));
+    nylonDampFilter.frequency.setValueAtTime(Math.min(1000, initialFundamental * 2.0), startTime);
+    nylonDampFilter.frequency.exponentialRampToValueAtTime(Math.min(220, initialFundamental * 1.0), startTime + Math.min(totalDuration, 0.6));
 
-    const bodyResonance = ctx.createBiquadFilter();
-    bodyResonance.type = 'peaking';
-    bodyResonance.frequency.value = 195;
-    bodyResonance.Q.value = 1.5;
-    bodyResonance.gain.value = 6.0;
+    const bodyWarmth = ctx.createBiquadFilter();
+    bodyWarmth.type = 'lowshelf';
+    bodyWarmth.frequency.value = 400;
+    bodyWarmth.gain.value = 5.0;
 
     mainGain.connect(nylonDampFilter);
-    nylonDampFilter.connect(bodyResonance);
-    bodyResonance.connect(getMasterGain(ctx));
+    nylonDampFilter.connect(bodyWarmth);
+    bodyWarmth.connect(getMasterGain(ctx));
 
-    // Consolidated Nylon Amplitude Envelope
-    const attackTime = 0.005;
+    const attackTime = 0.010;
     const totalDecayTime = Math.max(totalDuration * 0.95, 1.2);
 
     mainGain.gain.setValueAtTime(0, startTime);
-    mainGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.65, startTime + attackTime);
+    mainGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.50, startTime + attackTime);
     mainGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.20, startTime + 0.08);
     mainGain.gain.exponentialRampToValueAtTime(0.001, startTime + totalDecayTime - 0.02);
 
     // --- REPLACE THE OSCILLATOR CONFIGURATION BLOCK ---
-    // 1. Core Nylon String Fundamental Layer
+    // 1. Core Nylon String Fundamental Layer (pure tone for warmth)
     const stringOsc = ctx.createOscillator();
-    stringOsc.type = 'triangle';
+    stringOsc.type = 'sine';
     const detuneA = (Math.random() * 3) - 1.5;
     stringOsc.frequency.setValueAtTime(initialFundamental, startTime);
     stringOsc.detune.setValueAtTime(detuneA, startTime);
@@ -165,18 +162,18 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     const bassSubOsc = ctx.createOscillator();
     bassSubOsc.type = 'sine';
     const bassGain = ctx.createGain();
-    bassGain.gain.setValueAtTime(effectiveVelocity * 0.24, startTime);
-    bassGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35); // Rapid decay to keep mix clear
+    bassGain.gain.setValueAtTime(effectiveVelocity * 0.30, startTime);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
     bassSubOsc.frequency.setValueAtTime(initialFundamental, startTime);
     bassSubOsc.detune.setValueAtTime((Math.random() * 4) - 2, startTime);
 
-    // 3. Bright Pick Attack Transient (Fades out almost immediately)
+    // 3. Soft Nail Transient (brief finger contact warmth)
     const brightTransientOsc = ctx.createOscillator();
-    brightTransientOsc.type = 'sawtooth';
+    brightTransientOsc.type = 'sine';
     const brightGain = ctx.createGain();
-    brightGain.gain.setValueAtTime(effectiveVelocity * 0.12, startTime);
-    brightGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.04); // Instant snap
-    brightTransientOsc.frequency.setValueAtTime(initialFundamental * 2.5, startTime);
+    brightGain.gain.setValueAtTime(effectiveVelocity * 0.04, startTime);
+    brightGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.02);
+    brightTransientOsc.frequency.setValueAtTime(initialFundamental * 3.0, startTime);
 
     // Route secondary layers into the principal synthesis channel
     stringOsc.connect(mainGain);
