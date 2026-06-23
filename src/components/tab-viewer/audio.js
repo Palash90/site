@@ -43,6 +43,20 @@ export const RHYTHM_BEAT_VALUES = {
 const VOICE_COUNT = 12;
 let voicePool = null;
 
+// Shared noise buffer for finger-attack transient
+let noiseBuffer = null;
+
+function getNoiseBuffer(ctx) {
+    if (!noiseBuffer) {
+        const sr = ctx.sampleRate;
+        const length = Math.ceil(sr * 0.06);
+        noiseBuffer = ctx.createBuffer(1, length, sr);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+    }
+    return noiseBuffer;
+}
+
 function acquireVoice(ctx, voiceStartTime) {
     const now = ctx.currentTime;
     const scheduleBase = Math.max(voiceStartTime, now);
@@ -52,7 +66,7 @@ function acquireVoice(ctx, voiceStartTime) {
         const masterTarget = getMasterGain(ctx);
         for (let i = 0; i < VOICE_COUNT; i++) {
             const osc = ctx.createOscillator();
-            osc.type = 'sine';
+            osc.type = 'triangle';
 
             const gain = ctx.createGain();
             gain.gain.value = 0;
@@ -62,7 +76,7 @@ function acquireVoice(ctx, voiceStartTime) {
             filter.frequency.value = 1000;
 
             const bodyOsc = ctx.createOscillator();
-            bodyOsc.type = 'sine';
+            bodyOsc.type = 'triangle';
 
             const bodyGain = ctx.createGain();
             bodyGain.gain.value = 0;
@@ -120,8 +134,14 @@ const getMasterGain = (ctx) => {
 
         const bodyWarmth = ctx.createBiquadFilter();
         bodyWarmth.type = 'lowshelf';
-        bodyWarmth.frequency.value = 400;
-        bodyWarmth.gain.value = 5.0;
+        bodyWarmth.frequency.value = 250;
+        bodyWarmth.gain.value = 3.0;
+
+        const woodyResonance = ctx.createBiquadFilter();
+        woodyResonance.type = 'peaking';
+        woodyResonance.frequency.value = 500;
+        woodyResonance.Q.value = 0.7;
+        woodyResonance.gain.value = 0.8;
 
         const limiter = ctx.createDynamicsCompressor();
         limiter.threshold.setValueAtTime(-12.0, ctx.currentTime);
@@ -131,7 +151,8 @@ const getMasterGain = (ctx) => {
         limiter.release.setValueAtTime(0.10, ctx.currentTime);
 
         masterGain.connect(bodyWarmth);
-        bodyWarmth.connect(limiter);
+        bodyWarmth.connect(woodyResonance);
+        woodyResonance.connect(limiter);
         limiter.connect(ctx.destination);
         ctx.masterGain = masterGain;
     }
@@ -217,13 +238,40 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     // Acquire a pre-allocated voice from the pool — zero node creation
     const voice = acquireVoice(ctx, startTime);
 
-    voice.filter.frequency.setValueAtTime(Math.min(1000, initialFundamental * 2.0), startTime);
-    voice.filter.frequency.exponentialRampToValueAtTime(Math.min(220, initialFundamental * 1.0), startTime + Math.min(totalDuration, 0.6));
+    voice.filter.frequency.setValueAtTime(Math.min(1200, initialFundamental * 1.8), startTime);
+    voice.filter.frequency.exponentialRampToValueAtTime(Math.min(250, initialFundamental * 0.7), startTime + Math.min(totalDuration, 0.5));
+
+    // Finger-on-string attack noise (the critical "stab" transient)
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = getNoiseBuffer(ctx);
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.value = Math.min(2000, initialFundamental * 4);
+    noiseFilter.Q.value = 1.2;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0, startTime);
+    noiseGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.08, startTime + 0.002);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.025);
+    noiseSrc.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(voice.filter);
+    noiseSrc.start(startTime);
+    noiseSrc.stop(startTime + 0.06);
+    pendingNodeCleanups.push({
+        time: startTime + 0.08,
+        cleanup: () => {
+            try { noiseSrc.disconnect(); noiseFilter.disconnect(); noiseGain.disconnect(); } catch (e) {}
+        }
+    });
+
+    // String stretch: pitch bends up ~12 cents at attack then settles (simulates string being displaced by pick)
+    voice.osc.frequency.setValueAtTime(initialFundamental * 1.012, startTime);
+    voice.osc.frequency.exponentialRampToValueAtTime(initialFundamental, startTime + 0.025);
 
     const attackTime = 0.010;
 
     voice.gain.gain.setValueAtTime(0, startTime);
-    voice.gain.gain.linearRampToValueAtTime(effectiveVelocity * 0.50, startTime + attackTime);
+    voice.gain.gain.linearRampToValueAtTime(effectiveVelocity * 0.60, startTime + attackTime);
 
     if (noteVoice === 2) {
         // V2: slow gradual decay (drone) — rings through the measure then fades
@@ -236,7 +284,7 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     } else {
         // V1: natural decay
         const totalDecayTime = Math.max(totalDuration * 0.95, 1.2);
-        voice.gain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.20, startTime + 0.08);
+        voice.gain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.25, startTime + 0.06);
         voice.gain.gain.exponentialRampToValueAtTime(0.01, startTime + totalDecayTime - 0.03);
         const fadeOutTime = 0.015;
         const stopTime = startTime + totalDecayTime;
@@ -246,15 +294,16 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     }
 
     // Main oscillator
-    const detuneA = (Math.random() * 3) - 1.5;
-    voice.osc.frequency.setValueAtTime(initialFundamental, startTime);
+    const detuneA = (Math.random() * 6) - 3;
     voice.osc.detune.setValueAtTime(detuneA, startTime);
 
-    // Body thump oscillator
-    voice.bodyGain.gain.setValueAtTime(effectiveVelocity * 0.35, startTime);
-    voice.bodyGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.20);
+    // Body resonance: percussive thump at attack, then sustained drone
+    const droneEnd = startTime + Math.max(totalDuration * 0.9, 0.3);
+    voice.bodyGain.gain.setValueAtTime(effectiveVelocity * 0.50, startTime);
+    voice.bodyGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.18, startTime + 0.04);
+    voice.bodyGain.gain.exponentialRampToValueAtTime(0.001, droneEnd);
     voice.bodyOsc.frequency.setValueAtTime(initialFundamental, startTime);
-    voice.bodyOsc.detune.setValueAtTime((Math.random() * 4) - 2, startTime);
+    voice.bodyOsc.detune.setValueAtTime((Math.random() * 24) - 12, startTime);
 
     // Continuous Pitch Timeline Automation
     let timeCursor = startTime;
