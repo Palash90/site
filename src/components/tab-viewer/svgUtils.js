@@ -834,43 +834,45 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                     </g>
                                 )}
 
-                                <g>
-                                    <rect
-                                        x={ev.cx - SLOT_WIDTH / 2 + 4}
-                                        y={yLane - 18 * scaleY}
-                                        width={SLOT_WIDTH - 8}
-                                        height={24 * scaleY}
-                                        fill={ev.voice === 2 ? DARK_THEME.voice2RhythmBg : DARK_THEME.voice1RhytmBg}
-                                        rx="2" />
-                                    {ev.isTiedToNext &&
-                                        (() => {
-                                            const nextEv = rowEvents
-                                                .slice(idx + 1)
-                                                .find(e => e.voice === ev.voice);
-                                            if (nextEv)
-                                                return (
-                                                    <line
-                                                        x1={ev.cx + 20}
-                                                        y1={yLane - 4 * scaleY}
-                                                        x2={nextEv.cx - 20}
-                                                        y2={yLane - 4 * scaleY}
-                                                        stroke={DARK_THEME.lineStaff}
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round" />
-                                                );
-                                            return null;
-                                        })()}
-                                    <text
-                                        x={ev.cx}
-                                        y={yLane}
-                                        textAnchor="middle"
-                                        className="font-mono font-black text-sm"
-                                        fill={isMuted ? DARK_THEME.inactiveVoiceColor :
-                                            (ev.isRest ? DARK_THEME.fillRest : (ev.voice === 2 ? DARK_THEME.voice2Rhythm : DARK_THEME.voice1Rhythm))}
-                                    >
-                                        {ev.rhythm}
-                                    </text>
-                                </g>
+                                {!ev.isMetronomeTick && (
+                                    <g>
+                                        <rect
+                                            x={ev.cx - SLOT_WIDTH / 2 + 4}
+                                            y={yLane - 18 * scaleY}
+                                            width={SLOT_WIDTH - 8}
+                                            height={24 * scaleY}
+                                            fill={ev.voice === 2 ? DARK_THEME.voice2RhythmBg : DARK_THEME.voice1RhytmBg}
+                                            rx="2" />
+                                        {ev.isTiedToNext &&
+                                            (() => {
+                                                const nextEv = rowEvents
+                                                    .slice(idx + 1)
+                                                    .find(e => e.voice === ev.voice);
+                                                if (nextEv)
+                                                    return (
+                                                        <line
+                                                            x1={ev.cx + 20}
+                                                            y1={yLane - 4 * scaleY}
+                                                            x2={nextEv.cx - 20}
+                                                            y2={yLane - 4 * scaleY}
+                                                            stroke={DARK_THEME.lineStaff}
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round" />
+                                                    );
+                                                return null;
+                                            })()}
+                                        <text
+                                            x={ev.cx}
+                                            y={yLane}
+                                            textAnchor="middle"
+                                            className="font-mono font-black text-sm"
+                                            fill={isMuted ? DARK_THEME.inactiveVoiceColor :
+                                                (ev.isRest ? DARK_THEME.fillRest : (ev.voice === 2 ? DARK_THEME.voice2Rhythm : DARK_THEME.voice1Rhythm))}
+                                        >
+                                            {ev.rhythm}
+                                        </text>
+                                    </g>
+                                )}
                                 <rect
                                     x={ev.cx - SLOT_WIDTH / 2}
                                     y={hitTestY}
