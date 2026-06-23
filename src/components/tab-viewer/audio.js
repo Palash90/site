@@ -134,8 +134,8 @@ const getMasterGain = (ctx) => {
 
         const bodyWarmth = ctx.createBiquadFilter();
         bodyWarmth.type = 'lowshelf';
-        bodyWarmth.frequency.value = 250;
-        bodyWarmth.gain.value = 3.0;
+        bodyWarmth.frequency.value = 350;
+        bodyWarmth.gain.value = 3.5;
 
         const woodyResonance = ctx.createBiquadFilter();
         woodyResonance.type = 'peaking';
@@ -238,15 +238,15 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     // Acquire a pre-allocated voice from the pool — zero node creation
     const voice = acquireVoice(ctx, startTime);
 
-    voice.filter.frequency.setValueAtTime(Math.min(1200, initialFundamental * 1.8), startTime);
-    voice.filter.frequency.exponentialRampToValueAtTime(Math.min(250, initialFundamental * 0.7), startTime + Math.min(totalDuration, 0.5));
+    voice.filter.frequency.setValueAtTime(Math.min(900, initialFundamental * 1.5), startTime);
+    voice.filter.frequency.exponentialRampToValueAtTime(Math.min(220, initialFundamental * 0.6), startTime + Math.min(totalDuration, 0.5));
 
     // Finger-on-string attack noise (the critical "stab" transient)
     const noiseSrc = ctx.createBufferSource();
     noiseSrc.buffer = getNoiseBuffer(ctx);
     const noiseFilter = ctx.createBiquadFilter();
     noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.value = Math.min(2000, initialFundamental * 4);
+    noiseFilter.frequency.value = Math.min(1200, initialFundamental * 2.5);
     noiseFilter.Q.value = 1.2;
     const noiseGain = ctx.createGain();
     noiseGain.gain.setValueAtTime(0, startTime);
