@@ -31,6 +31,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const [voice1Enabled, setVoice1Enabled] = useState(true);
     const [voice2Enabled, setVoice2Enabled] = useState(true);
     const [metronomeEnabled, setMetronomeEnabled] = useState(false);
+    const [sheetMusicEnabled, setSheetMusicEnabled] = useState(true);
 
     const lookaheadTimerRef = useRef(null);
 
@@ -555,6 +556,29 @@ export default function GuitaleleViewer({ scoreData }) {
                             />
                         </div>
 
+                        {/* Thin divider between metronome and sheet music row */}
+                        <div className="border-top border-secondary-subtle opacity-25" style={{ margin: '2px 0' }}></div>
+
+                        {/* Line 3: Sheet Music toggle */}
+                        <div className="d-flex align-items-center justify-content-between" style={{ height: '18px' }}>
+                            <span style={{
+                                fontSize: '10px',
+                                color: sheetMusicEnabled ? '#e2e8f0' : '#8892b0',
+                                fontWeight: 'bold'
+                            }}>
+                                Sheet Music
+                            </span>
+                            <Form.Check
+                                type="switch"
+                                id="sheet-music-toggle"
+                                label=""
+                                className="m-0 d-flex align-items-center"
+                                style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
+                                checked={sheetMusicEnabled}
+                                onChange={(e) => setSheetMusicEnabled(e.target.checked)}
+                            />
+                        </div>
+
                     </div>
 
                 </div>
@@ -614,7 +638,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                             measuresPerRow,
                                             voice1Enabled && availableVoices.includes(1),
                                             voice2Enabled && availableVoices.includes(2),
-                                            metronomeEnabled
+                                            metronomeEnabled,
+                                            sheetMusicEnabled
                                         )(row, index)}
                                     </td>
                                 </tr>

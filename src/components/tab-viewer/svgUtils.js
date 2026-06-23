@@ -1,6 +1,6 @@
 import { DARK_THEME, getFlagPath } from "./guitaleleViewerUtils";
 
-export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, handleNoteClick, measuresPerRow, voice1Enabled, voice2Enabled, metronomeEnabled) {
+export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, handleNoteClick, measuresPerRow, voice1Enabled, voice2Enabled, metronomeEnabled, sheetMusicEnabled) {
     return (
         {
             rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX
@@ -100,77 +100,81 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                         stroke={DARK_THEME.lineStaff}
                         strokeWidth="2.5" />
 
-                    {[0, 1, 2, 3, 4].map(i => (
-                        <line
-                            key={`treble-${i}`}
-                            x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
-                            y1={(trebleTopY * scaleY) + i * sLineSpacing}
-                            x2={rowEndX}
-                            y2={(trebleTopY * scaleY) + i * sLineSpacing}
-                            stroke={DARK_THEME.lineStaff}
-                            strokeWidth="1.6" />
-                    ))}
-                    <text
-                        x={leftMargin}
-                        y={(trebleTopY * scaleY) + 3.5 * sLineSpacing}
-                        style={{ fontSize: `${48 * scaleY}px` }}
-                        fill={DARK_THEME.textClef}
-                    >
-                        𝄞
-                    </text>
+                    {sheetMusicEnabled && <>
+                        {[0, 1, 2, 3, 4].map(i => (
+                            <line
+                                key={`treble-${i}`}
+                                x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
+                                y1={(trebleTopY * scaleY) + i * sLineSpacing}
+                                x2={rowEndX}
+                                y2={(trebleTopY * scaleY) + i * sLineSpacing}
+                                stroke={DARK_THEME.lineStaff}
+                                strokeWidth="1.6" />
+                        ))}
+                        <text
+                            x={leftMargin}
+                            y={(trebleTopY * scaleY) + 3.5 * sLineSpacing}
+                            style={{ fontSize: `${48 * scaleY}px` }}
+                            fill={DARK_THEME.textClef}
+                        >
+                            𝄞
+                        </text>
 
-                    {[0, 1, 2, 3, 4].map(i => (
-                        <line
-                            key={`bass-${i}`}
-                            x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
-                            y1={(bassTopY * scaleY) + i * sLineSpacing}
-                            x2={rowEndX}
-                            y2={(bassTopY * scaleY) + i * sLineSpacing}
-                            stroke={DARK_THEME.lineStaff}
-                            strokeWidth="1" />
-                    ))}
-                    <text
-                        x={leftMargin}
-                        y={(bassTopY * scaleY) + 3.2 * sLineSpacing}
-                        style={{ fontSize: `${48 * scaleY}px` }}
-                        fill={DARK_THEME.textClef}
-                    >
-                        𝄢
-                    </text>
+                        {[0, 1, 2, 3, 4].map(i => (
+                            <line
+                                key={`bass-${i}`}
+                                x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
+                                y1={(bassTopY * scaleY) + i * sLineSpacing}
+                                x2={rowEndX}
+                                y2={(bassTopY * scaleY) + i * sLineSpacing}
+                                stroke={DARK_THEME.lineStaff}
+                                strokeWidth="1" />
+                        ))}
+                        <text
+                            x={leftMargin}
+                            y={(bassTopY * scaleY) + 3.2 * sLineSpacing}
+                            style={{ fontSize: `${48 * scaleY}px` }}
+                            fill={DARK_THEME.textClef}
+                        >
+                            𝄢
+                        </text>
+                    </>}
 
                     <g
                         className="font-serif font-black text-2xl text-center"
                         fill={DARK_THEME.textTimeSig}
                         transform={`translate(${paddingX - (90 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9))}, 0)`}
                     >
-                        <text
-                            x="0"
-                            y={(trebleTopY * scaleY) + 1.35 * sLineSpacing}
-                            textAnchor="middle"
-                        >
-                            {timeSigTop}
-                        </text>
-                        <text
-                            x="0"
-                            y={(trebleTopY * scaleY) + 3.35 * sLineSpacing}
-                            textAnchor="middle"
-                        >
-                            {timeSigBottom}
-                        </text>
-                        <text
-                            x="0"
-                            y={(bassTopY * scaleY) + 1.35 * sLineSpacing}
-                            textAnchor="middle"
-                        >
-                            {timeSigTop}
-                        </text>
-                        <text
-                            x="0"
-                            y={(bassTopY * scaleY) + 3.35 * sLineSpacing}
-                            textAnchor="middle"
-                        >
-                            {timeSigBottom}
-                        </text>
+                        {sheetMusicEnabled && <>
+                            <text
+                                x="0"
+                                y={(trebleTopY * scaleY) + 1.35 * sLineSpacing}
+                                textAnchor="middle"
+                            >
+                                {timeSigTop}
+                            </text>
+                            <text
+                                x="0"
+                                y={(trebleTopY * scaleY) + 3.35 * sLineSpacing}
+                                textAnchor="middle"
+                            >
+                                {timeSigBottom}
+                            </text>
+                            <text
+                                x="0"
+                                y={(bassTopY * scaleY) + 1.35 * sLineSpacing}
+                                textAnchor="middle"
+                            >
+                                {timeSigTop}
+                            </text>
+                            <text
+                                x="0"
+                                y={(bassTopY * scaleY) + 3.35 * sLineSpacing}
+                                textAnchor="middle"
+                            >
+                                {timeSigBottom}
+                            </text>
+                        </>}
                         <text
                             x="0"
                             y={(tabTopY * scaleY) + 1.6 * sLineSpacing}
@@ -483,63 +487,61 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
 
                                 {ev.isRest ? (
                                     <g style={{ opacity: isMuted ? 0.4 : 1 }}>
-                                        {/* Whole and Half rest rendering based on beatValue */}
-                                        {ev.beatValue === 4.0 ? (
-                                            // Whole rest (small rectangle hanging from the staff)
-                                            <rect
-                                                x={ev.cx - 7}
-                                                y={(trebleTopY * scaleY) + 1 * sLineSpacing - (sLineSpacing * 0.05)}
-                                                width={14}
-                                                height={sLineSpacing * 0.6}
-                                                fill={DARK_THEME.fillRest}
-                                                rx={1} />
-                                        ) : ev.beatValue === 2.0 ? (
-                                            // Half rest (small rectangle sitting on the staff)
-                                            <rect
-                                                x={ev.cx - 7}
-                                                y={(trebleTopY * scaleY) + 2 * sLineSpacing + (sLineSpacing * 0.4)}
-                                                width={14}
-                                                height={sLineSpacing * 0.6}
-                                                fill={DARK_THEME.fillRest}
-                                                rx={1} />
-                                        ) : (
-                                            // Quarter / Eighth / Sixteenth rests (existing shapes)
-                                            <>
-                                                {ev.rhythm === "r" && (
-                                                    <path
-                                                        d={`M ${ev.cx - 4} ${(trebleTopY + 28) * scaleY} L ${ev.cx + 4} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 40) * scaleY} Q ${ev.cx + 6} ${(trebleTopY + 44) * scaleY} ${ev.cx} ${(trebleTopY + 50) * scaleY}`}
-                                                        fill="none"
-                                                        stroke={DARK_THEME.fillRest}
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round" />
-                                                )}
-                                                {ev.rhythm === "r+" && (
-                                                    <path
-                                                        d={`M ${ev.cx - 3} ${(trebleTopY + 32) * scaleY} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${(trebleTopY + 34) * scaleY} Q ${ev.cx - 2} ${(trebleTopY + 38) * scaleY} ${ev.cx + 4} ${(trebleTopY + 30) * scaleY} L ${ev.cx - 3} ${(trebleTopY + 50) * scaleY}`}
-                                                        fill="none"
-                                                        stroke={DARK_THEME.fillRest}
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round" />
-                                                )}
-                                                {ev.rhythm === "r=" && (
-                                                    <g>
+                                        {sheetMusicEnabled && <>
+                                            {ev.beatValue === 4.0 ? (
+                                                <rect
+                                                    x={ev.cx - 7}
+                                                    y={(trebleTopY * scaleY) + 1 * sLineSpacing - (sLineSpacing * 0.05)}
+                                                    width={14}
+                                                    height={sLineSpacing * 0.6}
+                                                    fill={DARK_THEME.fillRest}
+                                                    rx={1} />
+                                            ) : ev.beatValue === 2.0 ? (
+                                                <rect
+                                                    x={ev.cx - 7}
+                                                    y={(trebleTopY * scaleY) + 2 * sLineSpacing + (sLineSpacing * 0.4)}
+                                                    width={14}
+                                                    height={sLineSpacing * 0.6}
+                                                    fill={DARK_THEME.fillRest}
+                                                    rx={1} />
+                                            ) : (
+                                                <>
+                                                    {ev.rhythm === "r" && (
                                                         <path
-                                                            d={`M ${ev.cx - 2} ${(trebleTopY + 27) * scaleY} A 3 3 0 1 1 ${ev.cx + 3} ${(trebleTopY + 29) * scaleY} Q ${ev.cx - 1} ${(trebleTopY + 33) * scaleY} ${ev.cx + 5} ${(trebleTopY + 25) * scaleY}`}
+                                                            d={`M ${ev.cx - 4} ${(trebleTopY + 28) * scaleY} L ${ev.cx + 4} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 40) * scaleY} Q ${ev.cx + 6} ${(trebleTopY + 44) * scaleY} ${ev.cx} ${(trebleTopY + 50) * scaleY}`}
                                                             fill="none"
                                                             stroke={DARK_THEME.fillRest}
-                                                            strokeWidth="2" />
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round" />
+                                                    )}
+                                                    {ev.rhythm === "r+" && (
                                                         <path
-                                                            d={`M ${ev.cx - 4} ${(trebleTopY + 36) * scaleY} A 3 3 0 1 1 ${ev.cx + 1} ${(trebleTopY + 38) * scaleY} Q ${ev.cx - 3} ${(trebleTopY + 42) * scaleY} ${ev.cx + 3} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 52) * scaleY}`}
+                                                            d={`M ${ev.cx - 3} ${(trebleTopY + 32) * scaleY} A 3.5 3.5 0 1 1 ${ev.cx + 2} ${(trebleTopY + 34) * scaleY} Q ${ev.cx - 2} ${(trebleTopY + 38) * scaleY} ${ev.cx + 4} ${(trebleTopY + 30) * scaleY} L ${ev.cx - 3} ${(trebleTopY + 50) * scaleY}`}
                                                             fill="none"
                                                             stroke={DARK_THEME.fillRest}
                                                             strokeWidth="2"
                                                             strokeLinecap="round"
                                                             strokeLinejoin="round" />
-                                                    </g>
-                                                )}
-                                            </>
-                                        )}
+                                                    )}
+                                                    {ev.rhythm === "r=" && (
+                                                        <g>
+                                                            <path
+                                                                d={`M ${ev.cx - 2} ${(trebleTopY + 27) * scaleY} A 3 3 0 1 1 ${ev.cx + 3} ${(trebleTopY + 29) * scaleY} Q ${ev.cx - 1} ${(trebleTopY + 33) * scaleY} ${ev.cx + 5} ${(trebleTopY + 25) * scaleY}`}
+                                                                fill="none"
+                                                                stroke={DARK_THEME.fillRest}
+                                                                strokeWidth="2" />
+                                                            <path
+                                                                d={`M ${ev.cx - 4} ${(trebleTopY + 36) * scaleY} A 3 3 0 1 1 ${ev.cx + 1} ${(trebleTopY + 38) * scaleY} Q ${ev.cx - 3} ${(trebleTopY + 42) * scaleY} ${ev.cx + 3} ${(trebleTopY + 34) * scaleY} L ${ev.cx - 4} ${(trebleTopY + 52) * scaleY}`}
+                                                                fill="none"
+                                                                stroke={DARK_THEME.fillRest}
+                                                                strokeWidth="2"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round" />
+                                                        </g>
+                                                    )}
+                                                </>
+                                            )}
+                                        </>}
 
 
 
@@ -587,121 +589,123 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                     <g
                                                         key={`p-${pIdx}`}
                                                     >
-                                                        {pitch.isSharp && (
-                                                            <text
-                                                                x={ev.cx - 18}
-                                                                y={currentStaffY + 5 * scaleY}
-                                                                className="text-base font-normal font-serif"
-                                                                fill={activeStrokeColor}
-                                                                filter={glowFilter}
-                                                            >
-                                                                ♯
-                                                            </text>
-                                                        )}
+                                                        {sheetMusicEnabled && <>
+                                                            {pitch.isSharp && (
+                                                                <text
+                                                                    x={ev.cx - 18}
+                                                                    y={currentStaffY + 5 * scaleY}
+                                                                    className="text-base font-normal font-serif"
+                                                                    fill={activeStrokeColor}
+                                                                    filter={glowFilter}
+                                                                >
+                                                                    ♯
+                                                                </text>
+                                                            )}
 
-                                                        {Array.from(
-                                                            {
-                                                                length: Math.max(0, upperLedgers)
-                                                            }
-                                                        ).map((_, lIdx) => (
-                                                            <line
-                                                                key={`up-ledg-${lIdx}`}
-                                                                x1={ev.cx - 14}
-                                                                y1={(clefTopY * scaleY) - (lIdx + 1) * sLineSpacing}
-                                                                x2={ev.cx + 14}
-                                                                y2={(clefTopY * scaleY) - (lIdx + 1) * sLineSpacing}
-                                                                stroke={DARK_THEME.lineStaff}
-                                                                strokeWidth="1.2" />
-                                                        )
-                                                        )}
-                                                        {Array.from(
-                                                            {
-                                                                length: Math.max(0, lowerLedgers)
-                                                            }
-                                                        ).map(
-                                                            (_, lIdx) => (
+                                                            {Array.from(
+                                                                {
+                                                                    length: Math.max(0, upperLedgers)
+                                                                }
+                                                            ).map((_, lIdx) => (
                                                                 <line
-                                                                    key={`low-ledg-${lIdx}`}
+                                                                    key={`up-ledg-${lIdx}`}
                                                                     x1={ev.cx - 14}
-                                                                    y1={(bottomStaffEdge * scaleY) + (lIdx + 1) * sLineSpacing}
+                                                                    y1={(clefTopY * scaleY) - (lIdx + 1) * sLineSpacing}
                                                                     x2={ev.cx + 14}
-                                                                    y2={(bottomStaffEdge * scaleY) + (lIdx + 1) * sLineSpacing}
+                                                                    y2={(clefTopY * scaleY) - (lIdx + 1) * sLineSpacing}
                                                                     stroke={DARK_THEME.lineStaff}
                                                                     strokeWidth="1.2" />
                                                             )
-                                                        )}
-
-                                                        {pitch.fret ===
-                                                            null ? (
-                                                            <g>
-                                                                <line
-                                                                    x1={ev.cx - 6}
-                                                                    y1={currentStaffY - 6 * scaleY}
-                                                                    x2={ev.cx + 6}
-                                                                    y2={currentStaffY + 6 * scaleY}
-                                                                    stroke={activeStrokeColor}
-                                                                    strokeWidth="1.8"
-                                                                    strokeLinecap="round" />
-                                                                <line
-                                                                    x1={ev.cx - 6}
-                                                                    y1={currentStaffY + 6 * scaleY}
-                                                                    x2={ev.cx + 6}
-                                                                    y2={currentStaffY - 6 * scaleY}
-                                                                    stroke={activeStrokeColor}
-                                                                    strokeWidth="1.8"
-                                                                    strokeLinecap="round" />
-                                                            </g>
-                                                        ) : ev.beatValue >= 2.0 ? (
-                                                            <ellipse
-                                                                cx={ev.cx}
-                                                                cy={currentStaffY}
-                                                                rx={6}
-                                                                ry={4 * scaleY}
-                                                                transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
-                                                                fill="none"
-                                                                stroke={activeStrokeColor}
-                                                                strokeWidth="2.2"
-                                                                filter={glowFilter} />
-                                                        ) : (
-                                                            <ellipse
-                                                                cx={ev.cx}
-                                                                cy={currentStaffY}
-                                                                rx={6}
-                                                                ry={4 * scaleY}
-                                                                transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
-                                                                fill={activeNoteColor}
-                                                                filter={glowFilter} />
-                                                        )}
-
-                                                        {ev.isTiedToNext &&
-                                                            pitch.fret !==
-                                                            null &&
-                                                            (() => {
-                                                                const nextEv = rowEvents
-                                                                    .slice(idx + 1)
-                                                                    .find(e => e.voice === ev.voice && !e.isRest);
-                                                                if (!nextEv)
-                                                                    return null;
-                                                                const targetPitch = nextEv.processedPitches.find(
-                                                                    np => np.string ===
-                                                                        pitch.string
-                                                                ) ||
-                                                                    nextEv
-                                                                        .processedPitches[0];
-                                                                if (targetPitch &&
-                                                                    targetPitch.fret !==
-                                                                    null) {
-                                                                    return (
-                                                                        <path
-                                                                            d={`M ${ev.cx + 4} ${currentStaffY + 5 * scaleY} Q ${(ev.cx + nextEv.cx) / 2} ${(Math.max(pitch.staffY, targetPitch.staffY) * scaleY) + 16 * scaleY} ${nextEv.cx - 4} ${(targetPitch.staffY * scaleY) + 5 * scaleY}`}
-                                                                            fill="none"
-                                                                            stroke={DARK_THEME.lineTie}
-                                                                            strokeWidth="1.8"
-                                                                            strokeLinecap="round" />
-                                                                    );
+                                                            )}
+                                                            {Array.from(
+                                                                {
+                                                                    length: Math.max(0, lowerLedgers)
                                                                 }
-                                                                return null;
-                                                            })()}
+                                                            ).map(
+                                                                (_, lIdx) => (
+                                                                    <line
+                                                                        key={`low-ledg-${lIdx}`}
+                                                                        x1={ev.cx - 14}
+                                                                        y1={(bottomStaffEdge * scaleY) + (lIdx + 1) * sLineSpacing}
+                                                                        x2={ev.cx + 14}
+                                                                        y2={(bottomStaffEdge * scaleY) + (lIdx + 1) * sLineSpacing}
+                                                                        stroke={DARK_THEME.lineStaff}
+                                                                        strokeWidth="1.2" />
+                                                                )
+                                                            )}
+
+                                                            {pitch.fret ===
+                                                                null ? (
+                                                                <g>
+                                                                    <line
+                                                                        x1={ev.cx - 6}
+                                                                        y1={currentStaffY - 6 * scaleY}
+                                                                        x2={ev.cx + 6}
+                                                                        y2={currentStaffY + 6 * scaleY}
+                                                                        stroke={activeStrokeColor}
+                                                                        strokeWidth="1.8"
+                                                                        strokeLinecap="round" />
+                                                                    <line
+                                                                        x1={ev.cx - 6}
+                                                                        y1={currentStaffY + 6 * scaleY}
+                                                                        x2={ev.cx + 6}
+                                                                        y2={currentStaffY - 6 * scaleY}
+                                                                        stroke={activeStrokeColor}
+                                                                        strokeWidth="1.8"
+                                                                        strokeLinecap="round" />
+                                                                </g>
+                                                            ) : ev.beatValue >= 2.0 ? (
+                                                                <ellipse
+                                                                    cx={ev.cx}
+                                                                    cy={currentStaffY}
+                                                                    rx={6}
+                                                                    ry={4 * scaleY}
+                                                                    transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
+                                                                    fill="none"
+                                                                    stroke={activeStrokeColor}
+                                                                    strokeWidth="2.2"
+                                                                    filter={glowFilter} />
+                                                            ) : (
+                                                                <ellipse
+                                                                    cx={ev.cx}
+                                                                    cy={currentStaffY}
+                                                                    rx={6}
+                                                                    ry={4 * scaleY}
+                                                                    transform={`rotate(-22 ${ev.cx} ${currentStaffY})`}
+                                                                    fill={activeNoteColor}
+                                                                    filter={glowFilter} />
+                                                            )}
+
+                                                            {ev.isTiedToNext &&
+                                                                pitch.fret !==
+                                                                null &&
+                                                                (() => {
+                                                                    const nextEv = rowEvents
+                                                                        .slice(idx + 1)
+                                                                        .find(e => e.voice === ev.voice && !e.isRest);
+                                                                    if (!nextEv)
+                                                                        return null;
+                                                                    const targetPitch = nextEv.processedPitches.find(
+                                                                        np => np.string ===
+                                                                            pitch.string
+                                                                    ) ||
+                                                                        nextEv
+                                                                            .processedPitches[0];
+                                                                    if (targetPitch &&
+                                                                        targetPitch.fret !==
+                                                                        null) {
+                                                                        return (
+                                                                            <path
+                                                                                d={`M ${ev.cx + 4} ${currentStaffY + 5 * scaleY} Q ${(ev.cx + nextEv.cx) / 2} ${(Math.max(pitch.staffY, targetPitch.staffY) * scaleY) + 16 * scaleY} ${nextEv.cx - 4} ${(targetPitch.staffY * scaleY) + 5 * scaleY}`}
+                                                                                fill="none"
+                                                                                stroke={DARK_THEME.lineTie}
+                                                                                strokeWidth="1.8"
+                                                                                strokeLinecap="round" />
+                                                                        );
+                                                                    }
+                                                                    return null;
+                                                                })()}
+                                                        </>}
 
                                                         {ev.isTiedToNext &&
                                                             pitch.fret !== null &&
@@ -782,77 +786,79 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                             }
                                         )}
 
-                                        {ev.trebleStem &&
-                                            ev.beatValue <
-                                            4.0 &&
-                                            (() => {
-                                                const voiceColor = ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color;
-                                                const activeStrokeColor = isMuted ? DARK_THEME.inactiveVoiceColor : (!isActive ? DARK_THEME.fillNote : voiceColor);
-                                                const glowFilter = (isActive && !isMuted) ? "url(#note-glow)" : "none";
+                                        {sheetMusicEnabled && <>
+                                            {ev.trebleStem &&
+                                                ev.beatValue <
+                                                4.0 &&
+                                                (() => {
+                                                    const voiceColor = ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color;
+                                                    const activeStrokeColor = isMuted ? DARK_THEME.inactiveVoiceColor : (!isActive ? DARK_THEME.fillNote : voiceColor);
+                                                    const glowFilter = (isActive && !isMuted) ? "url(#note-glow)" : "none";
 
-                                                const { lowestY, highestY, stemDown } = ev.trebleStem;
-                                                const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
-                                                const extY = stemDown ? (lowestY * scaleY) + 28 * scaleY : (highestY * scaleY) - 28 * scaleY;
-                                                const numFlags = ev.beatValue <= 0.25 ? 2 : ev.beatValue <= 0.75 ? 1 : 0;
+                                                    const { lowestY, highestY, stemDown } = ev.trebleStem;
+                                                    const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
+                                                    const extY = stemDown ? (lowestY * scaleY) + 28 * scaleY : (highestY * scaleY) - 28 * scaleY;
+                                                    const numFlags = ev.beatValue <= 0.25 ? 2 : ev.beatValue <= 0.75 ? 1 : 0;
 
-                                                return (
-                                                    <g>
-                                                        <line
-                                                            x1={xPos}
-                                                            y1={highestY * scaleY}
-                                                            x2={xPos}
-                                                            y2={extY}
-                                                            stroke={activeStrokeColor}
-                                                            strokeWidth="1.6" />
-                                                        {numFlags >
-                                                            0 && (
-                                                                <path
-                                                                    d={getFlagPath(xPos, extY, stemDown, numFlags)}
-                                                                    fill={activeStrokeColor} />
-                                                            )}
-                                                    </g>
-                                                );
-                                            })()}
+                                                    return (
+                                                        <g>
+                                                            <line
+                                                                x1={xPos}
+                                                                y1={highestY * scaleY}
+                                                                x2={xPos}
+                                                                y2={extY}
+                                                                stroke={activeStrokeColor}
+                                                                strokeWidth="1.6" />
+                                                            {numFlags >
+                                                                0 && (
+                                                                    <path
+                                                                        d={getFlagPath(xPos, extY, stemDown, numFlags)}
+                                                                        fill={activeStrokeColor} />
+                                                                )}
+                                                        </g>
+                                                    );
+                                                })()}
 
-                                        {ev.bassStem && ev.beatValue < 4.0 &&
-                                            (() => {
-                                                const voiceColor = ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color;
-                                                const activeStrokeColor = isMuted ? DARK_THEME.inactiveVoiceColor : (isActive ? voiceColor : DARK_THEME.fillNote);
-                                                const glowFilter = isActive && !isMuted ? "url(#note-glow)" : "none";
+                                            {ev.bassStem && ev.beatValue < 4.0 &&
+                                                (() => {
+                                                    const voiceColor = ev.voice === 2 ? DARK_THEME.voice2Color : DARK_THEME.voice1Color;
+                                                    const activeStrokeColor = isMuted ? DARK_THEME.inactiveVoiceColor : (isActive ? voiceColor : DARK_THEME.fillNote);
+                                                    const glowFilter = isActive && !isMuted ? "url(#note-glow)" : "none";
 
-                                                const { lowestY, highestY, stemDown } = ev.bassStem;
-                                                const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
-                                                const extY = stemDown ? (lowestY * scaleY) + 28 * scaleY : (highestY * scaleY) - 28 * scaleY;
-                                                const numFlags = ev.beatValue <= 0.25 ? 2 : ev.beatValue <= 0.75 ? 1 : 0;
+                                                    const { lowestY, highestY, stemDown } = ev.bassStem;
+                                                    const xPos = stemDown ? ev.cx - 5.5 : ev.cx + 5.5;
+                                                    const extY = stemDown ? (lowestY * scaleY) + 28 * scaleY : (highestY * scaleY) - 28 * scaleY;
+                                                    const numFlags = ev.beatValue <= 0.25 ? 2 : ev.beatValue <= 0.75 ? 1 : 0;
 
-                                                return (
-                                                    <g>
-                                                        <line
-                                                            x1={xPos}
-                                                            y1={highestY * scaleY}
-                                                            x2={xPos}
-                                                            y2={extY}
-                                                            stroke={activeStrokeColor}
-                                                            strokeWidth={1.6 * scaleY}
-                                                        />
-                                                        {numFlags >
-                                                            0 && (
-                                                                <path
-                                                                    d={getFlagPath(xPos, extY, stemDown, numFlags)}
-                                                                    fill={activeStrokeColor} />
-                                                            )}
-                                                    </g>
-                                                );
-                                            })()}
+                                                    return (
+                                                        <g>
+                                                            <line
+                                                                x1={xPos}
+                                                                y1={highestY * scaleY}
+                                                                x2={xPos}
+                                                                y2={extY}
+                                                                stroke={activeStrokeColor}
+                                                                strokeWidth={1.6 * scaleY}
+                                                            />
+                                                            {numFlags >
+                                                                0 && (
+                                                                    <path
+                                                                        d={getFlagPath(xPos, extY, stemDown, numFlags)}
+                                                                        fill={activeStrokeColor} />
+                                                                )}
+                                                        </g>
+                                                    );
+                                                })()}
 
-                                        {[6.0, 3.0, 1.5, 0.75].includes(
-                                            ev.beatValue) && (
-                                                <circle
-                                                    cx={ev.cx + 12}
-                                                    cy={((ev.trebleStem?.highestY || ev.bassStem?.highestY || trebleTopY) - 3) * scaleY}
-                                                    r={3 * scaleY}
-                                                    fill={currentNoteFill} />
-                                            )}
+                                            {[6.0, 3.0, 1.5, 0.75].includes(
+                                                ev.beatValue) && (
+                                                    <circle
+                                                        cx={ev.cx + 12}
+                                                        cy={((ev.trebleStem?.highestY || ev.bassStem?.highestY || trebleTopY) - 3) * scaleY}
+                                                        r={3 * scaleY}
+                                                        fill={currentNoteFill} />
+                                                )}
+                                        </>}
                                     </g>
                                 )}
 
