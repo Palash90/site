@@ -46,6 +46,11 @@ const getMasterGain = (ctx) => {
         const masterGain = ctx.createGain();
         masterGain.gain.value = 0.50;
 
+        const bodyWarmth = ctx.createBiquadFilter();
+        bodyWarmth.type = 'lowshelf';
+        bodyWarmth.frequency.value = 400;
+        bodyWarmth.gain.value = 5.0;
+
         const limiter = ctx.createDynamicsCompressor();
         limiter.threshold.setValueAtTime(-12.0, ctx.currentTime);
         limiter.knee.setValueAtTime(12.0, ctx.currentTime);
@@ -53,7 +58,8 @@ const getMasterGain = (ctx) => {
         limiter.attack.setValueAtTime(0.002, ctx.currentTime);
         limiter.release.setValueAtTime(0.10, ctx.currentTime);
 
-        masterGain.connect(limiter);
+        masterGain.connect(bodyWarmth);
+        bodyWarmth.connect(limiter);
         limiter.connect(ctx.destination);
         ctx.masterGain = masterGain;
     }
@@ -133,14 +139,8 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     nylonDampFilter.frequency.setValueAtTime(Math.min(1000, initialFundamental * 2.0), startTime);
     nylonDampFilter.frequency.exponentialRampToValueAtTime(Math.min(220, initialFundamental * 1.0), startTime + Math.min(totalDuration, 0.6));
 
-    const bodyWarmth = ctx.createBiquadFilter();
-    bodyWarmth.type = 'lowshelf';
-    bodyWarmth.frequency.value = 400;
-    bodyWarmth.gain.value = 5.0;
-
     mainGain.connect(nylonDampFilter);
-    nylonDampFilter.connect(bodyWarmth);
-    bodyWarmth.connect(getMasterGain(ctx));
+    nylonDampFilter.connect(getMasterGain(ctx));
 
     const attackTime = 0.010;
     const totalDecayTime = Math.max(totalDuration * 0.95, 1.2);
@@ -148,7 +148,7 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     mainGain.gain.setValueAtTime(0, startTime);
     mainGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.50, startTime + attackTime);
     mainGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.20, startTime + 0.08);
-    mainGain.gain.exponentialRampToValueAtTime(0.001, startTime + totalDecayTime - 0.02);
+    mainGain.gain.exponentialRampToValueAtTime(0.01, startTime + totalDecayTime - 0.02);
 
     // --- REPLACE THE OSCILLATOR CONFIGURATION BLOCK ---
     // 1. Core Nylon String Fundamental Layer (pure tone for warmth)
@@ -158,29 +158,18 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     stringOsc.frequency.setValueAtTime(initialFundamental, startTime);
     stringOsc.detune.setValueAtTime(detuneA, startTime);
 
-    // 2. Low-End Acoustic Body Fundamental Thump (Decays quickly)
-    const bassSubOsc = ctx.createOscillator();
-    bassSubOsc.type = 'sine';
-    const bassGain = ctx.createGain();
-    bassGain.gain.setValueAtTime(effectiveVelocity * 0.30, startTime);
-    bassGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
-    bassSubOsc.frequency.setValueAtTime(initialFundamental, startTime);
-    bassSubOsc.detune.setValueAtTime((Math.random() * 4) - 2, startTime);
+    // 2. Body Thump (decays quickly for initial percussive warmth)
+    const bodyOsc = ctx.createOscillator();
+    bodyOsc.type = 'sine';
+    const bodyGain = ctx.createGain();
+    bodyGain.gain.setValueAtTime(effectiveVelocity * 0.35, startTime);
+    bodyGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.20);
+    bodyOsc.frequency.setValueAtTime(initialFundamental, startTime);
+    bodyOsc.detune.setValueAtTime((Math.random() * 4) - 2, startTime);
 
-    // 3. Soft Nail Transient (brief finger contact warmth)
-    const brightTransientOsc = ctx.createOscillator();
-    brightTransientOsc.type = 'sine';
-    const brightGain = ctx.createGain();
-    brightGain.gain.setValueAtTime(effectiveVelocity * 0.04, startTime);
-    brightGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.02);
-    brightTransientOsc.frequency.setValueAtTime(initialFundamental * 3.0, startTime);
-
-    // Route secondary layers into the principal synthesis channel
     stringOsc.connect(mainGain);
-    bassSubOsc.connect(bassGain);
-    bassGain.connect(mainGain);
-    brightTransientOsc.connect(brightGain);
-    brightGain.connect(mainGain);
+    bodyOsc.connect(bodyGain);
+    bodyGain.connect(mainGain);
 
 
     // Continuous Pitch Timeline Automation
@@ -204,42 +193,53 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
             const targetFund = hasMidi ? 440 * Math.pow(2, (seg.midi - 69) / 12) : startFund;
 
             stringOsc.frequency.setValueAtTime(startFund, segmentStartTime);
-            bassSubOsc.frequency.setValueAtTime(startFund, segmentStartTime);
+            bodyOsc.frequency.setValueAtTime(startFund, segmentStartTime);
 
             stringOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
-            bassSubOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
+            bodyOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
             currentMidi = seg.midi;
         } else if (seg.type === 'hammer' || seg.type === 'pull') {
             if (hasMidi) {
                 const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
                 stringOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
-                bassSubOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
+                bodyOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
                 currentMidi = seg.midi;
                 stringOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
-                bassSubOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
+                bodyOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
             }
         } else {
             const currentFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
             stringOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
-            bassSubOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
+            bodyOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
         }
         timeCursor = segmentEndTime;
     }
 
-    // Start and stop all nodes in sync
     stringOsc.start(startTime);
-    bassSubOsc.start(startTime);
-    brightTransientOsc.start(startTime);
+    bodyOsc.start(startTime);
 
     const fadeOutTime = 0.015;
     const stopTime = startTime + totalDecayTime;
 
-    mainGain.gain.setValueAtTime(0.001, stopTime - fadeOutTime);
+    mainGain.gain.setValueAtTime(0.01, stopTime - fadeOutTime);
     mainGain.gain.linearRampToValueAtTime(0, stopTime);
 
     stringOsc.stop(stopTime);
-    bassSubOsc.stop(stopTime);
-    brightTransientOsc.stop(stopTime);
+    bodyOsc.stop(stopTime);
+
+    const cleanupNodes = () => {
+        try {
+            stringOsc.disconnect();
+            bodyOsc.disconnect();
+            bodyGain.disconnect();
+            nylonDampFilter.disconnect();
+            mainGain.disconnect();
+        } catch (e) {
+            // already disconnected
+        }
+    };
+
+    stringOsc.onended = cleanupNodes;
 };
 
 const clearPlaybackCallbacks = playbackTimeoutsRef => {
@@ -548,7 +548,8 @@ export function runScheduler(
             : playbackStartBeatRef.current;
         const ctx = audioCtxRef.current;
         const beatDurationSeconds = 60 / bpm;
-        const scheduleOffsetSec = 0.2; // 200ms padding for smooth scheduling on heavy layouts
+        const scheduleOffsetSec = 0.5; // 500ms padding for smooth scheduling on heavy layouts
+        let nextTickMs = performance.now();
         const visualQueue = [];
         let visualFrameId = null;
 
@@ -618,7 +619,7 @@ export function runScheduler(
                 pausedTimeRef.current;
 
             let iterations = 0;
-            const MAX_ITERATIONS_PER_TICK = 32;
+            const MAX_ITERATIONS_PER_TICK = 12;
             const timelineLength = currentTimelineBeatsRef.current.length;
             const targetHorizonTime = absoluteCurrentPlaybackTime + scheduleAheadTime;
 
@@ -719,10 +720,11 @@ export function runScheduler(
                 return;
             }
 
-            // Queue up the next lookahead slice
+            // Drift-compensated lookahead: keeps interval consistent regardless of how long this tick took
+            nextTickMs += lookaheadInterval;
             lookaheadTimerRef.current = setTimeout(
                 scheduleTimelineChunk,
-                lookaheadInterval
+                Math.max(0, nextTickMs - performance.now())
             );
         };
 

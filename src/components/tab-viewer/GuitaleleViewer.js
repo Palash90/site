@@ -31,7 +31,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const [voice1Enabled, setVoice1Enabled] = useState(true);
     const [voice2Enabled, setVoice2Enabled] = useState(true);
     const [metronomeEnabled, setMetronomeEnabled] = useState(false);
-    const [sheetMusicEnabled, setSheetMusicEnabled] = useState(true);
+    const [sheetMusicEnabled, setSheetMusicEnabled] = useState(false);
 
     const lookaheadTimerRef = useRef(null);
 
