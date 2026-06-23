@@ -257,6 +257,7 @@ export default function GuitaleleViewer({ scoreData }) {
         return () => stopPlayback();
     }, []);
 
+    const countInBeat = isPlaying && playbackIndex !== null && playbackIndex < 0 ? -playbackIndex : 0;
     const activeTargetIndex = (isPlaying && !isPaused) ? playbackIndex : (hoveredNoteIndex !== null ? hoveredNoteIndex : clickedNoteIndex);
 
     const handleNoteClick = (globalIndex) => {
@@ -433,13 +434,20 @@ export default function GuitaleleViewer({ scoreData }) {
     const rhythm2TopY = rhythmTopY + 28;
 
     return (
-        <div
-            className="d-flex flex-column bg-dark"
-            style={{
-                height: 'calc(100vh - 20px)', // Takes up full screen height minus a small margin
-                overflow: 'hidden'             // Prevents the window scrollbar from appearing
-            }}
-        >
+        <>
+            <style>{`
+                @keyframes countin-fade {
+                    0% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+                }
+            `}</style>
+            <div
+                className="d-flex flex-column bg-dark"
+                style={{
+                    height: 'calc(100vh - 20px)', // Takes up full screen height minus a small margin
+                    overflow: 'hidden'             // Prevents the window scrollbar from appearing
+                }}
+            >
             <div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
 
                 <div className="d-flex flex-column gap-1" style={{ width: '140px', flexShrink: 0 }}>
@@ -615,7 +623,30 @@ export default function GuitaleleViewer({ scoreData }) {
                     </tbody>
                 </Table>
             </div>
-        </div>
+
+                {countInBeat > 0 && (
+                    <div
+                        key={countInBeat}
+                        style={{
+                            position: 'fixed',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            fontSize: '140px',
+                            color: 'rgba(167, 139, 250, 0.95)',
+                            fontWeight: 'bold',
+                            pointerEvents: 'none',
+                            zIndex: 9999,
+                            fontFamily: 'monospace',
+                            textShadow: '0 0 40px rgba(167, 139, 250, 0.5)',
+                            animation: 'countin-fade 0.8s ease-out forwards',
+                        }}
+                    >
+                        {countInBeat}
+                    </div>
+                )}
+            </div>
+        </>
     );
 }
 

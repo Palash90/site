@@ -387,7 +387,7 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
             const clickStartBeat = startOffsetBeat - beatsPerMeasure + (click * clickBeatSpacing);
             metronomeTicks.unshift({
                 startBeat: clickStartBeat,
-                globalIndex: -1,
+                globalIndex: -(click + 1),
                 voice: 0,
                 isMetronomeTick: true,
                 isPreviewTick: true,
