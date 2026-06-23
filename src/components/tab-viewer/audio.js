@@ -39,6 +39,17 @@ export const RHYTHM_BEAT_VALUES = {
     "r=": 0.25
 };
 
+// Batch cleanup queue: avoids GC bursts from per-node onended handlers
+const pendingNodeCleanups = [];
+const drainNodeCleanups = (currentTime, maxPerTick = 8) => {
+    const limit = currentTime === Infinity ? Infinity : maxPerTick;
+    let count = 0;
+    while (pendingNodeCleanups.length > 0 && pendingNodeCleanups[0].time <= currentTime && count < limit) {
+        pendingNodeCleanups.shift().cleanup();
+        count++;
+    }
+};
+
 // Global Node Manager: Clean audio summation channel with a safety compressor
 const getMasterGain = (ctx) => {
     if (!ctx.masterGain) {
@@ -114,6 +125,17 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
         highScrape.start(time);
         lowThump.stop(time + dur);
         highScrape.stop(time + dur);
+        pendingNodeCleanups.push({
+            time: time + dur + 0.02,
+            cleanup: () => {
+                try {
+                    lowThump.disconnect();
+                    highScrape.disconnect();
+                    filter.disconnect();
+                    g.disconnect();
+                } catch (e) {}
+            }
+        });
     };
 
     if (!firstPlayable) {
@@ -227,19 +249,18 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     stringOsc.stop(stopTime);
     bodyOsc.stop(stopTime);
 
-    const cleanupNodes = () => {
-        try {
-            stringOsc.disconnect();
-            bodyOsc.disconnect();
-            bodyGain.disconnect();
-            nylonDampFilter.disconnect();
-            mainGain.disconnect();
-        } catch (e) {
-            // already disconnected
+    pendingNodeCleanups.push({
+        time: stopTime + 0.05,
+        cleanup: () => {
+            try {
+                stringOsc.disconnect();
+                bodyOsc.disconnect();
+                bodyGain.disconnect();
+                nylonDampFilter.disconnect();
+                mainGain.disconnect();
+            } catch (e) {}
         }
-    };
-
-    stringOsc.onended = cleanupNodes;
+    });
 };
 
 const clearPlaybackCallbacks = playbackTimeoutsRef => {
@@ -283,9 +304,12 @@ export function stopPlaying(lookaheadTimerRef, playbackTimeoutsRef, setIsPlaying
         setPlaybackIndex(null);
         pausedTimeRef.current = 0;
 
-        if (audioCtxRef.current) {
-            audioCtxRef.current.close();
-            audioCtxRef.current = null;
+        // Drain all remaining node cleanups to reset the audio graph
+        drainNodeCleanups(Infinity);
+
+        // Reuse the AudioContext — suspend instead of close to avoid accumulation
+        if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
+            audioCtxRef.current.suspend();
         }
     };
 }
@@ -314,15 +338,15 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
     return (fromMeasure = 1) => {
         if (isPlaying || !scoreLayout || !isAudioCompiled) return;
 
-        // Sync hook initiation for mobile WebKit audio focus
+        // Drain any leftover node cleanups from previous playback before reactivating the context
+        drainNodeCleanups(Infinity);
+
+        // Reuse existing AudioContext instead of creating new ones to prevent resource accumulation
         if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
             audioCtxRef.current = new (
                 window.AudioContext || window.webkitAudioContext
             )();
-        }
-
-        // Ensure the AudioContext is running (some browsers start it suspended)
-        if (audioCtxRef.current.state === "suspended") {
+        } else if (audioCtxRef.current.state === "suspended") {
             audioCtxRef.current.resume();
         }
 
@@ -483,8 +507,22 @@ export const playMetronomeClick = (ctx, startTime, isDownbeat = false) => {
     bodyOsc.start(startTime);
     snapOsc.start(startTime);
 
-    bodyOsc.stop(startTime + 0.05);
-    snapOsc.stop(startTime + 0.02);
+    const bodyStop = startTime + 0.05;
+    const snapStop = startTime + 0.02;
+    bodyOsc.stop(bodyStop);
+    snapOsc.stop(snapStop);
+
+    pendingNodeCleanups.push({
+        time: Math.max(bodyStop, snapStop) + 0.02,
+        cleanup: () => {
+            try {
+                bodyOsc.disconnect();
+                bodyGain.disconnect();
+                snapOsc.disconnect();
+                snapGain.disconnect();
+            } catch (e) {}
+        }
+    });
 };
 
 /**
@@ -524,7 +562,18 @@ export const playStickClick = (ctx, startTime) => {
     }
 
     noise.start(startTime);
-    noise.stop(startTime + burstDuration);
+    const stopTime = startTime + burstDuration;
+    noise.stop(stopTime);
+    pendingNodeCleanups.push({
+        time: stopTime + 0.02,
+        cleanup: () => {
+            try {
+                noise.disconnect();
+                bandpass.disconnect();
+                gain.disconnect();
+            } catch (e) {}
+        }
+    });
 };
 export function runScheduler(
     playbackStartBeatRef,
@@ -614,6 +663,8 @@ export function runScheduler(
         const scheduleTimelineChunk = () => {
             if (!ctx || ctx.state === "closed") return;
 
+            drainNodeCleanups(ctx.currentTime);
+
             const absoluteCurrentPlaybackTime = ctx.currentTime -
                 playbackStartTimeRef.current +
                 pausedTimeRef.current;
@@ -649,6 +700,9 @@ export function runScheduler(
                     scheduleOffsetSec +
                     eventAbsoluteSec +
                     jitter;
+
+                // Skip events that can't be scheduled in the future — the scheduler fell behind
+                if (finalPluckTime < ctx.currentTime) continue;
 
                 // 1. Dispatch audio nodes instantly to the Web Audio timeline queue
                 beatSlice.notes.forEach(note => {
