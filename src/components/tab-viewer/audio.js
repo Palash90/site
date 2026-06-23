@@ -39,14 +39,87 @@ export const RHYTHM_BEAT_VALUES = {
     "r=": 0.25
 };
 
-// Batch cleanup queue: avoids GC bursts from per-node onended handlers
+// Voice pool: pre-allocated nodes reused across notes — zero GC during playback
+const VOICE_COUNT = 12;
+let voicePool = null;
+
+function acquireVoice(ctx, voiceStartTime) {
+    const now = ctx.currentTime;
+    const scheduleBase = Math.max(voiceStartTime, now);
+
+    if (!voicePool) {
+        voicePool = [];
+        const masterTarget = getMasterGain(ctx);
+        for (let i = 0; i < VOICE_COUNT; i++) {
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+
+            const gain = ctx.createGain();
+            gain.gain.value = 0;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1000;
+
+            const bodyOsc = ctx.createOscillator();
+            bodyOsc.type = 'sine';
+
+            const bodyGain = ctx.createGain();
+            bodyGain.gain.value = 0;
+
+            osc.connect(gain);
+            bodyOsc.connect(bodyGain);
+            bodyGain.connect(gain);
+            gain.connect(filter);
+            filter.connect(masterTarget);
+
+            osc.start();
+            bodyOsc.start();
+
+            voicePool.push({ osc, bodyOsc, gain, bodyGain, filter, releaseTime: 0 });
+        }
+    }
+
+    // Find available voice (releaseTime <= scheduleBase) or steal the soonest-free
+    let best = null;
+    for (const v of voicePool) {
+        if (v.releaseTime <= scheduleBase) { best = v; break; }
+    }
+    if (!best) {
+        best = voicePool.reduce((a, b) => a.releaseTime < b.releaseTime ? a : b);
+    }
+
+    const resetTime = scheduleBase;
+
+    best.gain.gain.cancelScheduledValues(resetTime);
+    best.bodyGain.gain.cancelScheduledValues(resetTime);
+    best.filter.frequency.cancelScheduledValues(resetTime);
+    best.osc.frequency.cancelScheduledValues(resetTime);
+    best.bodyOsc.frequency.cancelScheduledValues(resetTime);
+
+    best.gain.gain.setValueAtTime(0, resetTime);
+    best.bodyGain.gain.setValueAtTime(0, resetTime);
+
+    return best;
+}
+
+function silenceAllVoices(ctx) {
+    if (!voicePool) return;
+    const now = ctx.currentTime;
+    for (const v of voicePool) {
+        v.gain.gain.cancelScheduledValues(now);
+        v.bodyGain.gain.cancelScheduledValues(now);
+        v.gain.gain.setValueAtTime(0, now);
+        v.bodyGain.gain.setValueAtTime(0, now);
+        v.releaseTime = now;
+    }
+}
+
+// Minimal cleanup queue — only used by the rare playMutedPercussion path
 const pendingNodeCleanups = [];
-const drainNodeCleanups = (currentTime, maxPerTick = 8) => {
-    const limit = currentTime === Infinity ? Infinity : maxPerTick;
-    let count = 0;
-    while (pendingNodeCleanups.length > 0 && pendingNodeCleanups[0].time <= currentTime && count < limit) {
+const drainNodeCleanups = (currentTime) => {
+    while (pendingNodeCleanups.length > 0 && pendingNodeCleanups[0].time <= currentTime) {
         pendingNodeCleanups.shift().cleanup();
-        count++;
     }
 };
 
@@ -81,7 +154,7 @@ const getMasterGain = (ctx) => {
  * Plays a single note or a chain of continuous articulations with realistic nylon string modeling.
  * Re-engineered for crisp acoustic clarity, zero-pop note terminations, and smooth 6-string polyphony.
  */
-export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration, velocity = 1.0) => {
+export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration, velocity = 1.0, noteVoice = 1) => {
     let segments = [];
     if (Array.isArray(midiOrChain)) {
         segments = midiOrChain;
@@ -90,12 +163,11 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     }
 
     const polyphonyScale = Array.isArray(midiOrChain) && midiOrChain.length > 1 ? 0.65 : 1.0;
-    const effectiveVelocity = velocity * polyphonyScale;
+    const effectiveVelocity = velocity * polyphonyScale * (noteVoice === 2 ? 0.65 : 1.0);
     const totalDuration = segments.reduce((sum, seg) => sum + (seg.duration || 0), 0);
     const firstPlayable = segments.find(s => typeof s.midi === 'number');
 
     const playMutedPercussion = (time, dur = 0.05, vel = 0.5) => {
-        // High-efficiency procedural pick-scratch transient without heavy buffer re-allocation
         const lowThump = ctx.createOscillator();
         const highScrape = ctx.createOscillator();
         const filter = ctx.createBiquadFilter();
@@ -154,51 +226,51 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     const initialMidi = firstPlayable.midi;
     const initialFundamental = 440 * Math.pow(2, (initialMidi - 69) / 12);
 
-    // Main Audio Nodes (Consolidated allocation footprint)
-    const mainGain = ctx.createGain();
-    const nylonDampFilter = ctx.createBiquadFilter();
-    nylonDampFilter.type = 'lowpass';
-    nylonDampFilter.frequency.setValueAtTime(Math.min(1000, initialFundamental * 2.0), startTime);
-    nylonDampFilter.frequency.exponentialRampToValueAtTime(Math.min(220, initialFundamental * 1.0), startTime + Math.min(totalDuration, 0.6));
+    // Acquire a pre-allocated voice from the pool — zero node creation
+    const voice = acquireVoice(ctx, startTime);
 
-    mainGain.connect(nylonDampFilter);
-    nylonDampFilter.connect(getMasterGain(ctx));
+    voice.filter.frequency.setValueAtTime(Math.min(1000, initialFundamental * 2.0), startTime);
+    voice.filter.frequency.exponentialRampToValueAtTime(Math.min(220, initialFundamental * 1.0), startTime + Math.min(totalDuration, 0.6));
 
     const attackTime = 0.010;
-    const totalDecayTime = Math.max(totalDuration * 0.95, 1.2);
 
-    mainGain.gain.setValueAtTime(0, startTime);
-    mainGain.gain.linearRampToValueAtTime(effectiveVelocity * 0.50, startTime + attackTime);
-    mainGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.20, startTime + 0.08);
-    mainGain.gain.exponentialRampToValueAtTime(0.01, startTime + totalDecayTime - 0.02);
+    voice.gain.gain.setValueAtTime(0, startTime);
+    voice.gain.gain.linearRampToValueAtTime(effectiveVelocity * 0.50, startTime + attackTime);
 
-    // --- REPLACE THE OSCILLATOR CONFIGURATION BLOCK ---
-    // 1. Core Nylon String Fundamental Layer (pure tone for warmth)
-    const stringOsc = ctx.createOscillator();
-    stringOsc.type = 'sine';
+    if (noteVoice === 2) {
+        // V2: sustain (drone) — decays to moderate level then rings for the measure
+        voice.gain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.15, startTime + 0.08);
+        const fadeStart = Math.max(startTime + 0.08, startTime + totalDuration - 0.05);
+        voice.gain.gain.setValueAtTime(effectiveVelocity * 0.15, fadeStart);
+        voice.gain.gain.linearRampToValueAtTime(0, startTime + totalDuration + 0.02);
+        voice.releaseTime = startTime + totalDuration + 0.04;
+    } else {
+        // V1: natural decay
+        const totalDecayTime = Math.max(totalDuration * 0.95, 1.2);
+        voice.gain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.20, startTime + 0.08);
+        voice.gain.gain.exponentialRampToValueAtTime(0.01, startTime + totalDecayTime - 0.03);
+        const fadeOutTime = 0.015;
+        const stopTime = startTime + totalDecayTime;
+        voice.gain.gain.setValueAtTime(0.01, stopTime - fadeOutTime);
+        voice.gain.gain.linearRampToValueAtTime(0, stopTime);
+        voice.releaseTime = stopTime;
+    }
+
+    // Main oscillator
     const detuneA = (Math.random() * 3) - 1.5;
-    stringOsc.frequency.setValueAtTime(initialFundamental, startTime);
-    stringOsc.detune.setValueAtTime(detuneA, startTime);
+    voice.osc.frequency.setValueAtTime(initialFundamental, startTime);
+    voice.osc.detune.setValueAtTime(detuneA, startTime);
 
-    // 2. Body Thump (decays quickly for initial percussive warmth)
-    const bodyOsc = ctx.createOscillator();
-    bodyOsc.type = 'sine';
-    const bodyGain = ctx.createGain();
-    bodyGain.gain.setValueAtTime(effectiveVelocity * 0.35, startTime);
-    bodyGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.20);
-    bodyOsc.frequency.setValueAtTime(initialFundamental, startTime);
-    bodyOsc.detune.setValueAtTime((Math.random() * 4) - 2, startTime);
-
-    stringOsc.connect(mainGain);
-    bodyOsc.connect(bodyGain);
-    bodyGain.connect(mainGain);
-
+    // Body thump oscillator
+    voice.bodyGain.gain.setValueAtTime(effectiveVelocity * 0.35, startTime);
+    voice.bodyGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.20);
+    voice.bodyOsc.frequency.setValueAtTime(initialFundamental, startTime);
+    voice.bodyOsc.detune.setValueAtTime((Math.random() * 4) - 2, startTime);
 
     // Continuous Pitch Timeline Automation
     let timeCursor = startTime;
     let currentMidi = initialMidi;
 
-    // --- REPLACE THE INTERNALS OF THE SEGMENTS AUTOMATION LOOP ---
     for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
         const segmentStartTime = timeCursor;
@@ -214,53 +286,28 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
             const startFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
             const targetFund = hasMidi ? 440 * Math.pow(2, (seg.midi - 69) / 12) : startFund;
 
-            stringOsc.frequency.setValueAtTime(startFund, segmentStartTime);
-            bodyOsc.frequency.setValueAtTime(startFund, segmentStartTime);
+            voice.osc.frequency.setValueAtTime(startFund, segmentStartTime);
+            voice.bodyOsc.frequency.setValueAtTime(startFund, segmentStartTime);
 
-            stringOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
-            bodyOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
+            voice.osc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
+            voice.bodyOsc.frequency.linearRampToValueAtTime(targetFund, segmentEndTime);
             currentMidi = seg.midi;
         } else if (seg.type === 'hammer' || seg.type === 'pull') {
             if (hasMidi) {
                 const targetFund = 440 * Math.pow(2, (seg.midi - 69) / 12);
-                stringOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
-                bodyOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
+                voice.osc.frequency.setValueAtTime(targetFund, segmentStartTime);
+                voice.bodyOsc.frequency.setValueAtTime(targetFund, segmentStartTime);
                 currentMidi = seg.midi;
-                stringOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
-                bodyOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
+                voice.osc.frequency.setValueAtTime(targetFund, segmentEndTime);
+                voice.bodyOsc.frequency.setValueAtTime(targetFund, segmentEndTime);
             }
         } else {
             const currentFund = 440 * Math.pow(2, (currentMidi - 69) / 12);
-            stringOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
-            bodyOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
+            voice.osc.frequency.setValueAtTime(currentFund, segmentEndTime);
+            voice.bodyOsc.frequency.setValueAtTime(currentFund, segmentEndTime);
         }
         timeCursor = segmentEndTime;
     }
-
-    stringOsc.start(startTime);
-    bodyOsc.start(startTime);
-
-    const fadeOutTime = 0.015;
-    const stopTime = startTime + totalDecayTime;
-
-    mainGain.gain.setValueAtTime(0.01, stopTime - fadeOutTime);
-    mainGain.gain.linearRampToValueAtTime(0, stopTime);
-
-    stringOsc.stop(stopTime);
-    bodyOsc.stop(stopTime);
-
-    pendingNodeCleanups.push({
-        time: stopTime + 0.05,
-        cleanup: () => {
-            try {
-                stringOsc.disconnect();
-                bodyOsc.disconnect();
-                bodyGain.disconnect();
-                nylonDampFilter.disconnect();
-                mainGain.disconnect();
-            } catch (e) {}
-        }
-    });
 };
 
 const clearPlaybackCallbacks = playbackTimeoutsRef => {
@@ -304,6 +351,9 @@ export function stopPlaying(lookaheadTimerRef, playbackTimeoutsRef, setIsPlaying
         setPlaybackIndex(null);
         pausedTimeRef.current = 0;
 
+        // Silence all pool voices immediately to prevent bleed on next playback
+        silenceAllVoices(audioCtxRef.current);
+
         // Drain all remaining node cleanups to reset the audio graph
         drainNodeCleanups(Infinity);
 
@@ -343,9 +393,8 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
 
         // Reuse existing AudioContext instead of creating new ones to prevent resource accumulation
         if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
-            audioCtxRef.current = new (
-                window.AudioContext || window.webkitAudioContext
-            )();
+            const AC = window.AudioContext || window.webkitAudioContext;
+            audioCtxRef.current = new AC({ latencyHint: 'playback', sampleRate: 44100 });
         } else if (audioCtxRef.current.state === "suspended") {
             audioCtxRef.current.resume();
         }
@@ -726,7 +775,8 @@ export function runScheduler(
                         runtimeSegments,
                         finalPluckTime,
                         null,
-                        note.type === "mute" ? 0 : note.preCalculatedVelocity
+                        note.type === "mute" ? 0 : note.preCalculatedVelocity,
+                        note.voice || 1
                     );
                 });
 
