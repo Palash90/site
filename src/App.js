@@ -25,9 +25,7 @@ function Header() {
                 <Nav.Link key={l.link} href={l.link} onClick={() => setExpanded(false)}>{l.label}</Nav.Link>
               ))
             }
-            {user ? (
-              <Nav.Link href="/tab-parser" onClick={() => setExpanded(false)}>Scores</Nav.Link>
-            ) : (
+            {!user && (
               <Nav.Link href="/login" onClick={() => setExpanded(false)}>Login</Nav.Link>
             )}
           </Nav>

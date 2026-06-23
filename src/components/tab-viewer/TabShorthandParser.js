@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   collection,
   query,
@@ -19,6 +19,7 @@ import { Col, Container, Row, Button, Alert, Spinner } from "react-bootstrap";
 export default function TabShorthandParser() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [existingScores, setExistingScores] = useState([]);
   const [selectedScoreId, setSelectedScoreId] = useState("");
   const [loadingScores, setLoadingScores] = useState(true);
@@ -34,6 +35,7 @@ export default function TabShorthandParser() {
   const [instrument, setInstrument] = useState("Guitalele");
   const [capo, setCapo] = useState(0);
   const [desc, setDesc] = useState("");
+  const [published, setPublished] = useState(false);
   const [showFull, setShowFull] = useState(false);
   const [fullScore, setFullScore] = useState("");
 
@@ -65,6 +67,24 @@ export default function TabShorthandParser() {
     loadScores();
   }, [loadScores]);
 
+  useEffect(() => {
+    if (loadingScores || existingScores.length === 0) return;
+    const editId = searchParams.get("edit");
+    if (!editId) return;
+    const score = existingScores.find((s) => s.id === editId);
+    if (score) {
+      setSelectedScoreId(score.id);
+      setName(score.name || "");
+      setTimeSignature(score.timeSignature || "4/4");
+      setInstrument(score.instrument || "Guitalele");
+      setCapo(score.capo || 0);
+      setDesc(score.desc || "");
+      setPublished(score.published || false);
+      setShorthandText(score.rawShorthand || "");
+      window.history.replaceState(null, "", "/tab-parser");
+    }
+  }, [loadingScores, existingScores, searchParams]);
+
   const handleParse = async () => {
     try {
       setError(null);
@@ -87,13 +107,23 @@ export default function TabShorthandParser() {
       setParsedData(scores);
 
       setSaving(true);
+
+      const trimmedName = name.trim();
+      if (!selectedScoreId) {
+        const dup = existingScores.find((s) => s.name?.toLowerCase() === trimmedName.toLowerCase());
+        if (dup) {
+          throw new Error(`A score named "${trimmedName}" already exists.`);
+        }
+      }
+
       const scoreData = {
         userId: user.uid,
-        name: name.trim(),
+        name: trimmedName,
         timeSignature,
         instrument,
         capo: Number(capo),
         desc,
+        published,
         rawShorthand: shorthandText,
         createdAt: Date.now(),
       };
@@ -106,6 +136,7 @@ export default function TabShorthandParser() {
 
       await loadScores();
     } catch (err) {
+      console.error("Failed to save score", err.code, err.message);
       setError(err.message || "An error occurred during parsing.");
       setParsedData(null);
     } finally {
@@ -122,7 +153,8 @@ export default function TabShorthandParser() {
       setInstrument("Guitalele");
       setCapo(0);
       setDesc("");
-      setShorthandText("");
+      setPublished(false);
+      setCapo(0);
       setParsedData(null);
       return;
     }
@@ -133,6 +165,7 @@ export default function TabShorthandParser() {
       setInstrument(score.instrument || "Guitalele");
       setCapo(score.capo || 0);
       setDesc(score.desc || "");
+      setPublished(score.published || false);
       setShorthandText(score.rawShorthand || "");
     }
   };
@@ -148,10 +181,12 @@ export default function TabShorthandParser() {
       setInstrument("Guitalele");
       setCapo(0);
       setDesc("");
+      setPublished(false);
       setShorthandText("");
       setParsedData(null);
       await loadScores();
     } catch (e) {
+      console.error("Failed to delete score", e.code, e.message);
       setError(e.message);
     }
   };
@@ -188,7 +223,7 @@ export default function TabShorthandParser() {
                 ))}
               </select>
               {selectedScoreId && (
-                <Button size="sm" variant="info" onClick={() => navigate(`/score/${selectedScoreId}`)}>
+                <Button size="sm" variant="info" onClick={() => navigate(`/content/u-${selectedScoreId}`)}>
                   View
                 </Button>
               )}
@@ -248,6 +283,21 @@ export default function TabShorthandParser() {
               onChange={(e) => setDesc(e.target.value)}
             />
           </Col>
+          <Col xs="auto" className="d-flex flex-column justify-content-end">
+            <label>&nbsp;</label>
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="publish-toggle"
+                checked={published}
+                onChange={(e) => setPublished(e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="publish-toggle">
+                Published
+              </label>
+            </div>
+          </Col>
         </Row>
         <Row>
           <Col>
@@ -281,6 +331,7 @@ export default function TabShorthandParser() {
               setError(null);
               setName("");
               setDesc("");
+              setPublished(false);
               setCapo(0);
               setSelectedScoreId("");
             }}>

@@ -59,6 +59,7 @@ export default function Comments({ contentId }) {
       setText("");
       await loadComments();
     } catch (e) {
+      console.error("Failed to post comment", e.code, e.message);
       setError("Failed to post comment.");
     } finally {
       setSending(false);
