@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import Home from "./Home"
 import Projects from "./Projects"
 import About from "./About"
@@ -7,7 +7,15 @@ import Content from "./Content"
 import CustomComponent from "./CustomComponent"
 import { Container } from "react-bootstrap"
 import TabViewerDemo from "./tab-viewer/TabViewerDemo"
-import TabSorthandParser from "./tab-viewer/TabShorthandParser"
+import TabShorthandParser from "./tab-viewer/TabShorthandParser"
+import Login from "./Login"
+import { useAuth } from "../contexts/AuthContext"
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return user ? children : <Navigate to="/login" />;
+}
 
 export default function RouteResolver() {
     return (
@@ -20,9 +28,10 @@ export default function RouteResolver() {
                     <Route path='/content/:contentId' element={<Content />} />
                     <Route path='/projects' element={<Projects />} />
                     <Route path='/tab-demo' element={<TabViewerDemo />} />
-                    <Route path='/tab-parser' element={<TabSorthandParser />} />
+                    <Route path='/tab-parser' element={<ProtectedRoute><TabShorthandParser /></ProtectedRoute>} />
                     <Route path='/component/:componentId' element={<CustomComponent />} />
                     <Route path='/about' element={<About />} />
+                    <Route path='/login' element={<Login />} />
                 </Routes>
             </Router>
         </Container>

@@ -5,6 +5,7 @@
   "private": false,
   "dependencies": {
     "bootstrap": "^5.3.8",
+    "firebase": "^12.15.0",
     "new_site": "file:",
     "peerjs": "^1.5.5",
     "qrcode.react": "^4.2.0",

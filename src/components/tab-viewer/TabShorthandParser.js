@@ -1,304 +1,345 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  deleteDoc,
+  orderBy,
+} from "firebase/firestore";
+import { db } from "../../firebase";
+import { useAuth } from "../../contexts/AuthContext";
 import { parseShorthandText } from "./parseShorthandUtils";
 import GuitaleleViewer from "./GuitaleleViewer";
-import { Col, Container, Row } from "react-bootstrap";
+import { Col, Container, Row, Button, Alert, Spinner } from "react-bootstrap";
 
-export const TabShorthandParser = () => {
-    // 1. Initialize state directly from localStorage as an object
-    const [existingScores, setExistingScores] = useState(() => {
-        const saved = window.localStorage.getItem("musicScores");
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error("Error parsing localStorage data", e);
-                return {};
-            }
-        }
-        return {};
-    });
+export default function TabShorthandParser() {
+  const { user } = useAuth();
+  const [existingScores, setExistingScores] = useState([]);
+  const [selectedScoreId, setSelectedScoreId] = useState("");
+  const [loadingScores, setLoadingScores] = useState(true);
 
-    const [shorthandText, setShorthandText] = useState("");
-    const [parsedData, setParsedData] = useState(null);
-    const [error, setError] = useState(null);
+  const [shorthandText, setShorthandText] = useState("");
+  const [parsedData, setParsedData] = useState(null);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-    const [name, setName] = useState("");
-    const [timeSignature, setTimeSignature] = useState("4/4");
-    const [instrument, setInstrument] = useState("Guitalele");
-    const [capo, setCapo] = useState(0);
-    const [desc, setDesc] = useState("");
-    const [showFull, setShowFull] = useState(false);
-    const [fullScore, setFullScore] = useState("");
+  const [name, setName] = useState("");
+  const [timeSignature, setTimeSignature] = useState("4/4");
+  const [instrument, setInstrument] = useState("Guitalele");
+  const [capo, setCapo] = useState(0);
+  const [desc, setDesc] = useState("");
+  const [showFull, setShowFull] = useState(false);
+  const [fullScore, setFullScore] = useState("");
 
-    const instruments = ["Guitalele"];
-    const timeSignatures = ["4/4", "3/4", "6/8", "2/4", "2/2"];
+  const instruments = ["Guitalele"];
+  const timeSignatures = ["4/4", "3/4", "6/8", "2/4", "2/2"];
 
-    const handleParse = () => {
-        try {
-            setError(null);
-            if (!name.trim()) {
-                throw new Error("Score name is required.");
-            }
+  const scoresRef = collection(db, "scores");
 
-            let scoreText = "=".repeat(80);
-            scoreText += "\nScore: " + name;
-            scoreText += "\nTime Signature: " + timeSignature;
-            scoreText += "\nInstrument: " + instrument;
-            scoreText += "\nCapo: " + capo;
-            scoreText += "\nDescription: " + desc;
-            scoreText += "\n" + "=".repeat(80);
-            scoreText += "\n" + shorthandText;
+  const loadScores = useCallback(async () => {
+    if (!user) return;
+    setLoadingScores(true);
+    try {
+      const q = query(scoresRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      const list = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      setExistingScores(list);
+    } catch (e) {
+      console.error("Failed to load scores", e);
+    } finally {
+      setLoadingScores(false);
+    }
+  }, [user]);
 
-            setFullScore(scoreText);
-            const scores = parseShorthandText(scoreText);
-            console.log("Parsed Scores:", scores);
+  useEffect(() => {
+    loadScores();
+  }, [loadScores]);
 
-            // 2. Clone the object to avoid direct state mutation
-            const updatedScores = { ...existingScores };
+  const handleParse = async () => {
+    try {
+      setError(null);
+      if (!name.trim()) {
+        throw new Error("Score name is required.");
+      }
 
-            // 3. Update the value correctly
-            updatedScores[name] = {
-                name: name,
-                timeSignature: timeSignature,
-                instrument: instrument,
-                capo: capo,
-                desc: desc,
-                rawShorthand: shorthandText // Useful for loading it back later!
-            };
+      let scoreText = "=".repeat(80);
+      scoreText += "\nScore: " + name;
+      scoreText += "\nTime Signature: " + timeSignature;
+      scoreText += "\nInstrument: " + instrument;
+      scoreText += "\nCapo: " + capo;
+      scoreText += "\nDescription: " + desc;
+      scoreText += "\n" + "=".repeat(80);
+      scoreText += "\n" + shorthandText;
 
-            // 4. Update state and save to LocalStorage as a valid JSON string
-            setExistingScores(updatedScores);
-            window.localStorage.setItem("musicScores", JSON.stringify(updatedScores));
+      setFullScore(scoreText);
+      const scores = parseShorthandText(scoreText);
+      console.log("Parsed Scores:", scores);
+      setParsedData(scores);
 
-            setParsedData(scores);
-        } catch (err) {
-            setError(err.message || "An error occurred during parsing.");
-            setParsedData(null);
-        }
-    };
+      setSaving(true);
+      const scoreData = {
+        userId: user.uid,
+        name: name.trim(),
+        timeSignature,
+        instrument,
+        capo: Number(capo),
+        desc,
+        rawShorthand: shorthandText,
+        createdAt: Date.now(),
+      };
 
-    // This effect handles keeping parsedData in sync when loading the app
-    useEffect(() => {
-        setParsedData(existingScores);
-    }, []);
+      if (selectedScoreId) {
+        await updateDoc(doc(db, "scores", selectedScoreId), scoreData);
+      } else {
+        await addDoc(scoresRef, scoreData);
+      }
 
-    // Placeholder dropdown loader logic
-    const loadExistingScore = (scoreName) => {
-        const score = existingScores[scoreName];
-        if (score) {
-            setName(score.name || "");
-            setTimeSignature(score.timeSignature || "4/4");
-            setInstrument(score.instrument || "Guitalele");
-            setCapo(score.capo || 0);
-            setDesc(score.desc || "");
-            setShorthandText(score.rawShorthand || "");
-        }
-    };
+      await loadScores();
+    } catch (err) {
+      setError(err.message || "An error occurred during parsing.");
+      setParsedData(null);
+    } finally {
+      setSaving(false);
+    }
+  };
 
+  const loadExistingScore = (e) => {
+    const id = e.target.value;
+    setSelectedScoreId(id);
+    if (!id) {
+      setName("");
+      setTimeSignature("4/4");
+      setInstrument("Guitalele");
+      setCapo(0);
+      setDesc("");
+      setShorthandText("");
+      setParsedData(null);
+      return;
+    }
+    const score = existingScores.find((s) => s.id === id);
+    if (score) {
+      setName(score.name || "");
+      setTimeSignature(score.timeSignature || "4/4");
+      setInstrument(score.instrument || "Guitalele");
+      setCapo(score.capo || 0);
+      setDesc(score.desc || "");
+      setShorthandText(score.rawShorthand || "");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedScoreId) return;
+    if (!window.confirm("Delete this score?")) return;
+    try {
+      await deleteDoc(doc(db, "scores", selectedScoreId));
+      setSelectedScoreId("");
+      setName("");
+      setTimeSignature("4/4");
+      setInstrument("Guitalele");
+      setCapo(0);
+      setDesc("");
+      setShorthandText("");
+      setParsedData(null);
+      await loadScores();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  if (loadingScores) {
     return (
-        <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-            <Container>
-                <Row>
-                    <Col>
-                        <h2>Tab Shorthand Parser</h2>
-                    </Col>
-                </Row>
-                <Row className="flex-nowrap">
-                    <Col>
-                        <label>Existing Scores</label>
-                        <select
-                            value={name}
-                            onChange={e => loadExistingScore(e.target.value)}
-                        >
-                            <option value="">-- Select Score --</option>
-                            {Object.keys(existingScores).map(t => (
-                                <option key={t} value={t}>{t}</option>
-                            ))}
-                        </select>
-                    </Col>
-                    <Col>
-                        <label>Name:</label>
-                        <input
-                            type="text"
-                            value={name}
-                            required
-                            onChange={e => setName(e.target.value)}
-                        />
-                    </Col>
-                    <Col>
-                        <label>Time Signature</label>
-                        <select 
-                            value={timeSignature}
-                            onChange={e => setTimeSignature(e.target.value)}
-                        >
-                            {timeSignatures.map(t => (
-                                <option key={t} value={t}>{t}</option>
-                            ))}
-                        </select>
-                    </Col>
-                    <Col>
-                        <label>Instrument</label>
-                        <select value={instrument} onChange={e => setInstrument(e.target.value)}>
-                            {instruments.map(i => (
-                                <option key={i} value={i}>{i}</option>
-                            ))}
-                        </select>
-                    </Col>
-                    <Col>
-                        <label>Capo:</label>
-                        <input
-                            type="number"
-                            min={0}
-                            max={12}
-                            value={capo}
-                            onChange={e => setCapo(e.target.value)}
-                        />
-                    </Col>
-                    <Col>
-                        <label>Description</label>
-                        <input
-                            type="text"
-                            value={desc}
-                            onChange={e => setDesc(e.target.value)}
-                        />
-                    </Col>
-                </Row>
-                <Row>
-                    <Col>
-                        <br />
-                    </Col>
-                </Row>
-                <Row>
-                    <Col>
-                        <textarea
-                            rows={12}
-                            style={{
-                                width: "100%",
-                                fontFamily: "monospace",
-                                padding: "10px"
-                            }}
-                            placeholder="Paste your scores_shorthand.txt content here..."
-                            value={shorthandText}
-                            onChange={e => {
-                                setShorthandText(e.target.value);
-                            }}
-                        />
-                    </Col>
-                </Row>
-                <Row>
-                    <Col>
-                        <button
-                            onClick={handleParse}
-                            style={{
-                                padding: "10px 20px",
-                                marginTop: "10px",
-                                cursor: "pointer",
-                                background: name ? "#0070f3" : "#555555",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: "4px"
-                            }}
-                            disabled={!name}
-                        >
-                            Parse
-                        </button>
-                    </Col>
-                    <Col>
-                        <button
-                            onClick={() => {
-                                setShorthandText("");
-                                setParsedData(null);
-                                setError(null);
-                                setName("");
-                                setDesc("");
-                                setCapo(0);
-                            }}
-                            style={{
-                                padding: "10px 20px",
-                                marginTop: "10px",
-                                cursor: "pointer",
-                                background: "#0070f3",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: "4px"
-                            }}
-                        >
-                            Clear
-                        </button>
-                    </Col>
-                </Row>
-                {error && (
-                    <Row>
-                        <Col>
-                            <p style={{ color: "red", marginTop: "10px" }}>
-                                {error}
-                            </p>
-                        </Col>
-                    </Row>
-                )}
-                <Row>
-                    <br />
-                </Row>
-                <Row>
-                    <Col>
-                        <label>Show Fully Constructed Score:</label>
-                    </Col>
-                    <Col>
-                        <input
-                            type="checkbox"
-                            checked={showFull}
-                            onChange={e => setShowFull(e.target.checked)}
-                        />
-                    </Col>
-                    <Col>{showFull ? "Showing" : "Hidden"}</Col>
-                </Row>
-                {showFull && parsedData && (
-                    <>
-                        <Row>
-                            <Col>
-                                <textarea
-                                    readOnly
-                                    rows={12}
-                                    style={{
-                                        width: "100%",
-                                        fontFamily: "monospace",
-                                        padding: "10px"
-                                    }}
-                                    value={fullScore}
-                                />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col>
-                                <textarea
-                                    readOnly
-                                    rows={12}
-                                    style={{
-                                        width: "100%",
-                                        fontFamily: "monospace",
-                                        padding: "10px"
-                                    }}
-                                    value={JSON.stringify(parsedData, null, 2)}
-                                />
-                            </Col>
-                        </Row>
-                    </>
-                )}
-                <Row>
-                    <Col>
-                        <GuitaleleViewer
-                            scoreData={
-                                parsedData && parsedData.length > 0
-                                    ? parsedData[0]
-                                    : Array.isArray(parsedData) ? null : parsedData
-                            }
-                            editorMode={false}
-                        />
-                    </Col>
-                </Row>
-            </Container>
-        </div>
+      <Container className="text-center mt-5">
+        <Spinner animation="border" variant="light" />
+      </Container>
     );
+  }
+
+  return (
+    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
+      <Container>
+        <Row>
+          <Col>
+            <h2>Tab Shorthand Parser</h2>
+          </Col>
+        </Row>
+        <Row className="flex-nowrap">
+          <Col>
+            <label>Existing Scores</label>
+            <select
+              className="form-select"
+              value={selectedScoreId}
+              onChange={loadExistingScore}
+            >
+              <option value="">-- New Score --</option>
+              {existingScores.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </Col>
+          <Col>
+            <label>Name:</label>
+            <input
+              className="form-control"
+              type="text"
+              value={name}
+              required
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Col>
+          <Col>
+            <label>Time Signature</label>
+            <select
+              className="form-select"
+              value={timeSignature}
+              onChange={(e) => setTimeSignature(e.target.value)}
+            >
+              {timeSignatures.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </Col>
+          <Col>
+            <label>Instrument</label>
+            <select
+              className="form-select"
+              value={instrument}
+              onChange={(e) => setInstrument(e.target.value)}
+            >
+              {instruments.map((i) => (
+                <option key={i} value={i}>{i}</option>
+              ))}
+            </select>
+          </Col>
+          <Col>
+            <label>Capo:</label>
+            <input
+              className="form-control"
+              type="number"
+              min={0}
+              max={12}
+              value={capo}
+              onChange={(e) => setCapo(e.target.value)}
+            />
+          </Col>
+          <Col>
+            <label>Description</label>
+            <input
+              className="form-control"
+              type="text"
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+            />
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <br />
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <textarea
+              className="form-control"
+              rows={12}
+              style={{ fontFamily: "monospace" }}
+              placeholder="Paste your scores_shorthand.txt content here..."
+              value={shorthandText}
+              onChange={(e) => {
+                setShorthandText(e.target.value);
+              }}
+            />
+          </Col>
+        </Row>
+        <Row className="mt-2">
+          <Col xs="auto">
+            <Button onClick={handleParse} disabled={!name || saving}>
+              {saving ? "Saving..." : selectedScoreId ? "Update" : "Save & Parse"}
+            </Button>
+          </Col>
+          <Col xs="auto">
+            <Button variant="secondary" onClick={() => {
+              setShorthandText("");
+              setParsedData(null);
+              setError(null);
+              setName("");
+              setDesc("");
+              setCapo(0);
+              setSelectedScoreId("");
+            }}>
+              Clear
+            </Button>
+          </Col>
+          {selectedScoreId && (
+            <Col xs="auto">
+              <Button variant="danger" onClick={handleDelete}>Delete</Button>
+            </Col>
+          )}
+        </Row>
+        {error && (
+          <Row className="mt-2">
+            <Col>
+              <Alert variant="danger" className="py-2">{error}</Alert>
+            </Col>
+          </Row>
+        )}
+        <Row className="mt-3">
+          <Col xs="auto">
+            <label>Show Fully Constructed Score:</label>
+          </Col>
+          <Col xs="auto">
+            <input
+              type="checkbox"
+              checked={showFull}
+              onChange={(e) => setShowFull(e.target.checked)}
+            />
+          </Col>
+          <Col>{showFull ? "Showing" : "Hidden"}</Col>
+        </Row>
+        {showFull && parsedData && (
+          <>
+            <Row className="mt-2">
+              <Col>
+                <textarea
+                  className="form-control"
+                  readOnly
+                  rows={12}
+                  style={{ fontFamily: "monospace" }}
+                  value={fullScore}
+                />
+              </Col>
+            </Row>
+            <Row className="mt-2">
+              <Col>
+                <textarea
+                  className="form-control"
+                  readOnly
+                  rows={12}
+                  style={{ fontFamily: "monospace" }}
+                  value={JSON.stringify(parsedData, null, 2)}
+                />
+              </Col>
+            </Row>
+          </>
+        )}
+        <Row className="mt-3">
+          <Col>
+            <GuitaleleViewer
+              scoreData={
+                parsedData && parsedData.length > 0
+                  ? parsedData[0]
+                  : Array.isArray(parsedData) ? null : parsedData
+              }
+            />
+          </Col>
+        </Row>
+      </Container>
+    </div>
+  );
 };
 
-export default TabShorthandParser;
+
