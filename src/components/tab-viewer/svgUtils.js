@@ -1,6 +1,6 @@
 import { DARK_THEME, getFlagPath } from "./guitaleleViewerUtils";
 
-export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, handleNoteClick, measuresPerRow, voice1Enabled, voice2Enabled, metronomeEnabled, sheetMusicEnabled) {
+export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop, timeSigBottom, tabTopY, measureValidityMap, rhythmTopY, beatsPerMeasure, activeIndices, rhythm2TopY, rhythm1TopY, SLOT_WIDTH, isPlaying, isPaused, playbackIndex, setHoveredNoteIndex, handleNoteClick, measuresPerRow, voice1Enabled, voice2Enabled, metronomeEnabled, viewMode) {
     return (
         {
             rowEvents, totalWidth, barlineXPositions, measureGroups, rowEndX
@@ -11,15 +11,19 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
         const scaleY = measuresPerRow === 1 ? 0.62 : measuresPerRow === 2 ? 0.78 : 1.0;
         const sLineSpacing = lineSpacing * scaleY;
 
+        const showSheetMusic = viewMode !== 'tab';
+        const showTab = viewMode !== 'sheet';
+
         const leftMargin = (paddingX - 105) * (measuresPerRow === 4 ? 1 : 0.85);
 
         // 1. Dynamically compute precise vertical bounds based on drawn elements
-        const minY = (sheetMusicEnabled ? (trebleTopY - 55) : (tabTopY - 15)) * scaleY;
+        const minY = (showSheetMusic ? (trebleTopY - 55) : (tabTopY - 15)) * scaleY;
 
         // Bottom-most elements are either the rhythm lane 2 background or the measure validity descriptions
         const maxRhythmY = (rhythmTopY + 80) * scaleY; // Covers rhythm text + background rect boundaries
         const maxValidityTextY = (tabTopY + (5 * lineSpacing) + 65) * scaleY; // Covers measure debug details
-        const maxY = Math.max(maxRhythmY, maxValidityTextY);
+        const maxStaffY = (bassTopY + 4 * lineSpacing + 40) * scaleY; // Covers staff + ledger line area
+        const maxY = showTab ? Math.max(maxRhythmY, maxValidityTextY) : maxStaffY;
 
         // Calculate the exact height needed to fit everything snugly
         const calculatedHeight = maxY - minY;
@@ -29,11 +33,19 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
             ev => ev.globalIndex === playbackIndex
         );
 
-        // Compute rect positions based on sheetMusicEnabled to keep them within the visible viewBox
-        const highlightY = (sheetMusicEnabled ? (trebleTopY - 50) : (tabTopY - 15)) * scaleY;
-        const highlightH = (sheetMusicEnabled ? (rhythmTopY - trebleTopY + 95) : (rhythmTopY - tabTopY + 60)) * scaleY;
-        const hitTestY = (sheetMusicEnabled ? (trebleTopY - 15) : (tabTopY - 15)) * scaleY;
-        const hitTestH = (sheetMusicEnabled ? (rhythmTopY - trebleTopY + 65) : (rhythmTopY - tabTopY + 65)) * scaleY;
+        // Compute rect positions based on showSheetMusic to keep them within the visible viewBox
+        const highlightY = (showSheetMusic ? (trebleTopY - 50) : (tabTopY - 15)) * scaleY;
+        const highlightH = (showSheetMusic
+            ? (showTab
+                ? (rhythmTopY - trebleTopY + 95)
+                : (bassTopY + 4 * lineSpacing + 70 - trebleTopY))
+            : (rhythmTopY - tabTopY + 60)) * scaleY;
+        const hitTestY = (showSheetMusic ? (trebleTopY - 15) : (tabTopY - 15)) * scaleY;
+        const hitTestH = (showSheetMusic
+            ? (showTab
+                ? (rhythmTopY - trebleTopY + 65)
+                : (bassTopY + 4 * lineSpacing + 35 - trebleTopY))
+            : (rhythmTopY - tabTopY + 65)) * scaleY;
 
         return (
             <div
@@ -70,7 +82,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                         </filter>
                     </defs>
 
-                    {metronomeEnabled && (
+                    {metronomeEnabled && (showSheetMusic || showTab) && (
                         <g id="metronome-tick-layer" pointerEvents="none">
                             {rowEvents
                                 .filter(ev => ev.isMetronomeTick)
@@ -88,7 +100,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                             x1={ev.cx}
                                             y1={(trebleTopY - 30) * scaleY}
                                             x2={ev.cx + 0.01} // Keep the filter mobile-fix clip tweak
-                                            y2={(rhythmTopY - 50) * scaleY}
+                                            y2={showTab ? (rhythmTopY - 50) * scaleY : (bassTopY + 4 * lineSpacing + 10) * scaleY}
                                             stroke={ev.isDownbeat ? DARK_THEME.metronomeDownBeat : DARK_THEME.metronomeUpBeat}
                                             strokeWidth={isActiveMetronomeTick ? "3" : ev.isDownbeat ? "2" : "1.5"}
                                             strokeDasharray="4 4"
@@ -106,7 +118,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                         stroke={DARK_THEME.lineStaff}
                         strokeWidth="2.5" />
 
-                    {sheetMusicEnabled && <>
+                    {showSheetMusic && <>
                         {[0, 1, 2, 3, 4].map(i => (
                             <line
                                 key={`treble-${i}`}
@@ -151,7 +163,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                         fill={DARK_THEME.textTimeSig}
                         transform={`translate(${paddingX - (90 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9))}, 0)`}
                     >
-                        {sheetMusicEnabled && <>
+                        {showSheetMusic && <>
                             <text
                                 x="0"
                                 y={(trebleTopY * scaleY) + 1.35 * sLineSpacing}
@@ -181,27 +193,29 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                 {timeSigBottom}
                             </text>
                         </>}
-                        <text
-                            x="0"
-                            y={(tabTopY * scaleY) + 1.6 * sLineSpacing}
-                            textAnchor="middle"
-                            className="text-xl font-sans font-bold"
-                            fill={DARK_THEME.textTabLabel}
-                        >
-                            {timeSigTop}
-                        </text>
-                        <text
-                            x="0"
-                            y={(tabTopY * scaleY) + 4.1 * sLineSpacing}
-                            textAnchor="middle"
-                            className="text-xl font-sans font-bold"
-                            fill={DARK_THEME.textTabLabel}
-                        >
-                            {timeSigBottom}
-                        </text>
+                        {showTab && <>
+                            <text
+                                x="0"
+                                y={(tabTopY * scaleY) + 1.6 * sLineSpacing}
+                                textAnchor="middle"
+                                className="text-xl font-sans font-bold"
+                                fill={DARK_THEME.textTabLabel}
+                            >
+                                {timeSigTop}
+                            </text>
+                            <text
+                                x="0"
+                                y={(tabTopY * scaleY) + 4.1 * sLineSpacing}
+                                textAnchor="middle"
+                                className="text-xl font-sans font-bold"
+                                fill={DARK_THEME.textTabLabel}
+                            >
+                                {timeSigBottom}
+                            </text>
+                        </>}
                     </g>
 
-                    {[0, 1, 2, 3, 4, 5].map(i => (
+                    {showTab && [0, 1, 2, 3, 4, 5].map(i => (
                         <line
                             key={`t-l-${i}`}
                             x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
@@ -211,22 +225,18 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             stroke={DARK_THEME.lineTab}
                             strokeWidth="2" />
                     ))}
-                    <g
-                        transform={`translate(${leftMargin}, ${(tabTopY * scaleY) + 36 * scaleY})`}
-                        fill={DARK_THEME.textTabLabel}
-                        style={{ fontSize: `${36 * scaleY}px`, fontWeight: "900", letterSpacing: "-0.1em" }}
-                    >
-                        <text x="0" y="0">
-                            T
-                        </text>
-                        <text x="0" y={36 * scaleY}>
-                            A
-                        </text>
-                        <text x="0" y={72 * scaleY}>
-                            B
-                        </text>
-                    </g>
-                    {[0, 1, 2, 3, 4, 5].map(i => (
+                    {showTab && (
+                        <g
+                            transform={`translate(${leftMargin}, ${(tabTopY * scaleY) + 36 * scaleY})`}
+                            fill={DARK_THEME.textTabLabel}
+                            style={{ fontSize: `${36 * scaleY}px`, fontWeight: "900", letterSpacing: "-0.1em" }}
+                        >
+                            <text x="0" y="0">T</text>
+                            <text x="0" y={36 * scaleY}>A</text>
+                            <text x="0" y={72 * scaleY}>B</text>
+                        </g>
+                    )}
+                    {showTab && [0, 1, 2, 3, 4, 5].map(i => (
                         <text
                             key={`string-${i}`}
                             x={paddingX - (60 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9))}
@@ -246,36 +256,42 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                         y2={(bassTopY + 4 * lineSpacing) * scaleY}
                         stroke={DARK_THEME.lineBar}
                         strokeWidth="2" />
-                    <line
-                        x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
-                        y1={tabTopY * scaleY}
-                        x2={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
-                        y2={(tabTopY + 5 * lineSpacing) * scaleY}
-                        stroke={DARK_THEME.lineTab}
-                        strokeWidth="2" />
+                    {showTab && (
+                        <line
+                            x1={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
+                            y1={tabTopY * scaleY}
+                            x2={paddingX - 40 * (measuresPerRow === 4 ? 0.7 : measuresPerRow === 2 ? 0.8 : 0.9)}
+                            y2={(tabTopY + 5 * lineSpacing) * scaleY}
+                            stroke={DARK_THEME.lineTab}
+                            strokeWidth="2" />
+                    )}
 
                     {barlineXPositions.map((barX, i) => (
                         <g key={`barline-${i}`}>
-                            <line
-                                x1={barX}
-                                y1={trebleTopY * scaleY}
-                                x2={barX}
-                                y2={(bassTopY + 4 * lineSpacing) * scaleY}
-                                stroke={DARK_THEME.lineBar}
-                                strokeWidth={i ===
-                                    barlineXPositions.length - 1
-                                    ? "2"
-                                    : "1.6"} />
-                            <line
-                                x1={barX}
-                                y1={tabTopY * scaleY}
-                                x2={barX}
-                                y2={(tabTopY + 5 * lineSpacing) * scaleY}
-                                stroke={DARK_THEME.lineTab}
-                                strokeWidth={i ===
-                                    barlineXPositions.length - 1
-                                    ? "2"
-                                    : "1.6"} />
+                            {showSheetMusic && (
+                                <line
+                                    x1={barX}
+                                    y1={trebleTopY * scaleY}
+                                    x2={barX}
+                                    y2={(bassTopY + 4 * lineSpacing) * scaleY}
+                                    stroke={DARK_THEME.lineBar}
+                                    strokeWidth={i ===
+                                        barlineXPositions.length - 1
+                                        ? "2"
+                                        : "1.6"} />
+                            )}
+                            {showTab && (
+                                <line
+                                    x1={barX}
+                                    y1={tabTopY * scaleY}
+                                    x2={barX}
+                                    y2={(tabTopY + 5 * lineSpacing) * scaleY}
+                                    stroke={DARK_THEME.lineTab}
+                                    strokeWidth={i ===
+                                        barlineXPositions.length - 1
+                                        ? "2"
+                                        : "1.6"} />
+                            )}
                         </g>
                     ))}
 
@@ -289,37 +305,43 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             <g
                                 key={`measure-${measure.measureNumber}`}
                             >
-                                {isMeasureInvalid && (
+                                {isMeasureInvalid && showTab && (
                                     <rect
                                         x={measure.startX}
-                                        y={(sheetMusicEnabled ? (trebleTopY - 40) : (tabTopY - 15)) * scaleY}
+                                        y={(showSheetMusic ? (trebleTopY - 40) : (tabTopY - 15)) * scaleY}
                                         width={measure.endX -
                                             measure.startX}
-                                        height={(sheetMusicEnabled ? (rhythmTopY - trebleTopY + 85) : (rhythmTopY - tabTopY + 60)) * scaleY}
+                                        height={(showSheetMusic
+                                            ? (showTab
+                                                ? (rhythmTopY - trebleTopY + 85)
+                                                : (bassTopY + 4 * lineSpacing + 45 - trebleTopY))
+                                            : (rhythmTopY - tabTopY + 60)) * scaleY}
                                         fill={DARK_THEME.bgInvalidMeasure}
                                         stroke="rgba(239, 68, 68, 0.4)"
                                         strokeWidth="1.5"
                                         rx={6} />
                                 )}
 
-                                <text
-                                    x={measureCenterX}
-                                    y={(tabTopY +
-                                        5 * lineSpacing +
-                                        32) * scaleY}
-                                    textAnchor="middle"
-                                    className="text-[10px] font-mono font-bold"
-                                    fill={isMeasureInvalid
-                                        ? "#f87171"
-                                        : DARK_THEME.textTabString}
-                                >
-                                    M{measure.measureNumber}{" "}
-                                    {isMeasureInvalid
-                                        ? "⚠️"
-                                        : ""}
-                                </text>
+                                {showTab && (
+                                    <text
+                                        x={measureCenterX}
+                                        y={(tabTopY +
+                                            5 * lineSpacing +
+                                            32) * scaleY}
+                                        textAnchor="middle"
+                                        className="text-[10px] font-mono font-bold"
+                                        fill={isMeasureInvalid
+                                            ? "#f87171"
+                                            : DARK_THEME.textTabString}
+                                    >
+                                        M{measure.measureNumber}{" "}
+                                        {isMeasureInvalid
+                                            ? "⚠️"
+                                            : ""}
+                                    </text>
+                                )}
 
-                                {isMeasureInvalid &&
+                                {showTab && isMeasureInvalid &&
                                     mv &&
                                     (() => {
                                         const pieces = [];
@@ -459,7 +481,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
 
                                 {ev.isRest ? (
                                     <g style={{ opacity: isMuted ? 0.4 : 1 }}>
-                                        {sheetMusicEnabled && <>
+                                        {showSheetMusic && <>
                                             {ev.beatValue === 4.0 ? (
                                                 <rect
                                                     x={ev.cx - 7}
@@ -517,21 +539,25 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
 
 
 
-                                        <rect
-                                            x={ev.cx - 8}
-                                            y={(tabTopY + 2 * lineSpacing - 4) * scaleY + restTabOffset}
-                                            width={19}
-                                            height={20 * scaleY}
-                                            fill={DARK_THEME.bgTabRect} />
-                                        <text
-                                            x={ev.cx}
-                                            y={(tabTopY + 3 * lineSpacing - 6) * scaleY + restTabOffset}
-                                            textAnchor="middle"
-                                            className="text-lg font-mono font-bold"
-                                            fill={DARK_THEME.fillRest}
-                                        >
-                                            𝄾
-                                        </text>
+                                        {showTab && (
+                                            <rect
+                                                x={ev.cx - 8}
+                                                y={(tabTopY + 2 * lineSpacing - 4) * scaleY + restTabOffset}
+                                                width={19}
+                                                height={20 * scaleY}
+                                                fill={DARK_THEME.bgTabRect} />
+                                        )}
+                                        {showTab && (
+                                            <text
+                                                x={ev.cx}
+                                                y={(tabTopY + 3 * lineSpacing - 6) * scaleY + restTabOffset}
+                                                textAnchor="middle"
+                                                className="text-lg font-mono font-bold"
+                                                fill={DARK_THEME.fillRest}
+                                            >
+                                                𝄾
+                                            </text>
+                                        )}
                                     </g>
                                 ) : (
                                     <g>
@@ -561,7 +587,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                     <g
                                                         key={`p-${pIdx}`}
                                                     >
-                                                        {sheetMusicEnabled && <>
+                                                        {showSheetMusic && <>
                                                             {pitch.isSharp && (
                                                                 <text
                                                                     x={ev.cx - 18}
@@ -679,7 +705,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                 })()}
                                                         </>}
 
-                                                        {ev.isTiedToNext &&
+                                                        {showTab && ev.isTiedToNext &&
                                                             pitch.fret !== null &&
                                                             (() => {
                                                                 const nextEv = rowEvents
@@ -728,37 +754,41 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                                                 }
                                                             })()}
 
-                                                        <rect
-                                                            x={ev.cx - 13}
-                                                            y={currentTabY - 11 * scaleY}
-                                                            width={20}
-                                                            height={18 * scaleY}
-                                                            fill="#0f172a"
-                                                            stroke={activeStrokeColor}
-                                                            strokeWidth={isActive ? "2" : "1.5"}
-                                                            filter={glowFilter}
-                                                            rx={3} />
+                                                        {showTab && (
+                                                            <rect
+                                                                x={ev.cx - 13}
+                                                                y={currentTabY - 11 * scaleY}
+                                                                width={20}
+                                                                height={18 * scaleY}
+                                                                fill="#0f172a"
+                                                                stroke={activeStrokeColor}
+                                                                strokeWidth={isActive ? "2" : "1.5"}
+                                                                filter={glowFilter}
+                                                                rx={3} />
+                                                        )}
 
-                                                        <text
-                                                            x={ev.cx - 3}
-                                                            y={currentTabY + 3.2 * scaleY}
-                                                            textAnchor="middle"
-                                                            className="font-sans tracking-wide"
-                                                            style={{ fontSize: fretFontSize, fontWeight: "600" }}
-                                                            fill={
-                                                                isMuted ? DARK_THEME.inactiveVoiceColor
-                                                                    : (isActive
-                                                                        ? DARK_THEME.textTabNumberHover
-                                                                        : DARK_THEME.textTabNumber)}
-                                                        >
-                                                            {pitch.fret === null ? "X" : pitch.fret}
-                                                        </text>
+                                                        {showTab && (
+                                                            <text
+                                                                x={ev.cx - 3}
+                                                                y={currentTabY + 3.2 * scaleY}
+                                                                textAnchor="middle"
+                                                                className="font-sans tracking-wide"
+                                                                style={{ fontSize: fretFontSize, fontWeight: "600" }}
+                                                                fill={
+                                                                    isMuted ? DARK_THEME.inactiveVoiceColor
+                                                                        : (isActive
+                                                                            ? DARK_THEME.textTabNumberHover
+                                                                            : DARK_THEME.textTabNumber)}
+                                                            >
+                                                                {pitch.fret === null ? "X" : pitch.fret}
+                                                            </text>
+                                                        )}
                                                     </g>
                                                 );
                                             }
                                         )}
 
-                                        {sheetMusicEnabled && <>
+                                        {showSheetMusic && <>
                                             {ev.trebleStem &&
                                                 ev.beatValue <
                                                 4.0 &&
@@ -834,7 +864,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                     </g>
                                 )}
 
-                                {!ev.isMetronomeTick && (
+                                {!ev.isMetronomeTick && showTab && (
                                     <g>
                                         <rect
                                             x={ev.cx - SLOT_WIDTH / 2 + 4}

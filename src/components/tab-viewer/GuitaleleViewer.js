@@ -31,7 +31,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const [voice1Enabled, setVoice1Enabled] = useState(true);
     const [voice2Enabled, setVoice2Enabled] = useState(true);
     const [metronomeEnabled, setMetronomeEnabled] = useState(false);
-    const [sheetMusicEnabled, setSheetMusicEnabled] = useState(false);
+    const [viewMode, setViewMode] = useState('tab'); // 'tab', 'both', 'sheet'
 
     const lookaheadTimerRef = useRef(null);
 
@@ -451,7 +451,7 @@ export default function GuitaleleViewer({ scoreData }) {
             >
             <div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
 
-                <div className="d-flex flex-column gap-1" style={{ width: '170px', flexShrink: 0 }}>
+                <div className="d-flex flex-column gap-1" style={{ width: '215px', flexShrink: 0 }}>
 
                     {/* Row 1: Playback Controls */}
                     <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '32px', alignItems: 'center' }}>
@@ -509,9 +509,6 @@ export default function GuitaleleViewer({ scoreData }) {
                                 />
                             </div>
 
-                            {/* Divider line between V1 and V2 */}
-                            <div className="border-start border-secondary" style={{ height: '12px' }}></div>
-
                             {/* V2 - Takes up 50% width */}
                             <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
                                 <span style={{
@@ -557,26 +554,33 @@ export default function GuitaleleViewer({ scoreData }) {
                                 />
                             </div>
 
-                            <div className="border-start border-secondary" style={{ height: '12px' }}></div>
-
-                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
-                                <span style={{
-                                    fontSize: '10px',
-                                    color: sheetMusicEnabled ? '#e2e8f0' : '#8892b0',
-                                    fontWeight: 'bold'
-                                }}>
-                                    Sheet
-                                </span>
-                                <Form.Check
-                                    type="switch"
-                                    id="sheet-music-toggle"
-                                    label=""
-                                    className="m-0 d-flex align-items-center"
-                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                    checked={sheetMusicEnabled}
-                                    disabled={isPlaying}
-                                    onChange={(e) => setSheetMusicEnabled(e.target.checked)}
-                                />
+                            <div className="d-flex align-items-center justify-content-center flex-grow-1 gap-0" style={{ height: '18px' }}>
+                                {['tab','both','sheet'].map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => !isPlaying && setViewMode(m)}
+                                        disabled={isPlaying}
+                                        style={{
+                                            fontSize: '10px',
+                                            fontWeight: viewMode === m ? '700' : '400',
+                                            color: viewMode === m ? '#fff' : '#8892b0',
+                                            background: viewMode === m
+                                                ? (m === 'tab' ? '#1a6b4a' : m === 'sheet' ? '#6b4a8a' : '#2a5a7a')
+                                                : 'transparent',
+                                            border: `1px solid ${viewMode === m ? 'transparent' : '#3a3a5a'}`,
+                                            borderRadius: m === 'tab' ? '4px 0 0 4px' : m === 'sheet' ? '0 4px 4px 0' : '0',
+                                            padding: '0 8px',
+                                            lineHeight: '16px',
+                                            cursor: isPlaying ? 'default' : 'pointer',
+                                            opacity: isPlaying ? 0.5 : 1,
+                                            transition: 'all 0.15s ease',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.3px'
+                                        }}
+                                    >
+                                        {m === 'tab' ? 'Tab' : m === 'both' ? 'Both' : 'Staff'}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -640,7 +644,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                             voice1Enabled && availableVoices.includes(1),
                                             voice2Enabled && availableVoices.includes(2),
                                             metronomeEnabled,
-                                            sheetMusicEnabled
+                                            viewMode
                                         )(row, index)}
                                     </td>
                                 </tr>
