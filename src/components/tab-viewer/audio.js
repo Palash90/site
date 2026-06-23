@@ -269,7 +269,6 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     voice.osc.frequency.exponentialRampToValueAtTime(initialFundamental, startTime + 0.025);
 
     const attackTime = 0.010;
-
     voice.gain.gain.setValueAtTime(0, startTime);
     voice.gain.gain.linearRampToValueAtTime(effectiveVelocity * 0.60, startTime + attackTime);
 
@@ -303,7 +302,7 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     voice.bodyGain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.18, startTime + 0.04);
     voice.bodyGain.gain.exponentialRampToValueAtTime(0.001, droneEnd);
     voice.bodyOsc.frequency.setValueAtTime(initialFundamental, startTime);
-    voice.bodyOsc.detune.setValueAtTime((Math.random() * 24) - 12, startTime);
+    voice.bodyOsc.detune.setValueAtTime((Math.random() * 8) - 4, startTime);
 
     // Continuous Pitch Timeline Automation
     let timeCursor = startTime;
