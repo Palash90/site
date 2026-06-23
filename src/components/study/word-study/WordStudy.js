@@ -1,37 +1,58 @@
-import { useState } from "react";
+// WordStudy.js
 import { Button, Container, Row, Col, Form } from "react-bootstrap";
 import WordQuiz from "./WordQuiz";
 import SUPPORTED_LANGUAGES from "./vocab";
-
+import { useP2P } from "../P2PContext";
 
 export default function WordStudy() {
-  const [screen, setScreen] = useState(1);
-  const [words, setWords] = useState([]);
+  const { quizState, sendStateUpdate } = useP2P();
 
-  // Track selected languages and current active locale code
-  const [selectedLangs, setSelectedLangs] = useState({});
+  const screen = quizState.wordScreen;
+  const words = quizState.words;
+  const selectedLangs = quizState.selectedLangs;
 
   const handleLanguageChange = (langName, isChecked) => {
-    // Update checkbox state
     const updatedLangs = { ...selectedLangs, [langName]: isChecked };
-    setSelectedLangs(updatedLangs);
 
-    // Recalculate default alphabet word list based on checked languages
     let defaultWords = [];
     Object.keys(updatedLangs).forEach((lang) => {
       if (updatedLangs[lang]) {
-        defaultWords = [...defaultWords, ...SUPPORTED_LANGUAGES[lang].vocabs.map((word) => {
-          return { text: word, langCode: SUPPORTED_LANGUAGES[lang].code }
-        })];
+        defaultWords = [
+          ...defaultWords,
+          ...SUPPORTED_LANGUAGES[lang].vocabs.map((word) => ({
+            text: word,
+            langCode: SUPPORTED_LANGUAGES[lang].code
+          }))
+        ];
       }
     });
 
-    setWords(defaultWords);
+    sendStateUpdate({
+      selectedLangs: updatedLangs,
+      words: defaultWords
+    });
+  };
+
+  const startQuizEngine = () => {
+    // Completely shuffle the words right here when hitting start
+    const shuffledWords = [...words].sort(() => 0.5 - Math.random());
+
+    sendStateUpdate({
+      wordScreen: 2,
+      words: shuffledWords,
+      currentWordIndex: 0,
+      score: 0,
+      total: 0,
+      correct: 0,
+      wrong: 0,
+      quizEnded: false,
+      status: 'In Progress',
+      answer: ''
+    });
   };
 
   if (screen === 2) {
-    // Pass both the generated words and the active language code to the Quiz
-    return <WordQuiz words={words} setScreen={setScreen} />;
+    return <WordQuiz />;
   }
 
   return (
@@ -75,7 +96,9 @@ export default function WordStudy() {
                       type="button"
                       className="btn-close btn-close-white ms-1"
                       style={{ fontSize: '0.6rem' }}
-                      onClick={() => setWords(words.filter((_, idx) => idx !== i))}
+                      onClick={() => sendStateUpdate({
+                        words: words.filter((_, idx) => idx !== i)
+                      })}
                     ></button>
                   </span>
                 ))}
@@ -87,7 +110,12 @@ export default function WordStudy() {
 
       <Row className="mt-4">
         <Col>
-          <Button variant="success" size="lg" onClick={() => setScreen(2)} disabled={words.length === 0}>
+          <Button
+            variant="success"
+            size="lg"
+            onClick={startQuizEngine}
+            disabled={words.length === 0}
+          >
             Start Quiz
           </Button>
         </Col>

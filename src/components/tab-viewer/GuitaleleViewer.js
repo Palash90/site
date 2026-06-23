@@ -31,6 +31,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const [voice1Enabled, setVoice1Enabled] = useState(true);
     const [voice2Enabled, setVoice2Enabled] = useState(true);
     const [metronomeEnabled, setMetronomeEnabled] = useState(false);
+    const [viewMode, setViewMode] = useState('tab'); // 'tab', 'both', 'sheet'
 
     const lookaheadTimerRef = useRef(null);
 
@@ -257,6 +258,7 @@ export default function GuitaleleViewer({ scoreData }) {
         return () => stopPlayback();
     }, []);
 
+    const countInBeat = isPlaying && playbackIndex !== null && playbackIndex < 0 ? -playbackIndex : 0;
     const activeTargetIndex = (isPlaying && !isPaused) ? playbackIndex : (hoveredNoteIndex !== null ? hoveredNoteIndex : clickedNoteIndex);
 
     const handleNoteClick = (globalIndex) => {
@@ -433,16 +435,23 @@ export default function GuitaleleViewer({ scoreData }) {
     const rhythm2TopY = rhythmTopY + 28;
 
     return (
-        <div
-            className="d-flex flex-column bg-dark"
-            style={{
-                height: 'calc(100vh - 20px)', // Takes up full screen height minus a small margin
-                overflow: 'hidden'             // Prevents the window scrollbar from appearing
-            }}
-        >
+        <>
+            <style>{`
+                @keyframes countin-fade {
+                    0% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+                }
+            `}</style>
+            <div
+                className="d-flex flex-column bg-dark"
+                style={{
+                    height: 'calc(100vh - 20px)', // Takes up full screen height minus a small margin
+                    overflow: 'hidden'             // Prevents the window scrollbar from appearing
+                }}
+            >
             <div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
 
-                <div className="d-flex flex-column gap-1" style={{ width: '140px', flexShrink: 0 }}>
+                <div className="d-flex flex-column gap-1" style={{ width: '215px', flexShrink: 0 }}>
 
                     {/* Row 1: Playback Controls */}
                     <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '32px', alignItems: 'center' }}>
@@ -500,9 +509,6 @@ export default function GuitaleleViewer({ scoreData }) {
                                 />
                             </div>
 
-                            {/* Divider line between V1 and V2 */}
-                            <div className="border-start border-secondary" style={{ height: '12px' }}></div>
-
                             {/* V2 - Takes up 50% width */}
                             <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
                                 <span style={{
@@ -526,25 +532,56 @@ export default function GuitaleleViewer({ scoreData }) {
                         {/* Thin divider between the voice row and metronome row */}
                         <div className="border-top border-secondary-subtle opacity-25" style={{ margin: '2px 0' }}></div>
 
-                        {/* Line 2: Full Metronome spanning across the bottom */}
-                        <div className="d-flex align-items-center justify-content-between" style={{ height: '18px' }}>
-                            <span style={{
-                                fontSize: '10px',
-                                color: metronomeEnabled ? DARK_THEME.metronomeControlMedium : '#8892b0',
-                                fontWeight: 'bold'
-                            }}>
-                                Metronome
-                            </span>
-                            <Form.Check
-                                type="switch"
-                                id="metronome-toggle"
-                                label=""
-                                className="m-0 d-flex align-items-center"
-                                style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                checked={metronomeEnabled}
-                                disabled={isPlaying}
-                                onChange={(e) => setMetronomeEnabled(e.target.checked)}
-                            />
+                        {/* Line 2: Metronome and Sheet Music side-by-side */}
+                        <div className="d-flex align-items-center gap-2">
+                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
+                                <span style={{
+                                    fontSize: '10px',
+                                    color: metronomeEnabled ? DARK_THEME.metronomeControlMedium : '#8892b0',
+                                    fontWeight: 'bold'
+                                }}>
+                                    Met
+                                </span>
+                                <Form.Check
+                                    type="switch"
+                                    id="metronome-toggle"
+                                    label=""
+                                    className="m-0 d-flex align-items-center"
+                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
+                                    checked={metronomeEnabled}
+                                    disabled={isPlaying}
+                                    onChange={(e) => setMetronomeEnabled(e.target.checked)}
+                                />
+                            </div>
+
+                            <div className="d-flex align-items-center justify-content-center flex-grow-1 gap-0" style={{ height: '18px' }}>
+                                {['tab','both','sheet'].map(m => (
+                                    <button
+                                        key={m}
+                                        onClick={() => !isPlaying && setViewMode(m)}
+                                        disabled={isPlaying}
+                                        style={{
+                                            fontSize: '10px',
+                                            fontWeight: viewMode === m ? '700' : '400',
+                                            color: viewMode === m ? '#fff' : '#8892b0',
+                                            background: viewMode === m
+                                                ? (m === 'tab' ? '#1a6b4a' : m === 'sheet' ? '#6b4a8a' : '#2a5a7a')
+                                                : 'transparent',
+                                            border: `1px solid ${viewMode === m ? 'transparent' : '#3a3a5a'}`,
+                                            borderRadius: m === 'tab' ? '4px 0 0 4px' : m === 'sheet' ? '0 4px 4px 0' : '0',
+                                            padding: '0 8px',
+                                            lineHeight: '16px',
+                                            cursor: isPlaying ? 'default' : 'pointer',
+                                            opacity: isPlaying ? 0.5 : 1,
+                                            transition: 'all 0.15s ease',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.3px'
+                                        }}
+                                    >
+                                        {m === 'tab' ? 'Tab' : m === 'both' ? 'Both' : 'Staff'}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                     </div>
@@ -606,7 +643,8 @@ export default function GuitaleleViewer({ scoreData }) {
                                             measuresPerRow,
                                             voice1Enabled && availableVoices.includes(1),
                                             voice2Enabled && availableVoices.includes(2),
-                                            metronomeEnabled
+                                            metronomeEnabled,
+                                            viewMode
                                         )(row, index)}
                                     </td>
                                 </tr>
@@ -615,7 +653,30 @@ export default function GuitaleleViewer({ scoreData }) {
                     </tbody>
                 </Table>
             </div>
-        </div>
+
+                {countInBeat > 0 && (
+                    <div
+                        key={countInBeat}
+                        style={{
+                            position: 'fixed',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            fontSize: '140px',
+                            color: 'rgba(167, 139, 250, 0.95)',
+                            fontWeight: 'bold',
+                            pointerEvents: 'none',
+                            zIndex: 9999,
+                            fontFamily: 'monospace',
+                            textShadow: '0 0 40px rgba(167, 139, 250, 0.5)',
+                            animation: 'countin-fade 0.8s ease-out forwards',
+                        }}
+                    >
+                        {countInBeat}
+                    </div>
+                )}
+            </div>
+        </>
     );
 }
 
