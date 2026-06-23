@@ -451,7 +451,7 @@ export default function GuitaleleViewer({ scoreData }) {
             >
             <div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
 
-                <div className="d-flex flex-column gap-1" style={{ width: '140px', flexShrink: 0 }}>
+                <div className="d-flex flex-column gap-1" style={{ width: '170px', flexShrink: 0 }}>
 
                     {/* Row 1: Playback Controls */}
                     <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '32px', alignItems: 'center' }}>
@@ -535,48 +535,49 @@ export default function GuitaleleViewer({ scoreData }) {
                         {/* Thin divider between the voice row and metronome row */}
                         <div className="border-top border-secondary-subtle opacity-25" style={{ margin: '2px 0' }}></div>
 
-                        {/* Line 2: Full Metronome spanning across the bottom */}
-                        <div className="d-flex align-items-center justify-content-between" style={{ height: '18px' }}>
-                            <span style={{
-                                fontSize: '10px',
-                                color: metronomeEnabled ? DARK_THEME.metronomeControlMedium : '#8892b0',
-                                fontWeight: 'bold'
-                            }}>
-                                Metronome
-                            </span>
-                            <Form.Check
-                                type="switch"
-                                id="metronome-toggle"
-                                label=""
-                                className="m-0 d-flex align-items-center"
-                                style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                checked={metronomeEnabled}
-                                disabled={isPlaying}
-                                onChange={(e) => setMetronomeEnabled(e.target.checked)}
-                            />
-                        </div>
+                        {/* Line 2: Metronome and Sheet Music side-by-side */}
+                        <div className="d-flex align-items-center gap-2">
+                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
+                                <span style={{
+                                    fontSize: '10px',
+                                    color: metronomeEnabled ? DARK_THEME.metronomeControlMedium : '#8892b0',
+                                    fontWeight: 'bold'
+                                }}>
+                                    Met
+                                </span>
+                                <Form.Check
+                                    type="switch"
+                                    id="metronome-toggle"
+                                    label=""
+                                    className="m-0 d-flex align-items-center"
+                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
+                                    checked={metronomeEnabled}
+                                    disabled={isPlaying}
+                                    onChange={(e) => setMetronomeEnabled(e.target.checked)}
+                                />
+                            </div>
 
-                        {/* Thin divider between metronome and sheet music row */}
-                        <div className="border-top border-secondary-subtle opacity-25" style={{ margin: '2px 0' }}></div>
+                            <div className="border-start border-secondary" style={{ height: '12px' }}></div>
 
-                        {/* Line 3: Sheet Music toggle */}
-                        <div className="d-flex align-items-center justify-content-between" style={{ height: '18px' }}>
-                            <span style={{
-                                fontSize: '10px',
-                                color: sheetMusicEnabled ? '#e2e8f0' : '#8892b0',
-                                fontWeight: 'bold'
-                            }}>
-                                Sheet Music
-                            </span>
-                            <Form.Check
-                                type="switch"
-                                id="sheet-music-toggle"
-                                label=""
-                                className="m-0 d-flex align-items-center"
-                                style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                checked={sheetMusicEnabled}
-                                onChange={(e) => setSheetMusicEnabled(e.target.checked)}
-                            />
+                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
+                                <span style={{
+                                    fontSize: '10px',
+                                    color: sheetMusicEnabled ? '#e2e8f0' : '#8892b0',
+                                    fontWeight: 'bold'
+                                }}>
+                                    Sheet
+                                </span>
+                                <Form.Check
+                                    type="switch"
+                                    id="sheet-music-toggle"
+                                    label=""
+                                    className="m-0 d-flex align-items-center"
+                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
+                                    checked={sheetMusicEnabled}
+                                    disabled={isPlaying}
+                                    onChange={(e) => setSheetMusicEnabled(e.target.checked)}
+                                />
+                            </div>
                         </div>
 
                     </div>

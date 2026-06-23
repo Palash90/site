@@ -14,7 +14,7 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
         const leftMargin = (paddingX - 105) * (measuresPerRow === 4 ? 1 : 0.85);
 
         // 1. Dynamically compute precise vertical bounds based on drawn elements
-        const minY = (trebleTopY - 55) * scaleY;
+        const minY = (sheetMusicEnabled ? (trebleTopY - 55) : (tabTopY - 15)) * scaleY;
 
         // Bottom-most elements are either the rhythm lane 2 background or the measure validity descriptions
         const maxRhythmY = (rhythmTopY + 80) * scaleY; // Covers rhythm text + background rect boundaries
