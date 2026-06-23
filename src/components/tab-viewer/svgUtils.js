@@ -29,6 +29,12 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
             ev => ev.globalIndex === playbackIndex
         );
 
+        // Compute rect positions based on sheetMusicEnabled to keep them within the visible viewBox
+        const highlightY = (sheetMusicEnabled ? (trebleTopY - 50) : (tabTopY - 15)) * scaleY;
+        const highlightH = (sheetMusicEnabled ? (rhythmTopY - trebleTopY + 95) : (rhythmTopY - tabTopY + 60)) * scaleY;
+        const hitTestY = (sheetMusicEnabled ? (trebleTopY - 15) : (tabTopY - 15)) * scaleY;
+        const hitTestH = (sheetMusicEnabled ? (rhythmTopY - trebleTopY + 65) : (rhythmTopY - tabTopY + 65)) * scaleY;
+
         return (
             <div
                 key={`row-${rowIdx}`}
@@ -50,9 +56,9 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             id="note-glow"
                             filterUnits="userSpaceOnUse"
                             x="-20"
-                            y="-20"
-                            width="100%"
-                            height="100%"
+                            y={minY - 20 * scaleY}
+                            width={totalWidth + 40}
+                            height={maxY - minY + 40 * scaleY}
                         >
                             <feGaussianBlur
                                 stdDeviation="2"
@@ -286,12 +292,10 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                 {isMeasureInvalid && (
                                     <rect
                                         x={measure.startX}
-                                        y={(trebleTopY - 40) * scaleY}
+                                        y={(sheetMusicEnabled ? (trebleTopY - 40) : (tabTopY - 15)) * scaleY}
                                         width={measure.endX -
                                             measure.startX}
-                                        height={(rhythmTopY -
-                                            trebleTopY +
-                                            85) * scaleY}
+                                        height={(sheetMusicEnabled ? (rhythmTopY - trebleTopY + 85) : (rhythmTopY - tabTopY + 60)) * scaleY}
                                         fill={DARK_THEME.bgInvalidMeasure}
                                         stroke="rgba(239, 68, 68, 0.4)"
                                         strokeWidth="1.5"
@@ -414,9 +418,9 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                     <rect
                                         data-active-indicator="true"
                                         x={ev.cx - SLOT_WIDTH / 2 + 2}
-                                        y={(trebleTopY - 50) * scaleY}
+                                        y={highlightY}
                                         width={SLOT_WIDTH - 4}
-                                        height={(rhythmTopY - trebleTopY + 95) * scaleY}
+                                        height={highlightH}
                                         fill={isExplicitlyActive ? DARK_THEME.fillHoverHighlight : DARK_THEME.sustainedNoteHighlight}
                                         opacity={highlightOpacity} // Apply the timed decay factor here
                                         rx={4}
@@ -430,9 +434,9 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                     <rect
                                         data-active-indicator="true"
                                         x={ev.cx - SLOT_WIDTH / 2 + 2}
-                                        y={(trebleTopY - 50) * scaleY}
+                                        y={highlightY}
                                         width={SLOT_WIDTH - 4}
-                                        height={(rhythmTopY - trebleTopY + 95) * scaleY}
+                                        height={highlightH}
                                         fill={DARK_THEME.fillHoverHighlight}
                                         opacity={highlightOpacity}
                                         rx={4} />
@@ -442,9 +446,9 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                     <rect
                                         data-paused-indicator="true"
                                         x={ev.cx - SLOT_WIDTH / 2 + 2}
-                                        y={(trebleTopY - 50) * scaleY}
+                                        y={highlightY}
                                         width={SLOT_WIDTH - 4}
-                                        height={(rhythmTopY - trebleTopY + 95) * scaleY}
+                                        height={highlightH}
                                         fill="none"
                                         stroke={DARK_THEME.textTabNumberHover}
                                         strokeDasharray="5 4"
@@ -452,38 +456,6 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                         rx={4}
                                         pointerEvents="none" />
                                 )}
-
-                                <rect
-                                    x={ev.cx - SLOT_WIDTH / 2}
-                                    y={(trebleTopY - 15) * scaleY}
-                                    width={SLOT_WIDTH}
-                                    height={(rhythmTopY -
-                                        trebleTopY +
-                                        65) * scaleY}
-                                    fill="transparent"
-                                    pointerEvents="all"
-                                    onPointerEnter={() => {
-                                        if (!isPlaying || isPaused)
-                                            setHoveredNoteIndex(ev.globalIndex);
-                                    }}
-                                    onPointerLeave={() => {
-                                        if (!isPlaying || isPaused)
-                                            setHoveredNoteIndex(null);
-                                    }}
-                                    onPointerDown={() => {
-                                        if (!isPlaying || isPaused)
-                                            setHoveredNoteIndex(ev.globalIndex);
-                                    }}
-                                    onPointerUp={() => {
-                                        if (!isPlaying || isPaused)
-                                            setHoveredNoteIndex(null);
-                                    }}
-                                    onClick={() => {
-                                        if (!isPlaying || isPaused)
-                                            handleNoteClick(ev.globalIndex);
-                                    }} />
-
-
 
                                 {ev.isRest ? (
                                     <g style={{ opacity: isMuted ? 0.4 : 1 }}>
@@ -899,6 +871,33 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                         {ev.rhythm}
                                     </text>
                                 </g>
+                                <rect
+                                    x={ev.cx - SLOT_WIDTH / 2}
+                                    y={hitTestY}
+                                    width={SLOT_WIDTH}
+                                    height={hitTestH}
+                                    fill="transparent"
+                                    pointerEvents="all"
+                                    onPointerEnter={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(ev.globalIndex);
+                                    }}
+                                    onPointerLeave={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(null);
+                                    }}
+                                    onPointerDown={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(ev.globalIndex);
+                                    }}
+                                    onPointerUp={() => {
+                                        if (!isPlaying || isPaused)
+                                            setHoveredNoteIndex(null);
+                                    }}
+                                    onClick={() => {
+                                        if (!isPlaying || isPaused)
+                                            handleNoteClick(ev.globalIndex);
+                                    }} />
                             </g>
                         );
                     })}
