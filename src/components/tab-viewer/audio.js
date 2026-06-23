@@ -103,18 +103,6 @@ function acquireVoice(ctx, voiceStartTime) {
     return best;
 }
 
-function silenceAllVoices(ctx) {
-    if (!voicePool) return;
-    const now = ctx.currentTime;
-    for (const v of voicePool) {
-        v.gain.gain.cancelScheduledValues(now);
-        v.bodyGain.gain.cancelScheduledValues(now);
-        v.gain.gain.setValueAtTime(0, now);
-        v.bodyGain.gain.setValueAtTime(0, now);
-        v.releaseTime = now;
-    }
-}
-
 // Minimal cleanup queue — only used by the rare playMutedPercussion path
 const pendingNodeCleanups = [];
 const drainNodeCleanups = (currentTime) => {
@@ -238,12 +226,13 @@ export const playHumanizedGuitaleleNote = (ctx, midiOrChain, startTime, duration
     voice.gain.gain.linearRampToValueAtTime(effectiveVelocity * 0.50, startTime + attackTime);
 
     if (noteVoice === 2) {
-        // V2: sustain (drone) — decays to moderate level then rings for the measure
+        // V2: slow gradual decay (drone) — rings through the measure then fades
         voice.gain.gain.exponentialRampToValueAtTime(effectiveVelocity * 0.15, startTime + 0.08);
-        const fadeStart = Math.max(startTime + 0.08, startTime + totalDuration - 0.05);
-        voice.gain.gain.setValueAtTime(effectiveVelocity * 0.15, fadeStart);
-        voice.gain.gain.linearRampToValueAtTime(0, startTime + totalDuration + 0.02);
-        voice.releaseTime = startTime + totalDuration + 0.04;
+        const decayEnd = startTime + Math.max(totalDuration, 0.5);
+        voice.gain.gain.exponentialRampToValueAtTime(0.001, decayEnd);
+        voice.gain.gain.setValueAtTime(0.001, decayEnd);
+        voice.gain.gain.linearRampToValueAtTime(0, decayEnd + 0.015);
+        voice.releaseTime = decayEnd + 0.02;
     } else {
         // V1: natural decay
         const totalDecayTime = Math.max(totalDuration * 0.95, 1.2);
@@ -351,15 +340,12 @@ export function stopPlaying(lookaheadTimerRef, playbackTimeoutsRef, setIsPlaying
         setPlaybackIndex(null);
         pausedTimeRef.current = 0;
 
-        // Silence all pool voices immediately to prevent bleed on next playback
-        silenceAllVoices(audioCtxRef.current);
-
         // Drain all remaining node cleanups to reset the audio graph
         drainNodeCleanups(Infinity);
 
-        // Reuse the AudioContext — suspend instead of close to avoid accumulation
+        // Close the AudioContext for a clean slate on next playback
         if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-            audioCtxRef.current.suspend();
+            audioCtxRef.current.close();
         }
     };
 }
@@ -388,21 +374,23 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
     return (fromMeasure = 1) => {
         if (isPlaying || !scoreLayout || !isAudioCompiled) return;
 
-        // Drain any leftover node cleanups from previous playback before reactivating the context
+        // Drain any leftover node cleanups from previous playback
         drainNodeCleanups(Infinity);
 
-        // Reuse existing AudioContext instead of creating new ones to prevent resource accumulation
-        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
-            const AC = window.AudioContext || window.webkitAudioContext;
-            audioCtxRef.current = new AC({ latencyHint: 'playback', sampleRate: 44100 });
-        } else if (audioCtxRef.current.state === "suspended") {
-            audioCtxRef.current.resume();
+        // Close old context and create a fresh one every time for a clean slate
+        const oldCtx = audioCtxRef.current;
+        if (oldCtx && oldCtx.state !== "closed") {
+            oldCtx.close();
         }
+        voicePool = null;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        audioCtxRef.current = new AC({ latencyHint: 'playback', sampleRate: 44100 });
 
         setIsPlaying(true);
         setIsPaused(false);
         pausedTimeRef.current = 0;
-        playbackStartTimeRef.current = audioCtxRef.current.currentTime;
+        const ctx = audioCtxRef.current;
+        playbackStartTimeRef.current = ctx.currentTime;
 
         const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
 
