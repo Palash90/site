@@ -378,7 +378,31 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
         });
 
 
+        // Add a count-in measure of metronome ticks that always play before content starts
+        const numerator = parseInt(scoreLayout.timeSigTop, 10);
+        const denominator = parseInt(scoreLayout.timeSigBottom, 10);
+        const clickBeatSpacing = 4 / denominator;
+        const beatsPerMeasure = scoreLayout.beatsPerMeasure;
+        for (let click = 0; click < numerator; click++) {
+            const clickStartBeat = startOffsetBeat - beatsPerMeasure + (click * clickBeatSpacing);
+            metronomeTicks.unshift({
+                startBeat: clickStartBeat,
+                globalIndex: -1,
+                voice: 0,
+                isMetronomeTick: true,
+                isPreviewTick: true,
+                isDownbeat: click === 0,
+                segments: [],
+                preCalculatedJitter: 0,
+                preCalculatedVelocity: 1.0
+            });
+        }
+
         const combinedTimeline = [...instrumentNotes, ...metronomeTicks];
+
+        // Shift the playback start beat to the first preview tick so all scheduling times are non-negative
+        const firstPreviewTickStart = startOffsetBeat - beatsPerMeasure;
+        playbackStartBeatRef.current = firstPreviewTickStart;
 
         const uniqueBeatsMap = {};
         combinedTimeline.forEach(note => {
@@ -398,7 +422,7 @@ export function startPlaying(isPlaying, scoreLayout, isAudioCompiled, audioCtxRe
         );
         nextBeatIndexRef.current = 0;
 
-        runSchedulerLoop(startOffsetBeat);
+        runSchedulerLoop(firstPreviewTickStart);
     };
 }
 
@@ -464,6 +488,46 @@ export const playMetronomeClick = (ctx, startTime, isDownbeat = false) => {
 
     bodyOsc.stop(startTime + 0.05);
     snapOsc.stop(startTime + 0.02);
+};
+
+/**
+ * Synthesizes a short, crisp stick-click sound (drum sticks tapping together).
+ * Uses a noise burst through a bandpass filter for a distinctly different timbre
+ * from the regular metronome woodblock click.
+ */
+export const playStickClick = (ctx, startTime) => {
+    const burstDuration = 0.025;
+    const sampleRate = ctx.sampleRate;
+    const bufferSize = Math.max(1, Math.ceil(sampleRate * burstDuration));
+    const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1);
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = "bandpass";
+    bandpass.frequency.setValueAtTime(3500, startTime);
+    bandpass.Q.setValueAtTime(1.5, startTime);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.45, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + burstDuration);
+
+    noise.connect(bandpass);
+    bandpass.connect(gain);
+
+    if (ctx.masterGain) {
+        gain.connect(ctx.masterGain);
+    } else {
+        gain.connect(ctx.destination);
+    }
+
+    noise.start(startTime);
+    noise.stop(startTime + burstDuration);
 };
 export function runScheduler(
     playbackStartBeatRef,
@@ -591,8 +655,12 @@ export function runScheduler(
                 // 1. Dispatch audio nodes instantly to the Web Audio timeline queue
                 beatSlice.notes.forEach(note => {
                     // This is the correct, safely timed metronome handler:
-                    if (note.isMetronomeTick && metronomeEnabled) {
+                    if (note.isMetronomeTick && (metronomeEnabled || note.isPreviewTick)) {
+                        if (note.isPreviewTick) {
+                            playStickClick(ctx, finalPluckTime);
+                        } else {
                             playMetronomeClick(ctx, finalPluckTime, note.isDownbeat);
+                        }
                         return;
                     }
 
