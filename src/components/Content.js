@@ -4,6 +4,7 @@ import Blog from "./Blog";
 import Yt from "./Yt";
 import Both from "./Both";
 import TabViewer from "./tab-viewer/TabViewer";
+import Comments from "./Comments";
 import { Row, Col } from "react-bootstrap";
 
 export default function Content() {
@@ -51,12 +52,26 @@ export default function Content() {
 
     if (error) return <p>Error: {error.message}</p>;
 
-    switch (type) {
-        case "markdown": return (
-            <>
-                <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} />
-                {tab ?
-                    <>
+    const contentBody = (() => {
+        switch (type) {
+            case "markdown": return (
+                <>
+                    <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} />
+                    {tab ?
+                        <>
+                            <br />
+                            <Row style={{ borderTop: '1px solid' }} >
+                                <Col>
+                                    <br />
+                                </Col>
+                            </Row>
+                            <TabViewer tab={tab} />
+                        </> : <></>}
+                </>)
+            case "video": return (
+                <>
+                    <Yt ytId={ytId} tab={tab} />
+                    {tab ? <>
                         <br />
                         <Row style={{ borderTop: '1px solid' }} >
                             <Col>
@@ -64,35 +79,30 @@ export default function Content() {
                             </Col>
                         </Row>
                         <TabViewer tab={tab} />
+
                     </> : <></>}
-            </>)
-        case "video": return (
-            <>
-                <Yt ytId={ytId} tab={tab} />
-                {tab ? <>
-                    <br />
-                    <Row style={{ borderTop: '1px solid' }} >
-                        <Col>
-                            <br />
-                        </Col>
-                    </Row>
-                    <TabViewer tab={tab} />
+                </>)
+            case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} tab={tab} />
 
-                </> : <></>}
-            </>)
-        case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} tab={tab} />
-
-        default: {
-            if (tab) {
-                return <>
-                    <Row>
-                        {publishDate ? <Col><b>{window.findProp("labels.publishedOn")}</b>{publishDate}</Col> : <></>}
-                        {lastUpdated ? <Col><b>{window.findProp("labels.lastUpdated")}</b>{lastUpdated}</Col> : <></>}
-                    </Row>
-                    <TabViewer tab={tab} />
-                </>
+            default: {
+                if (tab) {
+                    return <>
+                        <Row>
+                            {publishDate ? <Col><b>{window.findProp("labels.publishedOn")}</b>{publishDate}</Col> : <></>}
+                            {lastUpdated ? <Col><b>{window.findProp("labels.lastUpdated")}</b>{lastUpdated}</Col> : <></>}
+                        </Row>
+                        <TabViewer tab={tab} />
+                    </>
+                }
+                return <div>Unknown Content Type</div>
             }
-            return <div>Unknown Content Type</div>
         }
-    }
+    })();
+
+    return (
+        <>
+            {contentBody}
+            <Comments contentId={params.contentId} />
+        </>
+    );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   collection,
   query,
@@ -8,7 +9,6 @@ import {
   updateDoc,
   doc,
   deleteDoc,
-  orderBy,
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
@@ -18,9 +18,11 @@ import { Col, Container, Row, Button, Alert, Spinner } from "react-bootstrap";
 
 export default function TabShorthandParser() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [existingScores, setExistingScores] = useState([]);
   const [selectedScoreId, setSelectedScoreId] = useState("");
   const [loadingScores, setLoadingScores] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [shorthandText, setShorthandText] = useState("");
   const [parsedData, setParsedData] = useState(null);
@@ -43,13 +45,16 @@ export default function TabShorthandParser() {
   const loadScores = useCallback(async () => {
     if (!user) return;
     setLoadingScores(true);
+    setLoadError("");
     try {
-      const q = query(scoresRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+      const q = query(scoresRef, where("userId", "==", user.uid));
       const snap = await getDocs(q);
       const list = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setExistingScores(list);
     } catch (e) {
+      setLoadError(`Firestore error: ${e.code || e.message}`);
       console.error("Failed to load scores", e);
     } finally {
       setLoadingScores(false);
@@ -162,6 +167,7 @@ export default function TabShorthandParser() {
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <Container>
+        {loadError && <Alert variant="warning" className="py-2">{loadError}</Alert>}
         <Row>
           <Col>
             <h2>Tab Shorthand Parser</h2>
@@ -170,16 +176,23 @@ export default function TabShorthandParser() {
         <Row className="flex-nowrap">
           <Col>
             <label>Existing Scores</label>
-            <select
-              className="form-select"
-              value={selectedScoreId}
-              onChange={loadExistingScore}
-            >
-              <option value="">-- New Score --</option>
-              {existingScores.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+            <div className="d-flex gap-2">
+              <select
+                className="form-select"
+                value={selectedScoreId}
+                onChange={loadExistingScore}
+              >
+                <option value="">-- New Score --</option>
+                {existingScores.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              {selectedScoreId && (
+                <Button size="sm" variant="info" onClick={() => navigate(`/score/${selectedScoreId}`)}>
+                  View
+                </Button>
+              )}
+            </div>
           </Col>
           <Col>
             <label>Name:</label>
