@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
   sendEmailVerification,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { auth, googleProvider, db } from "../firebase";
 import gravatarUrl from "../utils/gravatar";
 
@@ -23,14 +23,17 @@ async function ensureProfile(user) {
         displayName: user.displayName || user.email?.split("@")[0] || "Anonymous",
         photoURL: user.photoURL || gravatarUrl(user.email),
         email: user.email,
+        emailVerified: user.emailVerified,
         username: "",
         website: "",
         birthday: "",
         createdAt: serverTimestamp(),
       });
+    } else if (snap.data().emailVerified !== user.emailVerified) {
+      await updateDoc(ref, { emailVerified: user.emailVerified });
     }
   } catch (e) {
-    console.warn("Profile sync skipped (rules may not be deployed yet):", e.message);
+    console.warn("Profile sync skipped:", e.message);
   }
 }
 

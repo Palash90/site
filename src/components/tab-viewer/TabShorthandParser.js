@@ -149,7 +149,11 @@ export default function TabShorthandParser() {
       await loadScores();
     } catch (err) {
       console.error("Failed to save score", err.code, err.message);
-      setError(err.message || "An error occurred during parsing.");
+      if (err.code === "permission-denied") {
+        setError("Please verify your email before creating or editing scores. Check your inbox for a verification link.");
+      } else {
+        setError(err.message || "An error occurred during parsing.");
+      }
       setParsedData(null);
     } finally {
       setSaving(false);

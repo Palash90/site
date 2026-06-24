@@ -73,9 +73,14 @@ export default function Profile() {
           )}
         </div>
         {user && user.uid === profileUid && (
-          <Link to="/profile/edit" className="btn btn-outline-light btn-sm ms-auto">
-            <FaEdit className="me-1" /> Edit
-          </Link>
+          <div className="d-flex gap-2 ms-auto">
+            <Link to="/tab-parser" className="btn btn-outline-info btn-sm">
+              + New
+            </Link>
+            <Link to="/profile/edit" className="btn btn-outline-light btn-sm">
+              <FaEdit className="me-1" /> Edit
+            </Link>
+          </div>
         )}
       </div>
       <h5 className="mb-3">Published Scores</h5>

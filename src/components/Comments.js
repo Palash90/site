@@ -62,7 +62,11 @@ export default function Comments({ contentId }) {
       await loadComments();
     } catch (e) {
       console.error("Failed to post comment", e.code, e.message);
-      setError("Failed to post comment.");
+      if (e.code === "permission-denied") {
+        setError("Please verify your email before posting comments.");
+      } else {
+        setError("Failed to post comment.");
+      }
     } finally {
       setSending(false);
     }
@@ -102,34 +106,40 @@ export default function Comments({ contentId }) {
       )}
 
       {user ? (
-        <Form onSubmit={handleSubmit}>
-          <div className="d-flex gap-2">
-            <Link to={`/profile/${user.uid}`} className="text-decoration-none flex-shrink-0">
-              {user.photoURL ? (
-                <img src={user.photoURL || gravatarUrl(user.email)} alt="" width={32} height={32} className="rounded-circle" />
-              ) : (
-                <FaUserCircle size={32} className="text-secondary" />
-              )}
-            </Link>
-            <Form.Group className="flex-grow-1 mb-2">
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Write a comment..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                className="bg-dark text-light border-secondary"
-                required
-              />
-            </Form.Group>
-          </div>
-          {error && <Alert variant="danger" className="py-1 small">{error}</Alert>}
-          <div className="text-end">
-            <Button type="submit" disabled={sending || !text.trim()}>
-              {sending ? "Posting..." : "Post Comment"}
-            </Button>
-          </div>
-        </Form>
+        user.emailVerified ? (
+          <Form onSubmit={handleSubmit}>
+            <div className="d-flex gap-2">
+              <Link to={`/profile/${user.uid}`} className="text-decoration-none flex-shrink-0">
+                {user.photoURL ? (
+                  <img src={user.photoURL || gravatarUrl(user.email)} alt="" width={32} height={32} className="rounded-circle" />
+                ) : (
+                  <FaUserCircle size={32} className="text-secondary" />
+                )}
+              </Link>
+              <Form.Group className="flex-grow-1 mb-2">
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  placeholder="Write a comment..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  className="bg-dark text-light border-secondary"
+                  required
+                />
+              </Form.Group>
+            </div>
+            {error && <Alert variant="danger" className="py-1 small">{error}</Alert>}
+            <div className="text-end">
+              <Button type="submit" disabled={sending || !text.trim()}>
+                {sending ? "Posting..." : "Post Comment"}
+              </Button>
+            </div>
+          </Form>
+        ) : (
+          <Alert variant="warning" className="py-2 small mb-0">
+            Please verify your email before posting comments.
+          </Alert>
+        )
       ) : (
         <div className="d-flex align-items-center gap-2 text-secondary small">
           <FaGoogle /> <Button variant="link" size="sm" onClick={signInWithGoogle} className="p-0">Sign in with Google</Button> to leave a comment.

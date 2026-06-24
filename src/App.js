@@ -22,15 +22,28 @@ function Header() {
   const displayName = profile?.displayName || user?.displayName || user?.email || "";
 
   return (
-    <Navbar expanded={expanded} onToggle={(val) => setExpanded(val)} expand="lg" bg="dark" style={{ borderBottom: "1px solid" }} sticky='top'>
+    <>
+      <style>{`.navbar.sticky-top { z-index: 1030 !important; } .dropdown-menu { z-index: 10060 !important; }`}</style>
+      <Navbar expanded={expanded} onToggle={(val) => setExpanded(val)} expand="lg" bg="dark" style={{ borderBottom: "1px solid" }} sticky='top'>
       <Container fluid>
         <Navbar.Brand href="/" onClick={() => setExpanded(false)}>{window.findProp("name")}</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="justify-content-end flex-grow-1 pe-6">
-            {window.findProp("navLinks").map((l) => (
-              <Nav.Link key={l.link} href={l.link} onClick={() => setExpanded(false)}>{l.label}</Nav.Link>
-            ))}
+            {window.findProp("navLinks").map((l) => {
+              if (user && l.label && l.label.toLowerCase().includes("tech")) {
+                return (
+                  <Nav.Link key="scores" onClick={() => { setExpanded(false); navigate("/contents/scores"); }}>
+                    All Scores
+                  </Nav.Link>
+                );
+              }
+              return (
+                <Nav.Link key={l.link} href={l.link} onClick={() => setExpanded(false)}>
+                  {l.label}
+                </Nav.Link>
+              );
+            })}
           </Nav>
           <Nav className="align-items-center">
             {loading ? null : !user ? (
@@ -50,6 +63,9 @@ function Header() {
                 <NavDropdown.Item onClick={() => { setExpanded(false); navigate(profileLink); }}>
                   Profile
                 </NavDropdown.Item>
+                <NavDropdown.Item onClick={() => { setExpanded(false); navigate("/contents/scores"); }}>
+                  My Scores
+                </NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item onClick={() => { setExpanded(false); logout(); navigate("/"); }}>
                   Logout
@@ -60,6 +76,7 @@ function Header() {
         </Navbar.Collapse>
       </Container>
     </Navbar>
+    </>
   );
 }
 

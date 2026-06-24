@@ -6,7 +6,7 @@ import ContentList from "./ContentList";
 import { collection, query, where, getDocs, deleteDoc, doc, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { FaUserCircle, FaSearch } from "react-icons/fa";
+import { FaUserCircle, FaSearch, FaMusic } from "react-icons/fa";
 
 export default function Contents() {
     const type = useParams().type;
@@ -14,6 +14,7 @@ export default function Contents() {
     const [userScores, setUserScores] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [profiles, setProfiles] = useState([]);
+    const [scoreResults, setScoreResults] = useState([]);
     var intro, header, h1Color;
 
     const loadScores = async () => {
@@ -83,10 +84,29 @@ export default function Contents() {
         }
     }, []);
 
+    const searchScores = useCallback(async (q) => {
+        if (!q.trim()) { setScoreResults([]); return; }
+        try {
+            const snap = await getDocs(query(collection(db, "scores"),
+                where("published", "==", true),
+                where("name", ">=", q),
+                where("name", "<=", q + "\uf8ff"),
+                limit(5)));
+            const results = [];
+            snap.forEach(d => {
+                const data = d.data();
+                results.push({ id: d.id, name: data.name });
+            });
+            setScoreResults(results);
+        } catch (e) {
+            console.error("Score search error", e);
+        }
+    }, []);
+
     useEffect(() => {
-        const t = setTimeout(() => searchProfiles(searchQuery), 300);
+        const t = setTimeout(() => { searchProfiles(searchQuery); searchScores(searchQuery); }, 300);
         return () => clearTimeout(t);
-    }, [searchQuery, searchProfiles]);
+    }, [searchQuery, searchProfiles, searchScores]);
 
     switch (type) {
         case "tech":
@@ -137,7 +157,7 @@ export default function Contents() {
                         onChange={e => setSearchQuery(e.target.value)}
                         className="bg-dark text-light border-secondary ps-5"
                     />
-                    {profiles.length > 0 && searchQuery.trim() && (
+                    {(profiles.length > 0 || scoreResults.length > 0) && searchQuery.trim() && (
                         <div className="position-absolute w-100 mt-1 rounded shadow-lg" style={{ background: "#1e1e1e", zIndex: 10, border: "1px solid #333" }}>
                             {profiles.map(p => (
                                 <Link key={p.id} to={`/profile/${p.username ? `@${p.username}` : p.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
@@ -149,13 +169,22 @@ export default function Contents() {
                                     </div>
                                 </Link>
                             ))}
+                            {scoreResults.map(s => (
+                                <Link key={"score-" + s.id} to={`/content/u-${s.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
+                                    <FaMusic size={20} className="text-info" />
+                                    <div>
+                                        <div className="small">{s.name}</div>
+                                        <span className="text-secondary" style={{ fontSize: "11px" }}>Score</span>
+                                    </div>
+                                </Link>
+                            ))}
                         </div>
                     )}
                 </div>
             )}
 
-            {searchQuery.trim() && profiles.length === 0 && showSearch && (
-                <p className="text-secondary small mb-3">No users found for &ldquo;{searchQuery}&rdquo;</p>
+            {searchQuery.trim() && profiles.length === 0 && scoreResults.length === 0 && showSearch && (
+                <p className="text-secondary small mb-3">No users or scores found for &ldquo;{searchQuery}&rdquo;</p>
             )}
 
             <Row>
