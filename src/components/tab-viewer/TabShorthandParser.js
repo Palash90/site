@@ -171,6 +171,7 @@ export default function TabShorthandParser() {
       });
 
       await loadScores();
+      setSelectedScoreId(newDocId);
     } catch (err) {
       console.error("Failed to save score", err.code, err.message);
       if (err.code === "permission-denied") {
@@ -264,11 +265,6 @@ export default function TabShorthandParser() {
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
-              {selectedScoreId && username && (
-                <Button size="sm" variant="info" onClick={() => navigate(`/content/${username}/${slugify(instrument)}/${slugify(name)}`)}>
-                  View
-                </Button>
-              )}
             </div>
           </Col>
           <Col>
@@ -325,21 +321,6 @@ export default function TabShorthandParser() {
               onChange={(e) => setDesc(e.target.value)}
             />
           </Col>
-          <Col xs="auto" className="d-flex flex-column justify-content-end">
-            <label>&nbsp;</label>
-            <div className="form-check">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="publish-toggle"
-                checked={published}
-                onChange={(e) => setPublished(e.target.checked)}
-              />
-              <label className="form-check-label" htmlFor="publish-toggle">
-                Published
-              </label>
-            </div>
-          </Col>
         </Row>
         <Row>
           <Col>
@@ -362,12 +343,24 @@ export default function TabShorthandParser() {
         </Row>
         <Row className="mt-2">
           <Col xs="auto">
-            <Button onClick={handleParse} disabled={!name || saving}>
+            <Button variant="outline-primary" onClick={handleParse} disabled={!name || saving}>
               {saving ? "Saving..." : selectedScoreId ? "Update" : "Save & Parse"}
             </Button>
           </Col>
+          {selectedScoreId && username && (
+            <Col xs="auto">
+              <Button variant="outline-info" onClick={() => navigate(`/content/${username}/${slugify(instrument)}/${slugify(name)}`)}>
+                Preview
+              </Button>
+            </Col>
+          )}
           <Col xs="auto">
-            <Button variant="secondary" onClick={() => {
+            <Button variant={published ? "outline-warning" : "outline-success"} onClick={() => setPublished(!published)}>
+              {published ? "Mark as Draft" : "Publish"}
+            </Button>
+          </Col>
+          <Col xs="auto">
+            <Button variant="outline-secondary" onClick={() => {
               setShorthandText("");
               setParsedData(null);
               setError(null);
@@ -383,7 +376,7 @@ export default function TabShorthandParser() {
           </Col>
           {selectedScoreId && (
             <Col xs="auto">
-              <Button variant="danger" onClick={handleDelete}>Delete</Button>
+              <Button variant="outline-danger" onClick={handleDelete}>Delete</Button>
             </Col>
           )}
         </Row>
