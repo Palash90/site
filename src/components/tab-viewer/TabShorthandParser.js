@@ -102,9 +102,13 @@ export default function TabShorthandParser() {
       scoreText += "\n" + shorthandText;
 
       setFullScore(scoreText);
-      const scores = parseShorthandText(scoreText);
-      console.log("Parsed Scores:", scores);
-      setParsedData(scores);
+      const parsed = parseShorthandText(scoreText);
+      console.log("Parsed Scores:", parsed);
+      setParsedData(parsed);
+
+      if (!parsed || parsed.length === 0 || !parsed[0].measures || parsed[0].measures.length === 0) {
+        throw new Error("Score must contain at least one measure with notes.");
+      }
 
       setSaving(true);
 
@@ -116,22 +120,30 @@ export default function TabShorthandParser() {
         }
       }
 
-      const scoreData = {
-        userId: user.uid,
-        name: trimmedName,
-        timeSignature,
-        instrument,
-        capo: Number(capo),
-        desc,
-        published,
-        rawShorthand: shorthandText,
-        createdAt: Date.now(),
-      };
-
       if (selectedScoreId) {
-        await updateDoc(doc(db, "scores", selectedScoreId), scoreData);
+        await updateDoc(doc(db, "scores", selectedScoreId), {
+          name: trimmedName,
+          timeSignature,
+          instrument,
+          capo: Number(capo),
+          desc,
+          published,
+          rawShorthand: shorthandText,
+          updatedAt: Date.now(),
+        });
       } else {
-        await addDoc(scoresRef, scoreData);
+        await addDoc(scoresRef, {
+          userId: user.uid,
+          name: trimmedName,
+          timeSignature,
+          instrument,
+          capo: Number(capo),
+          desc,
+          published,
+          rawShorthand: shorthandText,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       }
 
       await loadScores();

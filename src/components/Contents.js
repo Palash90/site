@@ -28,8 +28,9 @@ export default function Contents() {
                     id: "u-" + d.id,
                     title: data.name,
                     noLink: !data.published,
-                    publishDate: data.createdAt
-                        ? new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                    rawTime: data.updatedAt || data.createdAt,
+                    publishDate: (data.updatedAt || data.createdAt)
+                        ? new Date(data.updatedAt || data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
                         : null,
                     editLink: "/tab-parser?edit=" + d.id,
                     onDelete: async () => {
@@ -43,7 +44,7 @@ export default function Contents() {
                     },
                 });
             });
-            scores.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate));
+            scores.sort((a, b) => (b.rawTime || 0) - (a.rawTime || 0));
             setUserScores(scores);
         } catch (e) {
             console.error("Failed to load user scores", e);
@@ -108,12 +109,9 @@ export default function Contents() {
                 {!type || type === "tech" ? <Col><ContentList showDate type="contents.swe" /></Col> : <></>}
                 {isMusic ? (
                     <Col>
-                        <h4 style={{ color: window.findProp("pages.contents.musicHeadColor") }} className="mb-3">
-                            {siteName}&#39;s Scores
-                        </h4>
-                        <ContentList showDate type="contents.music" />
+                        {!user && <ContentList showDate type="contents.music" />}
                         {user && (
-                            <>
+                            <div id="your-scores">
                                 <hr className="text-secondary" />
                                 <div className="d-flex align-items-center gap-3 mb-3">
                                     <h4 style={{ color: window.findProp("pages.contents.musicHeadColor") }} className="mb-0">
@@ -126,7 +124,13 @@ export default function Contents() {
                                 ) : (
                                     <p className="text-secondary small">No scores yet. <a href="/tab-parser" className="text-info">Create one</a>.</p>
                                 )}
-                            </>
+                            </div>
+                        )}
+                        {!user && (
+                            <div className="text-center mt-3 pt-3 border-top border-secondary">
+                                <p className="text-secondary mb-2">Sign in to create and save your own scores</p>
+                                <a href="/login" className="btn btn-outline-info">Sign In</a>
+                            </div>
                         )}
                     </Col>
                 ) : <></>}

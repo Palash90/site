@@ -95,36 +95,7 @@ export default function TabViewer(props) {
     return props.tab && data ? (
         <div className="bg-slate-950 min-h-screen text-slate-100 p-6 flex flex-col gap-4">
             <div className="mt-2">
-                <div className="d-flex justify-content-between align-items-center">
-                    <h3 className="text-lg font-bold tracking-tight text-slate-300 mb-0">Score Viewer - {data.title}</h3>
-                    <div className="d-flex gap-1 align-items-center">
-                        {shareLinks.map(s => (
-                            <button
-                                key={s.name}
-                                onClick={() => window.open(s.url, '_blank', 'noopener,noreferrer,width=600,height=500')}
-                                title={`Share on ${s.name}`}
-                                style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    background: 'transparent',
-                                    border: '1px solid #3a3a5a',
-                                    borderRadius: '4px',
-                                    color: '#8892b0',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.15s ease',
-                                    opacity: 0.7
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = s.color; e.currentTarget.style.borderColor = s.color; }}
-                                onMouseLeave={e => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.color = '#8892b0'; e.currentTarget.style.borderColor = '#3a3a5a'; }}
-                            >
-                                {s.icon}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                <h3 className="text-lg font-bold tracking-tight text-slate-300 mb-2">Score Viewer - {data.title}</h3>
                 <GuitaleleViewer scoreData={data} editorMode={false} />
             </div>
         </div>
