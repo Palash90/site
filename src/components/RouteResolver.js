@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import { Routes, Route, Navigate } from "react-router-dom"
 import Home from "./Home"
 import Projects from "./Projects"
 import About from "./About"
@@ -23,23 +23,21 @@ function ProtectedRoute({ children }) {
 export default function RouteResolver() {
     return (
         <Container fluid className={window.findProp("pages.home.secondaryStyle") + " m-1"} >
-            <Router>
-                <Routes>
-                    <Route path='/' element={<Home />} />
-                    <Route path='/contents' element={<Contents />} />
-                    <Route path='/contents/:type' element={<Contents />} />
-                    <Route path='/content/:contentId' element={<Content />} />
-                    <Route path='/projects' element={<Projects />} />
-                    <Route path='/tab-demo' element={<TabViewerDemo />} />
-                    <Route path='/tab-parser' element={<ProtectedRoute><TabShorthandParser /></ProtectedRoute>} />
-                    <Route path='/component/:componentId' element={<CustomComponent />} />
-                    <Route path='/about' element={<About />} />
-                    <Route path='/login' element={<Login />} />
-                    <Route path='/setup-username' element={<ProtectedRoute><SetupUsername /></ProtectedRoute>} />
-                    <Route path='/profile/:identifier' element={<Profile />} />
-                    <Route path='/profile/edit' element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
-                </Routes>
-            </Router>
+            <Routes>
+                <Route path='/' element={<Home />} />
+                <Route path='/contents' element={<Contents />} />
+                <Route path='/contents/:type' element={<Contents />} />
+                <Route path='/content/:contentId' element={<Content />} />
+                <Route path='/projects' element={<Projects />} />
+                <Route path='/tab-demo' element={<TabViewerDemo />} />
+                <Route path='/tab-parser' element={<ProtectedRoute><TabShorthandParser /></ProtectedRoute>} />
+                <Route path='/component/:componentId' element={<CustomComponent />} />
+                <Route path='/about' element={<About />} />
+                <Route path='/login' element={<Login />} />
+                <Route path='/setup-username' element={<ProtectedRoute><SetupUsername /></ProtectedRoute>} />
+                <Route path='/profile/:identifier' element={<Profile />} />
+                <Route path='/profile/edit' element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
+            </Routes>
         </Container>
     )
 }
