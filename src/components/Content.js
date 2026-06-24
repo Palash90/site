@@ -11,6 +11,7 @@ import Both from "./Both";
 import TabViewer from "./tab-viewer/TabViewer";
 import Comments from "./Comments";
 import { Row, Col, Container, Spinner, Alert } from "react-bootstrap";
+import slugify from "../utils/slugify";
 
 const shareSvg = {
     facebook: <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>,
@@ -65,55 +66,63 @@ export default function Content() {
     let params = useParams()
     const { user } = useAuth();
 
+    const loadUserScore = async (scoreId) => {
+        setError(null);
+        setLoadingUserScore(true);
+        try {
+            const snap = await getDoc(doc(db, "scores", scoreId));
+            if (!snap.exists()) {
+                console.error("Score doc not found:", scoreId);
+                setError({ message: "Score not found." });
+                return;
+            }
+            const data = { id: snap.id, ...snap.data() };
+            if (!data.published && data.userId !== user?.uid) {
+                console.error("Score unpublished:", { owner: data.userId, viewer: user?.uid });
+                setError({ message: "Score not found." });
+                return;
+            }
+            setPublishDate((data.updatedAt || data.createdAt)
+                ? new Date(data.updatedAt || data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                : null);
+            setLastUpdated(data.updatedAt && data.createdAt
+                ? new Date(data.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                : null);
+            setContentType("music");
+
+            const scoreText =
+                "=".repeat(80) +
+                "\nScore: " + data.name +
+                "\nTime Signature: " + data.timeSignature +
+                "\nInstrument: " + data.instrument +
+                "\nCapo: " + (data.capo || 0) +
+                "\nDescription: " + (data.desc || "") +
+                "\n" + "=".repeat(80) +
+                "\n" + data.rawShorthand;
+
+            const parsed = parseShorthandText(scoreText);
+            setUserScoreData(parsed && parsed.length > 0 ? parsed[0] : null);
+            setType("user-score");
+        } catch (e) {
+            console.error("Failed to load score", e.code, e.message);
+            setError({ message: "Failed to load score." });
+        } finally {
+            setLoadingUserScore(false);
+        }
+    };
+
     useEffect(() => {
-        const contentId = params.contentId;
+        const { contentId, username, instrument, titleSlug } = params;
+
+        if (username && instrument && titleSlug) {
+            const docId = `${username}:${instrument}:${titleSlug}`;
+            loadUserScore(docId);
+            return;
+        }
 
         if (contentId && contentId.startsWith("u-")) {
-            setError(null);
-            setLoadingUserScore(true);
             const firestoreId = contentId.slice(2);
-            (async () => {
-                try {
-                    const snap = await getDoc(doc(db, "scores", firestoreId));
-                    if (!snap.exists()) {
-                        console.error("Score doc not found:", firestoreId);
-                        setError({ message: "Score not found." });
-                        return;
-                    }
-                    const data = { id: snap.id, ...snap.data() };
-                    if (!data.published && data.userId !== user?.uid) {
-                        console.error("Score unpublished:", { owner: data.userId, viewer: user?.uid });
-                        setError({ message: "Score not found." });
-                        return;
-                    }
-                    setPublishDate((data.updatedAt || data.createdAt)
-                        ? new Date(data.updatedAt || data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-                        : null);
-                    setLastUpdated(data.updatedAt && data.createdAt
-                        ? new Date(data.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-                        : null);
-                    setContentType("music");
-
-                    const scoreText =
-                        "=".repeat(80) +
-                        "\nScore: " + data.name +
-                        "\nTime Signature: " + data.timeSignature +
-                        "\nInstrument: " + data.instrument +
-                        "\nCapo: " + (data.capo || 0) +
-                        "\nDescription: " + (data.desc || "") +
-                        "\n" + "=".repeat(80) +
-                        "\n" + data.rawShorthand;
-
-                    const parsed = parseShorthandText(scoreText);
-                    setUserScoreData(parsed && parsed.length > 0 ? parsed[0] : null);
-                    setType("user-score");
-                } catch (e) {
-                    console.error("Failed to load score", e.code, e.message);
-                    setError({ message: "Failed to load score." });
-                } finally {
-                    setLoadingUserScore(false);
-                }
-            })();
+            loadUserScore(firestoreId);
             return;
         }
 
@@ -146,7 +155,7 @@ export default function Content() {
                 message: window.findProp("labels.contentNotExists")
             });
         }
-    }, [params.contentId, user]);
+    }, [params.contentId, params.username, params.instrument, params.titleSlug, user]);
 
     if (error) return (
         <Container className="mt-4">

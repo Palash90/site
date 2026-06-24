@@ -44,6 +44,7 @@ export default function RouteResolver() {
         <Route path='/' element={<Home />} />
         <Route path='/contents' element={<Contents />} />
         <Route path='/contents/:type' element={<Contents />} />
+        <Route path='/content/:username/:instrument/:titleSlug' element={<Content />} />
         <Route path='/content/:contentId' element={<Content />} />
         <Route path='/projects' element={<Projects />} />
         <Route path='/tab-demo' element={<TabViewerDemo />} />

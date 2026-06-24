@@ -20,6 +20,10 @@ service cloud.firestore {
         && request.resource.data.rawShorthand is string
         && request.resource.data.rawShorthand.size() >= 2
         && request.resource.data.rawShorthand.size() <= 10000
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 1
+        && request.resource.data.slug is string
+        && request.resource.data.slug.size() >= 1
         && (!("published" in request.resource.data) || request.resource.data.published is bool);
 
       allow update: if isVerified()
@@ -30,6 +34,10 @@ service cloud.firestore {
         && request.resource.data.rawShorthand is string
         && request.resource.data.rawShorthand.size() >= 2
         && request.resource.data.rawShorthand.size() <= 10000
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 1
+        && request.resource.data.slug is string
+        && request.resource.data.slug.size() >= 1
         && (!("published" in request.resource.data) || request.resource.data.published is bool);
 
       allow delete: if isVerified()

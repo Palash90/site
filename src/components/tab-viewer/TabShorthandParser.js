@@ -5,9 +5,10 @@ import {
   query,
   where,
   getDocs,
-  addDoc,
+  setDoc,
   updateDoc,
   doc,
+  getDoc,
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -15,6 +16,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { parseShorthandText } from "./parseShorthandUtils";
 import GuitaleleViewer from "./GuitaleleViewer";
 import { Col, Container, Row, Button, Alert, Spinner } from "react-bootstrap";
+import slugify from "../../utils/slugify";
 
 export default function TabShorthandParser() {
   const { user } = useAuth();
@@ -42,6 +44,8 @@ export default function TabShorthandParser() {
   const instruments = ["Guitalele"];
   const timeSignatures = ["4/4", "3/4", "6/8", "2/4", "2/2"];
 
+  const [username, setUsername] = useState("");
+
   const scoresRef = collection(db, "scores");
 
   const loadScores = useCallback(async () => {
@@ -67,6 +71,17 @@ export default function TabShorthandParser() {
     loadScores();
   }, [loadScores]);
 
+  const getUserName = useCallback(async () => {
+    if (!user) return "";
+    try {
+      const snap = await getDoc(doc(db, "profiles", user.uid));
+      if (snap.exists()) return snap.data().username || "";
+    } catch (e) {
+      console.error("Failed to get username", e);
+    }
+    return "";
+  }, [user]);
+
   useEffect(() => {
     if (loadingScores || existingScores.length === 0) return;
     const editId = searchParams.get("edit");
@@ -81,9 +96,15 @@ export default function TabShorthandParser() {
       setDesc(score.desc || "");
       setPublished(score.published || false);
       setShorthandText(score.rawShorthand || "");
+      setUsername(score.username || "");
       window.history.replaceState(null, "", "/tab-parser");
     }
   }, [loadingScores, existingScores, searchParams]);
+
+  const makeScoreDocId = (uname, instr, title) => {
+    const s = slugify(title);
+    return `${uname}:${slugify(instr)}:${s}`;
+  };
 
   const handleParse = async () => {
     try {
@@ -113,38 +134,41 @@ export default function TabShorthandParser() {
       setSaving(true);
 
       const trimmedName = name.trim();
-      if (!selectedScoreId) {
-        const dup = existingScores.find((s) => s.name?.toLowerCase() === trimmedName.toLowerCase());
-        if (dup) {
-          throw new Error(`A score named "${trimmedName}" already exists.`);
+      const uname = username || (await getUserName());
+      if (!uname) {
+        throw new Error("You must set a username before saving scores. Go to your profile to set one.");
+      }
+      setUsername(uname);
+
+      const instr = instrument.trim();
+      const slug = slugify(trimmedName);
+      const newDocId = makeScoreDocId(uname, instr, trimmedName);
+
+      const existing = await getDoc(doc(db, "scores", newDocId));
+      if (existing.exists()) {
+        if (existing.data().userId !== user.uid || (selectedScoreId && selectedScoreId !== newDocId)) {
+          throw new Error(`A score named "${trimmedName}" for ${instrument} already exists.`);
         }
       }
 
-      if (selectedScoreId) {
-        await updateDoc(doc(db, "scores", selectedScoreId), {
-          name: trimmedName,
-          timeSignature,
-          instrument,
-          capo: Number(capo),
-          desc,
-          published,
-          rawShorthand: shorthandText,
-          updatedAt: Date.now(),
-        });
-      } else {
-        await addDoc(scoresRef, {
-          userId: user.uid,
-          name: trimmedName,
-          timeSignature,
-          instrument,
-          capo: Number(capo),
-          desc,
-          published,
-          rawShorthand: shorthandText,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        });
+      if (selectedScoreId && selectedScoreId !== newDocId) {
+        await deleteDoc(doc(db, "scores", selectedScoreId));
       }
+
+      await setDoc(doc(db, "scores", newDocId), {
+        userId: user.uid,
+        name: trimmedName,
+        timeSignature,
+        instrument: instr,
+        capo: Number(capo),
+        desc,
+        published,
+        rawShorthand: shorthandText,
+        username: uname,
+        slug,
+        createdAt: existing.exists() ? existing.data().createdAt || Date.now() : Date.now(),
+        updatedAt: Date.now(),
+      });
 
       await loadScores();
     } catch (err) {
@@ -172,6 +196,7 @@ export default function TabShorthandParser() {
       setPublished(false);
       setCapo(0);
       setParsedData(null);
+      setUsername("");
       return;
     }
     const score = existingScores.find((s) => s.id === id);
@@ -183,6 +208,7 @@ export default function TabShorthandParser() {
       setDesc(score.desc || "");
       setPublished(score.published || false);
       setShorthandText(score.rawShorthand || "");
+      setUsername(score.username || "");
     }
   };
 
@@ -238,8 +264,8 @@ export default function TabShorthandParser() {
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
-              {selectedScoreId && (
-                <Button size="sm" variant="info" onClick={() => navigate(`/content/u-${selectedScoreId}`)}>
+              {selectedScoreId && username && (
+                <Button size="sm" variant="info" onClick={() => navigate(`/content/${username}/${slugify(instrument)}/${slugify(name)}`)}>
                   View
                 </Button>
               )}
@@ -350,6 +376,7 @@ export default function TabShorthandParser() {
               setPublished(false);
               setCapo(0);
               setSelectedScoreId("");
+              setUsername("");
             }}>
               Clear
             </Button>

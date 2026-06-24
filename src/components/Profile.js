@@ -5,6 +5,7 @@ import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { Container, Spinner, Row, Col } from "react-bootstrap";
 import { FaGlobe, FaBirthdayCake, FaEdit, FaUserCircle } from "react-icons/fa";
+import slugify from "../utils/slugify";
 
 export default function Profile() {
   const { identifier } = useParams();
@@ -41,7 +42,17 @@ export default function Profile() {
       orderBy("updatedAt", "desc")
     );
     const sSnap = await getDocs(q);
-    setScores(sSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    const mapped = sSnap.docs.map(d => {
+      const data = d.data();
+      const hasComposite = data.username && data.slug && data.instrument;
+      return {
+        id: hasComposite
+          ? `${data.username}/${slugify(data.instrument)}/${data.slug}`
+          : "u-" + d.id,
+        ...data
+      };
+    });
+    setScores(mapped);
     setLoading(false);
   }, [identifier]);
 
@@ -90,7 +101,7 @@ export default function Profile() {
         <Row>
           {scores.map(s => (
             <Col xs={12} key={s.id} className="mb-2">
-              <Link to={`/content/u-${s.id}`} className="text-decoration-none d-flex justify-content-between align-items-center p-3 rounded" style={{ background: "#1e1e1e" }}>
+              <Link to={`/content/${s.id}`} className="text-decoration-none d-flex justify-content-between align-items-center p-3 rounded" style={{ background: "#1e1e1e" }}>
                 <span className="fw-bold small">{s.name}</span>
                 <span className="text-secondary" style={{ fontSize: "11px" }}>
                   {s.updatedAt?.toDate?.()?.toLocaleDateString() || ""}

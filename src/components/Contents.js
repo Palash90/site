@@ -7,6 +7,7 @@ import { collection, query, where, getDocs, deleteDoc, doc, limit } from "fireba
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { FaUserCircle, FaSearch, FaMusic } from "react-icons/fa";
+import slugify from "../utils/slugify";
 
 export default function Contents() {
     const type = useParams().type;
@@ -28,8 +29,12 @@ export default function Contents() {
             const scores = [];
             snap.forEach((d) => {
                 const data = d.data();
+                const hasComposite = data.username && data.slug && data.instrument;
+                const id = hasComposite
+                    ? `${data.username}/${slugify(data.instrument)}/${data.slug}`
+                    : "u-" + d.id;
                 scores.push({
-                    id: "u-" + d.id,
+                    id,
                     title: data.name,
                     noLink: !data.published,
                     rawTime: data.updatedAt || data.createdAt,
@@ -95,7 +100,11 @@ export default function Contents() {
             const results = [];
             snap.forEach(d => {
                 const data = d.data();
-                results.push({ id: d.id, name: data.name });
+                const hasComposite = data.username && data.slug && data.instrument;
+                const urlId = hasComposite
+                    ? `${data.username}/${slugify(data.instrument)}/${data.slug}`
+                    : "u-" + d.id;
+                results.push({ id: urlId, name: data.name });
             });
             setScoreResults(results);
         } catch (e) {
@@ -170,7 +179,7 @@ export default function Contents() {
                                 </Link>
                             ))}
                             {scoreResults.map(s => (
-                                <Link key={"score-" + s.id} to={`/content/u-${s.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
+                                <Link key={"score-" + s.id} to={`/content/${s.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
                                     <FaMusic size={20} className="text-info" />
                                     <div>
                                         <div className="small">{s.name}</div>
