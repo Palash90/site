@@ -86,6 +86,11 @@ export default function Contents() {
             intro = window.findProp("pages.contents.musicIntro");
             h1Color = window.findProp("pages.contents.musicHeadColor")
             break;
+        case "scores":
+            header = window.findProp("pages.contents.scoresHeader") || "Scores";
+            intro = window.findProp("pages.contents.scoresIntro") || "Browse and manage your guitar tablature scores";
+            h1Color = window.findProp("pages.contents.scoresHeadColor") || window.findProp("pages.contents.musicHeadColor")
+            break;
         default:
             header = window.findProp("pages.contents.header");
             intro = window.findProp("pages.contents.intro");
@@ -94,7 +99,10 @@ export default function Contents() {
     }
 
     const siteName = window.findProp("name") || "Site";
-    const isMusic = !type || type === "music";
+    const isDefault = !type;
+    const isMusic = type === "music";
+    const isScores = type === "scores";
+    const showSearch = isScores;
     const filterProp = searchQuery.trim() || undefined;
 
     return <>
@@ -106,7 +114,7 @@ export default function Contents() {
                 pColor={window.findProp("pages.contents.pColor")}
             />
 
-            {isMusic && (
+            {showSearch && (
                 <div className="position-relative mb-3" style={{ maxWidth: 400 }}>
                     <FaSearch className="position-absolute text-secondary" style={{ left: 12, top: 10, fontSize: 13 }} />
                     <Form.Control
@@ -129,7 +137,7 @@ export default function Contents() {
                 </div>
             )}
 
-            {searchQuery.trim() && profiles.length === 0 && isMusic && (
+            {searchQuery.trim() && profiles.length === 0 && showSearch && (
                 <p className="text-secondary small mb-3">No profiles found for &ldquo;{searchQuery}&rdquo;</p>
             )}
 
@@ -154,10 +162,10 @@ export default function Contents() {
                 }
             </Row>
             <Row>
-                {!type || type === "tech" ? <Col><ContentList showDate type="contents.swe" filter={filterProp} /></Col> : <></>}
-                {isMusic ? (
+                {isDefault || type === "tech" ? <Col><ContentList showDate type="contents.swe" filter={filterProp} /></Col> : <></>}
+                {isDefault || isMusic ? <Col><ContentList showDate type="contents.music" filter={filterProp} /></Col> : <></>}
+                {isScores ? (
                     <Col>
-                        {!user && <ContentList showDate type="contents.music" filter={filterProp} />}
                         {user && (
                             <div id="your-scores">
                                 <hr className="text-secondary" />

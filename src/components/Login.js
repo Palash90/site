@@ -44,7 +44,7 @@ export default function Login() {
       setError("");
       setLoading(true);
       await fn();
-      navigate("/contents/music#your-scores");
+      navigate("/contents/scores");
     } catch (e) {
       console.log("Auth error:", e.code, e.message);
       setError(friendlyError(e.code));
@@ -64,7 +64,7 @@ export default function Login() {
         setVerificationSent(true);
       } else {
         await signInWithEmail(email, password);
-        navigate("/contents/music#your-scores");
+        navigate("/contents/scores");
       }
     } catch (e) {
       setError(friendlyError(e.code));
