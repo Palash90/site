@@ -61,10 +61,23 @@ export default function Contents() {
     const searchProfiles = useCallback(async (q) => {
         if (!q.trim()) { setProfiles([]); return; }
         try {
-            const snap = await getDocs(
-                query(collection(db, "profiles"), where("displayName", ">=", q), where("displayName", "<=", q + "\uf8ff"), limit(5))
-            );
-            setProfiles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            const lower = q.toLowerCase().trim();
+
+            const [dnSnap, emailSnap, uSnap] = await Promise.all([
+                getDocs(query(collection(db, "profiles"),
+                    where("displayName", ">=", q), where("displayName", "<=", q + "\uf8ff"), limit(5))),
+                getDocs(query(collection(db, "profiles"),
+                    where("email", ">=", q), where("email", "<=", q + "\uf8ff"), limit(5))),
+                getDocs(query(collection(db, "profiles"),
+                    where("username", ">=", lower), where("username", "<=", lower + "\uf8ff"), limit(5))),
+            ]);
+
+            const seen = new Map();
+            dnSnap.forEach(d => seen.set(d.id, { id: d.id, ...d.data() }));
+            emailSnap.forEach(d => { if (!seen.has(d.id)) seen.set(d.id, { id: d.id, ...d.data() }); });
+            uSnap.forEach(d => { if (!seen.has(d.id)) seen.set(d.id, { id: d.id, ...d.data() }); });
+
+            setProfiles(Array.from(seen.values()).slice(0, 5));
         } catch (e) {
             console.error("Profile search error", e);
         }
@@ -119,7 +132,7 @@ export default function Contents() {
                     <FaSearch className="position-absolute text-secondary" style={{ left: 12, top: 10, fontSize: 13 }} />
                     <Form.Control
                         type="text"
-                        placeholder="Search scores &amp; people..."
+                        placeholder="Search users &amp; scores..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         className="bg-dark text-light border-secondary ps-5"
@@ -127,9 +140,13 @@ export default function Contents() {
                     {profiles.length > 0 && searchQuery.trim() && (
                         <div className="position-absolute w-100 mt-1 rounded shadow-lg" style={{ background: "#1e1e1e", zIndex: 10, border: "1px solid #333" }}>
                             {profiles.map(p => (
-                                <Link key={p.id} to={`/profile/${p.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
+                                <Link key={p.id} to={`/profile/${p.username ? `@${p.username}` : p.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
                                     {p.photoURL ? <img src={p.photoURL} alt="" width={28} height={28} className="rounded-circle" /> : <FaUserCircle size={28} className="text-secondary" />}
-                                    <span className="small">{p.displayName}</span>
+                                    <div>
+                                        <div className="small">{p.displayName}</div>
+                                        {p.username && <span className="text-secondary" style={{ fontSize: "11px" }}>@{p.username}</span>}
+                                        {p.email && <span className="text-secondary ms-2" style={{ fontSize: "11px" }}>{p.email}</span>}
+                                    </div>
                                 </Link>
                             ))}
                         </div>
@@ -138,7 +155,7 @@ export default function Contents() {
             )}
 
             {searchQuery.trim() && profiles.length === 0 && showSearch && (
-                <p className="text-secondary small mb-3">No profiles found for &ldquo;{searchQuery}&rdquo;</p>
+                <p className="text-secondary small mb-3">No users found for &ldquo;{searchQuery}&rdquo;</p>
             )}
 
             <Row>

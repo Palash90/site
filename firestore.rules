@@ -67,7 +67,7 @@ service cloud.firestore {
 
       allow create, update: if request.auth != null
         && request.auth.uid == userId
-        && request.resource.data.displayName is string
+        && (!("displayName" in request.resource.data) || request.resource.data.displayName is string)
         && (!("username" in request.resource.data) || isOwnUsername(request.resource.data.username));
 
       allow delete: if false;

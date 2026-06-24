@@ -108,8 +108,8 @@ export default function Login() {
           throw new Error(uErr || "Choose a different username.");
         }
         const cred = await signUpWithEmail(email, password);
-        await setDoc(doc(db, "profiles", cred.user.uid), { username: username.toLowerCase() }, { merge: true });
         await setDoc(doc(db, "usernames", username.toLowerCase()), { uid: cred.user.uid });
+        await setDoc(doc(db, "profiles", cred.user.uid), { username: username.toLowerCase() }, { merge: true });
         setVerificationSent(true);
       } else {
         const cred = await signInWithEmail(email, password);

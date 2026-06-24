@@ -10,7 +10,7 @@ const USERNAME_MIN = 3;
 const USERNAME_MAX = 20;
 
 export default function SetupUsername() {
-  const { user, needsUsername, setNeedsUsername } = useAuth();
+  const { user, needsUsername, setNeedsUsername, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [checking, setChecking] = useState(false);
@@ -56,18 +56,24 @@ export default function SetupUsername() {
     setSaving(true);
     try {
       const targetUsername = username.toLowerCase();
+      const usernameRef = doc(db, "usernames", targetUsername);
+      const existing = await getDoc(usernameRef);
 
-      // Step 1: claim the username (fails if already taken — document-level atomicity)
-      await setDoc(doc(db, "usernames", targetUsername), { uid: user.uid });
+      if (existing.exists()) {
+        // Already claimed (e.g. reserved during email sign-up) — verify it's ours
+        if (existing.data().uid !== user.uid) {
+          throw new Error("Username taken.");
+        }
+      } else {
+        await setDoc(usernameRef, { uid: user.uid });
+      }
 
-      // Step 2: update profile (rules verify usernames doc exists — committed in step 1)
       await updateDoc(doc(db, "profiles", user.uid), { username: targetUsername });
 
+      await refreshProfile();
       setNeedsUsername(false);
       navigate("/contents/scores");
     } catch (err) {
-      // `setDoc` on an existing doc hits `allow update: if false` → permission-denied.
-      // `transaction.set` on an existing doc returns "already-exists" if the txn get saw it.
       if (err.code === "already-exists" || err.code === "permission-denied") {
         setError("That username was just taken. Try another.");
       } else {

@@ -71,6 +71,12 @@ export function AuthProvider({ children }) {
 
   const logout = () => signOut(auth);
 
+  const refreshProfile = async () => {
+    if (!user) return;
+    const snap = await getDoc(doc(db, "profiles", user.uid));
+    setProfile(snap.data() || null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -79,6 +85,7 @@ export function AuthProvider({ children }) {
         loading,
         needsUsername,
         setNeedsUsername,
+        refreshProfile,
         signInWithGoogle,
         signUpWithEmail,
         signInWithEmail,
