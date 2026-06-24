@@ -40,7 +40,7 @@ async function checkUsernameAvailable(username) {
 }
 
 export default function Login() {
-  const { signInWithGoogle, signUpWithEmail, signInWithEmail } = useAuth();
+  const { signInWithGoogle, signUpWithEmail, signInWithEmail, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -74,12 +74,19 @@ export default function Login() {
   };
 
   const redirectAfterLogin = async (uid) => {
-    const snap = await getDoc(doc(db, "profiles", uid));
-    if (snap.exists() && !snap.data()?.username) {
-      navigate("/setup-username");
-    } else {
-      navigate("/contents/scores");
+    for (let i = 0; i < 10; i++) {
+      const snap = await getDoc(doc(db, "profiles", uid));
+      if (snap.exists()) {
+        if (!snap.data()?.username) {
+          navigate("/setup-username");
+        } else {
+          navigate("/contents/scores");
+        }
+        return;
+      }
+      await new Promise(r => setTimeout(r, 300));
     }
+    navigate("/");
   };
 
   const handleSocialLogin = (fn) => async () => {
@@ -110,6 +117,7 @@ export default function Login() {
         const cred = await signUpWithEmail(email, password);
         await setDoc(doc(db, "usernames", username.toLowerCase()), { uid: cred.user.uid });
         await setDoc(doc(db, "profiles", cred.user.uid), { username: username.toLowerCase() }, { merge: true });
+        await refreshProfile();
         setVerificationSent(true);
       } else {
         const cred = await signInWithEmail(email, password);
