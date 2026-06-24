@@ -1,16 +1,19 @@
-import { useState, useEffect } from "react"
-import { Col, Container, Row } from "react-bootstrap"
+import { useState, useEffect, useCallback } from "react"
+import { Col, Container, Row, Form } from "react-bootstrap"
 import PageIntro from "./PageIntro"
-import { useParams } from "react-router";
+import { useParams, Link } from "react-router-dom";
 import ContentList from "./ContentList";
-import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, deleteDoc, doc, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
+import { FaUserCircle, FaSearch } from "react-icons/fa";
 
 export default function Contents() {
     const type = useParams().type;
     const { user } = useAuth();
     const [userScores, setUserScores] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [profiles, setProfiles] = useState([]);
     var intro, header, h1Color;
 
     const loadScores = async () => {
@@ -55,6 +58,23 @@ export default function Contents() {
         loadScores();
     }, [user]);
 
+    const searchProfiles = useCallback(async (q) => {
+        if (!q.trim()) { setProfiles([]); return; }
+        try {
+            const snap = await getDocs(
+                query(collection(db, "profiles"), where("displayName", ">=", q), where("displayName", "<=", q + "\uf8ff"), limit(5))
+            );
+            setProfiles(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (e) {
+            console.error("Profile search error", e);
+        }
+    }, []);
+
+    useEffect(() => {
+        const t = setTimeout(() => searchProfiles(searchQuery), 300);
+        return () => clearTimeout(t);
+    }, [searchQuery, searchProfiles]);
+
     switch (type) {
         case "tech":
             header = window.findProp("pages.contents.techHeader");
@@ -75,6 +95,7 @@ export default function Contents() {
 
     const siteName = window.findProp("name") || "Site";
     const isMusic = !type || type === "music";
+    const filterProp = searchQuery.trim() || undefined;
 
     return <>
         <Container fluid>
@@ -84,6 +105,33 @@ export default function Contents() {
                 h1Color={h1Color}
                 pColor={window.findProp("pages.contents.pColor")}
             />
+
+            {isMusic && (
+                <div className="position-relative mb-3" style={{ maxWidth: 400 }}>
+                    <FaSearch className="position-absolute text-secondary" style={{ left: 12, top: 10, fontSize: 13 }} />
+                    <Form.Control
+                        type="text"
+                        placeholder="Search scores &amp; people..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="bg-dark text-light border-secondary ps-5"
+                    />
+                    {profiles.length > 0 && searchQuery.trim() && (
+                        <div className="position-absolute w-100 mt-1 rounded shadow-lg" style={{ background: "#1e1e1e", zIndex: 10, border: "1px solid #333" }}>
+                            {profiles.map(p => (
+                                <Link key={p.id} to={`/profile/${p.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
+                                    {p.photoURL ? <img src={p.photoURL} alt="" width={28} height={28} className="rounded-circle" /> : <FaUserCircle size={28} className="text-secondary" />}
+                                    <span className="small">{p.displayName}</span>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {searchQuery.trim() && profiles.length === 0 && isMusic && (
+                <p className="text-secondary small mb-3">No profiles found for &ldquo;{searchQuery}&rdquo;</p>
+            )}
 
             <Row>
                 {
@@ -106,10 +154,10 @@ export default function Contents() {
                 }
             </Row>
             <Row>
-                {!type || type === "tech" ? <Col><ContentList showDate type="contents.swe" /></Col> : <></>}
+                {!type || type === "tech" ? <Col><ContentList showDate type="contents.swe" filter={filterProp} /></Col> : <></>}
                 {isMusic ? (
                     <Col>
-                        {!user && <ContentList showDate type="contents.music" />}
+                        {!user && <ContentList showDate type="contents.music" filter={filterProp} />}
                         {user && (
                             <div id="your-scores">
                                 <hr className="text-secondary" />
@@ -120,7 +168,7 @@ export default function Contents() {
                                     <a href="/tab-parser" className="btn btn-sm btn-outline-info">+ New</a>
                                 </div>
                                 {userScores.length > 0 ? (
-                                    <ContentList showDate type="__user_scores__" extraContents={userScores} />
+                                    <ContentList showDate type="__user_scores__" extraContents={userScores} filter={filterProp} />
                                 ) : (
                                     <p className="text-secondary small">No scores yet. <a href="/tab-parser" className="text-info">Create one</a>.</p>
                                 )}

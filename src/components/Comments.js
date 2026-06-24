@@ -12,6 +12,8 @@ import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { Row, Col, Button, Form, Alert, Spinner } from "react-bootstrap";
 import { FaUserCircle, FaGoogle } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import gravatarUrl from "../utils/gravatar";
 
 export default function Comments({ contentId }) {
   const { user, signInWithGoogle } = useAuth();
@@ -52,7 +54,7 @@ export default function Comments({ contentId }) {
         contentId,
         userId: user.uid,
         userName: user.displayName || user.email?.split("@")[0] || "Anonymous",
-        userPhoto: user.photoURL || null,
+        userPhoto: user.photoURL || gravatarUrl(user.email) || null,
         text: text.trim(),
         createdAt: serverTimestamp(),
       });
@@ -78,14 +80,16 @@ export default function Comments({ contentId }) {
         <div className="mb-4">
           {comments.map((c) => (
             <div key={c.id} className="d-flex gap-3 mb-3 p-3 rounded" style={{ background: "#1e1e1e" }}>
-              {c.userPhoto ? (
-                <img src={c.userPhoto} alt="" width="36" height="36" className="rounded-circle" />
-              ) : (
-                <FaUserCircle size={36} className="text-secondary flex-shrink-0" />
-              )}
+              <Link to={`/profile/${c.userId}`} className="text-decoration-none flex-shrink-0">
+                {c.userPhoto ? (
+                  <img src={c.userPhoto} alt="" width="36" height="36" className="rounded-circle" />
+                ) : (
+                  <FaUserCircle size={36} className="text-secondary" />
+                )}
+              </Link>
               <div>
                 <div className="d-flex gap-2 align-items-baseline">
-                  <strong className="small">{c.userName}</strong>
+                  <Link to={`/profile/${c.userId}`} className="text-decoration-none"><strong className="small text-light">{c.userName}</strong></Link>
                   <span className="text-secondary" style={{ fontSize: "11px" }}>
                     {c.createdAt?.toDate?.()?.toLocaleDateString() || ""}
                   </span>
@@ -99,21 +103,32 @@ export default function Comments({ contentId }) {
 
       {user ? (
         <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-2">
-            <Form.Control
-              as="textarea"
-              rows={3}
-              placeholder="Write a comment..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="bg-dark text-light border-secondary"
-              required
-            />
-          </Form.Group>
+          <div className="d-flex gap-2">
+            <Link to={`/profile/${user.uid}`} className="text-decoration-none flex-shrink-0">
+              {user.photoURL ? (
+                <img src={user.photoURL || gravatarUrl(user.email)} alt="" width={32} height={32} className="rounded-circle" />
+              ) : (
+                <FaUserCircle size={32} className="text-secondary" />
+              )}
+            </Link>
+            <Form.Group className="flex-grow-1 mb-2">
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Write a comment..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                className="bg-dark text-light border-secondary"
+                required
+              />
+            </Form.Group>
+          </div>
           {error && <Alert variant="danger" className="py-1 small">{error}</Alert>}
-          <Button type="submit" disabled={sending || !text.trim()}>
-            {sending ? "Posting..." : "Post Comment"}
-          </Button>
+          <div className="text-end">
+            <Button type="submit" disabled={sending || !text.trim()}>
+              {sending ? "Posting..." : "Post Comment"}
+            </Button>
+          </div>
         </Form>
       ) : (
         <div className="d-flex align-items-center gap-2 text-secondary small">

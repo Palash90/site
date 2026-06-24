@@ -31,8 +31,10 @@ function Header() {
           </Nav>
           {user && (
             <Nav className="align-items-center gap-2 ms-3">
-              <FaUserCircle size={24} className="text-light" />
-              <span className="text-light small">{user.displayName || user.email}</span>
+              <a href={`/profile/${user.uid}`} className="text-decoration-none d-flex align-items-center text-light" title="View profile">
+                <FaUserCircle size={24} />
+              </a>
+              <a href={`/profile/${user.uid}`} className="text-light small text-decoration-none">{user.displayName || user.email}</a>
               <Button variant="outline-light" size="sm" onClick={logout}>Logout</Button>
             </Nav>
           )}

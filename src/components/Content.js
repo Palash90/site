@@ -40,10 +40,11 @@ function ShareRow({ url, title }) {
     };
     return (
         <div className="d-flex gap-1 align-items-center">
+            <style>{`.create-score-btn{position:relative;overflow:hidden}.create-score-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.35) 50%,transparent 70%);animation:shimmer 2.5s infinite}@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
             {shareButtons.map(sb => (
                 <button key={sb.name} onClick={() => window.open(links[sb.name], "_blank", "noopener,noreferrer,width=600,height=500")} title={`Share on ${sb.name}`} style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${sb.color}`, borderRadius: "4px", color: sb.color, cursor: "pointer", opacity: 0.7 }} onMouseEnter={e => e.currentTarget.style.opacity = "1"} onMouseLeave={e => e.currentTarget.style.opacity = "0.7"}>{shareSvg[sb.svg]}</button>
             ))}
-            <a href="/tab-parser" className="btn btn-sm btn-outline-success fw-bold" style={{ fontSize: "11px", lineHeight: "1", padding: "4px 10px" }}>+ Create</a>
+            <a href="/tab-parser" className="create-score-btn fw-bold text-decoration-none d-inline-flex align-items-center justify-content-center" style={{ height: "28px", fontSize: "12px", padding: "0 12px", borderRadius: "4px", background: "linear-gradient(90deg, #22d3ee, #10b981)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 0 10px rgba(34,197,94,0.4)", transition: "transform 0.15s, boxShadow 0.15s" }} onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.08)"; e.currentTarget.style.boxShadow = "0 0 16px rgba(34,197,94,0.6)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 0 10px rgba(34,197,94,0.4)"; }}>+ Create</a>
         </div>
     );
 }

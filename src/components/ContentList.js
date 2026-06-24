@@ -42,6 +42,10 @@ export default function ContentList(props) {
     if (props.extraContents) {
         allContents = [...allContents, ...props.extraContents];
     }
+    if (props.filter) {
+        var q = props.filter.toLowerCase();
+        allContents = allContents.filter(c => (c.title || "").toLowerCase().includes(q));
+    }
     var numColumns = Math.ceil(allContents.length / itemsPerPage);
     var columns = []
 

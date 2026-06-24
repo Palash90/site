@@ -9,6 +9,8 @@ import { Container } from "react-bootstrap"
 import TabViewerDemo from "./tab-viewer/TabViewerDemo"
 import TabShorthandParser from "./tab-viewer/TabShorthandParser"
 import Login from "./Login"
+import Profile from "./Profile"
+import ProfileEdit from "./ProfileEdit"
 import { useAuth } from "../contexts/AuthContext"
 
 function ProtectedRoute({ children }) {
@@ -32,6 +34,8 @@ export default function RouteResolver() {
                     <Route path='/component/:componentId' element={<CustomComponent />} />
                     <Route path='/about' element={<About />} />
                     <Route path='/login' element={<Login />} />
+                    <Route path='/profile/:userId' element={<Profile />} />
+                    <Route path='/profile/edit' element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
                 </Routes>
             </Router>
         </Container>
