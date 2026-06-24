@@ -11,7 +11,11 @@ ReactGA.send({hitType:"pageview",page:window.location.pathname+window.location.s
 
 function Header() {
   const [expanded, setExpanded] = React.useState(false);
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
+
+  const profileLink = profile?.username
+    ? `/profile/@${profile.username}`
+    : user ? `/profile/${user.uid}` : "";
 
   return (
     <Navbar expanded={expanded} onToggle={(val) => setExpanded(val)} expand="lg" bg="dark" style={{ borderBottom: "1px solid" }} sticky='top'>
@@ -31,10 +35,10 @@ function Header() {
           </Nav>
           {user && (
             <Nav className="align-items-center gap-2 ms-3">
-              <a href={`/profile/${user.uid}`} className="text-decoration-none d-flex align-items-center text-light" title="View profile">
+              <a href={profileLink} className="text-decoration-none d-flex align-items-center text-light" title="View profile">
                 <FaUserCircle size={24} />
               </a>
-              <a href={`/profile/${user.uid}`} className="text-light small text-decoration-none">{user.displayName || user.email}</a>
+              <a href={profileLink} className="text-light small text-decoration-none">{profile?.displayName || user.displayName || user.email}</a>
               <Button variant="outline-light" size="sm" onClick={logout}>Logout</Button>
             </Nav>
           )}

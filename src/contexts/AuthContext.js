@@ -23,6 +23,7 @@ async function ensureProfile(user) {
         displayName: user.displayName || user.email?.split("@")[0] || "Anonymous",
         photoURL: user.photoURL || gravatarUrl(user.email),
         email: user.email,
+        username: "",
         website: "",
         birthday: "",
         createdAt: serverTimestamp(),
@@ -35,12 +36,23 @@ async function ensureProfile(user) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [needsUsername, setNeedsUsername] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      if (u) await ensureProfile(u);
+      if (u) {
+        await ensureProfile(u);
+        const snap = await getDoc(doc(db, "profiles", u.uid));
+        const data = snap.data() || null;
+        setProfile(data);
+        setNeedsUsername(!data?.username);
+      } else {
+        setProfile(null);
+        setNeedsUsername(false);
+      }
       setLoading(false);
     });
     return unsub;
@@ -63,7 +75,10 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
+        profile,
         loading,
+        needsUsername,
+        setNeedsUsername,
         signInWithGoogle,
         signUpWithEmail,
         signInWithEmail,

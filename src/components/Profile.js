@@ -7,28 +7,43 @@ import { Container, Spinner, Row, Col } from "react-bootstrap";
 import { FaGlobe, FaBirthdayCake, FaEdit, FaUserCircle } from "react-icons/fa";
 
 export default function Profile() {
-  const { userId } = useParams();
+  const { identifier } = useParams();
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
+  const [profileUid, setProfileUid] = useState(null);
   const [scores, setScores] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const pSnap = await getDoc(doc(db, "profiles", userId));
-    if (!pSnap.exists()) { setLoading(false); return; }
-    setProfile({ id: pSnap.id, ...pSnap.data() });
+    const key = identifier.startsWith("@") ? identifier.slice(1) : identifier;
+
+    // Try as profile UID first
+    let pSnap = await getDoc(doc(db, "profiles", key));
+    let uid = key;
+
+    if (!pSnap.exists()) {
+      // Not a UID — try as username
+      const uSnap = await getDoc(doc(db, "usernames", key.toLowerCase()));
+      if (!uSnap.exists()) { setLoading(false); return; }
+      uid = uSnap.data().uid;
+      pSnap = await getDoc(doc(db, "profiles", uid));
+      if (!pSnap.exists()) { setLoading(false); return; }
+    }
+
+    setProfile({ id: uid, ...pSnap.data() });
+    setProfileUid(uid);
 
     const q = query(
       collection(db, "scores"),
-      where("userId", "==", userId),
+      where("userId", "==", uid),
       where("published", "==", true),
       orderBy("updatedAt", "desc")
     );
     const sSnap = await getDocs(q);
     setScores(sSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     setLoading(false);
-  }, [userId]);
+  }, [identifier]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -44,7 +59,8 @@ export default function Profile() {
           <FaUserCircle size={72} className="text-secondary" />
         )}
         <div>
-          <h4 className="mb-1">{profile.displayName}</h4>
+          <h4 className="mb-0">{profile.displayName}</h4>
+          {profile.username && <span className="text-secondary small">@{profile.username}</span>}
           {profile.website && (
             <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-info small d-flex align-items-center gap-1">
               <FaGlobe size={12} /> {profile.website.replace(/^https?:\/\//, "")}
@@ -56,7 +72,7 @@ export default function Profile() {
             </span>
           )}
         </div>
-        {user && user.uid === userId && (
+        {user && user.uid === profileUid && (
           <Link to="/profile/edit" className="btn btn-outline-light btn-sm ms-auto">
             <FaEdit className="me-1" /> Edit
           </Link>
