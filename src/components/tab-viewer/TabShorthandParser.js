@@ -15,8 +15,176 @@ import { db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
 import { parseShorthandText } from "./parseShorthandUtils";
 import GuitaleleViewer from "./GuitaleleViewer";
-import { Col, Container, Row, Button, Alert, Spinner } from "react-bootstrap";
+import { Col, Container, Row, Button, Alert, Spinner, Modal } from "react-bootstrap";
+import { FaInfoCircle } from "react-icons/fa";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import slugify from "../../utils/slugify";
+
+const MANUAL_MD = `# Shorthand Tab Notation — Quick Guide
+
+## Writing Notes
+
+The basic format: **Fret:String@Duration**
+
+\`\`\`
+3:1@q      Fret 3, string 1, quarter note
+0:6@w      Open string 6, whole note
+5:3@h.     Fret 5, string 3, dotted half note
+\`\`\`
+
+**Strings:** 1 = thinnest (highest pitch), 6 = thickest (lowest pitch).
+
+### Duration Letters
+
+| Letter | Duration | Beats (in 4/4) |
+| --- | --- | --- |
+| \`s\` | 1/16 note | 1/4 beat |
+| \`e\` | 1/8 note | 1/2 beat |
+| \`q\` | 1/4 note | 1 beat |
+| \`h\` | 1/2 note | 2 beats |
+| \`w\` | whole note | 4 beats |
+
+Add \`.\` for dotted notes (e.g., \`h.\` = dotted half = 3 beats).
+
+### Compact Notation
+
+Shorter form: **fret** + \`f\` + **string** + \`s\` + **duration**
+
+\`\`\`
+3f1sq      Same as 3:1@q
+0f6sw      Same as 0:6@w
+\`\`\`
+
+---
+
+## Open Strings and Muted Strings
+
+| Symbol | Meaning |
+| --- | --- |
+| \`O\` or \`0\` | Open string |
+| \`X\` or \`x\` | Muted / dead string |
+
+---
+
+## Rests
+
+Use \`-\` for silence: \`-@q\` (quarter rest), \`-@h\` (half rest), etc.
+You can also write \`-q\`, \`-h\` (without the \`@\`).
+
+---
+
+## Chords
+
+Wrap simultaneous notes in square brackets:
+
+\`\`\`
+[0:6 | 2:5 | 2:4 | 1:3 | 0:2 | 0:1]@q   G major chord, quarter note
+[3:1 | 5:2]@h                              Two-note chord, half note
+[0f6s | 2f5s | 2f4s]@q                    Compact form inside chords
+[0:6 | 2:5]w                               Trailing duration (no @ needed)
+\`\`\`
+
+---
+
+## Two Voices (Polyphony)
+
+For melody + bass playing simultaneously, use \`v1\` (upper/melody) and \`v2\` (lower/bass). Each voice fills the bar independently.
+
+\`\`\`
+M1: 3f3sqv1 | 3f3sqv1 | 4f3sqv1 | 5f3sqv1
+M1: 0f6hwv2 | 0f6hwv2
+\`\`\`
+
+---
+
+## Ties
+
+Add \`t\` after duration to hold a note into the next beat without re-plucking:
+
+\`\`\`
+3:2@hq       Half note, tied
+[0:6 | 2:5]@wt   Whole chord, tied
+\`\`\`
+
+---
+
+## Annotations
+
+Add \`d:text\` for notes to yourself (doesn't affect sound):
+
+\`\`\`
+3:1@qd:Melody starts here
+[0:6 | 2:5]@qd:C major chord
+\`\`\`
+
+---
+
+## Measure Numbers
+
+- **Explicit:** \`Measure 1: ...\` or \`M 1: ...\` or \`M1: ...\`
+- **Implicit:** Just write a line of notes — the system counts them in order.
+
+---
+
+## Quick Reference
+
+| What You Write | What It Means |
+| --- | --- |
+| \`3:1@q\` | Fret 3, string 1, quarter note |
+| \`3f1sq\` | Same thing, compact form |
+| \`-@q\` | Quarter rest |
+| \`[0:6 \\| 2:5]@q\` | Two-note chord, quarter note |
+| \`t\` (after duration) | Tie — hold through next beat |
+| \`v1\`, \`v2\` | Voice 1 (melody) or Voice 2 (bass) |
+| \`d:text\` | Annotation (doesn't affect sound) |
+| \`O:3@q\` | Open string 3 |
+| \`X:6@h\` | Muted string 6 |
+| \`M1:\` or \`Measure 1:\` | Measure number label |
+
+---
+
+## Tips
+
+- Each measure must total exactly one bar (e.g., 4 beats in 4/4).
+- Use \`v1\`/\`v2\` when two independent lines happen at the same time.
+- Inside chords \`[...]\`, separate notes with \` | \`. Inside measures, also separate with \` | \`.
+- Strings: **1** (highest) to **6** (lowest).
+- Descriptions are just for your own reference.
+`;
+
+function ShorthandManualModal() {
+  const [show, setShow] = useState(false);
+
+  return (
+    <>
+      <FaInfoCircle
+        style={{ cursor: "pointer", fontSize: "0.85rem", verticalAlign: "middle" }}
+        onClick={() => setShow(true)}
+        title="Shorthand notation guide"
+      />
+      <Modal
+        show={show}
+        onHide={() => setShow(false)}
+        size="xl"
+        aria-labelledby="shorthand-manual-modal"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title id="shorthand-manual-modal">Shorthand Tab Notation Guide</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ maxHeight: "calc(100vh - 210px)", overflowY: "auto" }}>
+          <Markdown remarkPlugins={[remarkGfm]}>{MANUAL_MD}</Markdown>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShow(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
+  );
+}
 
 export default function TabShorthandParser() {
   const { user } = useAuth();
@@ -246,9 +414,12 @@ export default function TabShorthandParser() {
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <Container>
         {loadError && <Alert variant="warning" className="py-2">{loadError}</Alert>}
-        <Row>
+        <Row className="align-items-center">
           <Col>
-            <h2>Tab Shorthand Parser</h2>
+            <h2 className="mb-0">Tab Shorthand Parser</h2>
+          </Col>
+          <Col xs="auto">
+            <ShorthandManualModal />
           </Col>
         </Row>
         <Row className="flex-nowrap">
