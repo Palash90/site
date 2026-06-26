@@ -197,6 +197,7 @@ export default function TabShorthandParser() {
   const [shorthandText, setShorthandText] = useState("");
   const [parsedData, setParsedData] = useState(null);
   const [error, setError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState([]);
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
@@ -276,6 +277,7 @@ export default function TabShorthandParser() {
   const handleParse = async () => {
     try {
       setError(null);
+      setValidationErrors([]);
       if (!name.trim()) {
         throw new Error("Score name is required.");
       }
@@ -290,12 +292,17 @@ export default function TabShorthandParser() {
       scoreText += "\n" + shorthandText;
 
       setFullScore(scoreText);
-      const parsed = parseShorthandText(scoreText);
-      console.log("Parsed Scores:", parsed);
-      setParsedData(parsed);
+      const { scores, errors: parseErrors } = parseShorthandText(scoreText);
+      console.log("Parsed Scores:", scores);
+      setParsedData(scores);
+      setValidationErrors(parseErrors);
 
-      if (!parsed || parsed.length === 0 || !parsed[0].measures || parsed[0].measures.length === 0) {
+      if (!scores || scores.length === 0 || !scores[0].measures || scores[0].measures.length === 0) {
         throw new Error("Score must contain at least one measure with notes.");
+      }
+
+      if (parseErrors.length > 0) {
+        return;
       }
 
       setSaving(true);
@@ -364,6 +371,7 @@ export default function TabShorthandParser() {
       setPublished(false);
       setCapo(0);
       setParsedData(null);
+      setValidationErrors([]);
       setUsername("");
       return;
     }
@@ -532,8 +540,10 @@ export default function TabShorthandParser() {
           <Col xs="auto">
             <Button variant="outline-secondary" onClick={() => {
               setShorthandText("");
-              setParsedData(null);
+      setParsedData(null);
+      setValidationErrors([]);
               setError(null);
+              setValidationErrors([]);
               setName("");
               setDesc("");
               setPublished(false);
@@ -554,6 +564,17 @@ export default function TabShorthandParser() {
           <Row className="mt-2">
             <Col>
               <Alert variant="danger" className="py-2">{error}</Alert>
+            </Col>
+          </Row>
+        )}
+        {validationErrors.length > 0 && (
+          <Row className="mt-2">
+            <Col>
+              <Alert variant="warning" className="py-2">
+                <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "inherit" }}>
+                  {validationErrors.join("\n")}
+                </pre>
+              </Alert>
             </Col>
           </Row>
         )}

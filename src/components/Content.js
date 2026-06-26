@@ -108,8 +108,11 @@ export default function Content() {
                 "\n" + "=".repeat(80) +
                 "\n" + data.rawShorthand;
 
-            const parsed = parseShorthandText(scoreText);
-            setUserScoreData(parsed && parsed.length > 0 ? parsed[0] : null);
+            const { scores, errors } = parseShorthandText(scoreText);
+            if (errors.length > 0) {
+                console.warn("Score validation errors:", errors);
+            }
+            setUserScoreData(scores && scores.length > 0 ? scores[0] : null);
             setType("user-score");
         } catch (e) {
             console.error("Failed to load score", e.code, e.message);

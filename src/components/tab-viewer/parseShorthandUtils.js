@@ -1,4 +1,3 @@
-// Helper to parse fret characters preventing undefined/null errors
 const parseFretValue = fretStr => {
     if (!fretStr) return null;
     const cleanFret = fretStr.trim().toUpperCase();
@@ -8,36 +7,41 @@ const parseFretValue = fretStr => {
 };
 
 const durationMap = {
-    s: 0.25, // Sixteenth
-    e: 0.5, // Eighth
-    "e.": 0.75, // Dotted Eighth
-    q: 1.0, // Quarter
-    "q.": 1.5, // Dotted Quarter
-    h: 2.0, // Half
-    "h.": 3.0, // Dotted Half
-    w: 4.0, // Whole
-    "w.": 6.0 // Dotted Whole
+    s: 0.25,
+    e: 0.5,
+    "e.": 0.75,
+    q: 1.0,
+    "q.": 1.5,
+    h: 2.0,
+    "h.": 3.0,
+    w: 4.0,
+    "w.": 6.0
 };
 
-// Helper to parse individual note/rest/chord tokens cleanly
+const getExpectedBeats = timeSignature => {
+    if (!timeSignature) return 4.0;
+    const parts = timeSignature.split("/");
+    const num = parseInt(parts[0], 10);
+    const den = parseInt(parts[1], 10);
+    if (isNaN(num) || isNaN(den)) return 4.0;
+    return num * (4 / den);
+};
+
 export const parseToken = (token, capo = 0) => {
-    const event = { duration: 1.0 }; // Default fallback
+    const event = { duration: 1.0 };
     let workingToken = token.trim();
 
-    // 1. Extract Description (d:...) from the end of the token safely
     const descIndex = workingToken.indexOf("d:");
     if (descIndex !== -1) {
         event.description = workingToken.substring(descIndex + 2);
         workingToken = workingToken.substring(0, descIndex);
     }
 
-    // 2. Extract Tie flag
     if (workingToken.includes("t")) {
         event.tie = true;
         workingToken = workingToken.replace("t", "");
     }
 
-    // 3. Extract Voice flag
     const voiceMatch = workingToken.match(/v(\d+)/);
     if (voiceMatch) {
         event.voice = parseInt(voiceMatch[1], 10);
@@ -58,18 +62,14 @@ export const parseToken = (token, capo = 0) => {
         return event;
     }
 
-    // 4. Extract Duration flag
     const durationMatch = workingToken.match(/@([whqes]\.?)/);
     if (durationMatch) {
         const durStr = durationMatch[1];
-        // Map the string to the value; default to parseFloat if it's a raw number
         event.duration = durationMap[durStr] || parseFloat(durStr);
         workingToken = workingToken.split("@")[0];
     }
 
-    // Case 1: Rest Item (support trailing duration like "-h", "-w.")
     if (workingToken.startsWith("-")) {
-        // Try to parse a trailing duration letter (e.g., -h, -h., -q, -w.)
         const restDurMatch = workingToken.match(/^-([whqes]\.?)/i);
         if (restDurMatch) {
             const durStr = restDurMatch[1].toLowerCase();
@@ -79,9 +79,7 @@ export const parseToken = (token, capo = 0) => {
         return event;
     }
 
-    // Case 2: Chord blocks [...]
     if (workingToken.startsWith("[")) {
-        // Extract trailing duration if present right after the closing bracket (e.g., ]w)
         const closingBracketIndex = workingToken.lastIndexOf("]");
         const trailingDuration = workingToken
             .substring(closingBracketIndex + 1)
@@ -92,11 +90,9 @@ export const parseToken = (token, capo = 0) => {
         }
 
         const chordContent = workingToken.slice(1, closingBracketIndex);
-        // Split internal chord notes by spaces or pipes
         const elements = chordContent.split(/[\s|]+/).filter(Boolean);
 
         event.pitches = elements.map(el => {
-            // Support compact syntax inside chords (e.g., 0f6s)
             const compactMatch = el.match(/^(\d+|[OXox])f(\d+)s?$/i);
             if (compactMatch) {
                 return {
@@ -104,7 +100,6 @@ export const parseToken = (token, capo = 0) => {
                     string: parseInt(compactMatch[2], 10)
                 };
             }
-            // Fallback to legacy syntax inside chords (e.g., 0:6)
             const parts = el.split(":");
             return {
                 fret: parseFretValue(parts[0]),
@@ -114,7 +109,6 @@ export const parseToken = (token, capo = 0) => {
         return event;
     }
 
-    // Case 3: Standard single note map
     if (workingToken.includes(":")) {
         const parts = workingToken.split(":");
         event.string = parseInt(parts[1], 10);
@@ -129,14 +123,14 @@ export const parseToken = (token, capo = 0) => {
 export const parseShorthandText = shorthandText => {
     const lines = shorthandText.split("\n");
     const scores = [];
+    const errors = [];
     let currentScore = null;
 
-    for (let line of lines) {
-        line = line.trim();
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        const line = lines[lineIdx].trim();
         if (!line || line.startsWith("==") || line.startsWith("GUITALELE TAB"))
             continue;
 
-        // Detect Score block instantiation
         if (line.startsWith("Score:")) {
             if (currentScore) {
                 scores.push(currentScore);
@@ -145,7 +139,7 @@ export const parseShorthandText = shorthandText => {
                 id: "",
                 title: line.replace("Score:", "").trim(),
                 instrument: "",
-                timeSignature: "",
+                timeSignature: "4/4",
                 measures: [],
                 capo: 0
             };
@@ -181,8 +175,6 @@ export const parseShorthandText = shorthandText => {
                 continue;
             }
 
-            // Process structural measure text lines (Matches "Measure 1:" or "M 1:" or "M1:")
-            // Or even a line not part of score definition, is a measure
             let measureNumber;
             let measureContent;
 
@@ -194,7 +186,6 @@ export const parseShorthandText = shorthandText => {
                 measureNumber = parseInt(explicitMeasureMatch[1], 10);
                 measureContent = explicitMeasureMatch[2];
             } else {
-                // 1. A new line without metadata automatically denotes a new measure
                 const lastMeasureNum =
                     currentScore.measures.length > 0
                         ? currentScore.measures[
@@ -207,10 +198,65 @@ export const parseShorthandText = shorthandText => {
 
             const rawTokens =
                 measureContent.match(/\[[^\]]+\][^\s]*|[^\s|]+/g) || [];
+            const notes = [];
+            let totalBeats = 0;
 
-            const notes = rawTokens.map(token =>
-                parseToken(token, currentScore.capo)
-            );
+            for (const token of rawTokens) {
+                if (token.startsWith("[") && !token.includes("]")) {
+                    errors.push(
+                        `Measure ${measureNumber}: missing closing bracket in "${token}".`
+                    );
+                }
+
+                const note = parseToken(token, currentScore.capo);
+
+                const isRecognized =
+                    note.fret !== undefined ||
+                    note.isRest ||
+                    note.pitches;
+
+                if (!isRecognized) {
+                    errors.push(
+                        `Measure ${measureNumber}: unrecognized token "${token}".`
+                    );
+                }
+
+                if (
+                    note.string !== undefined &&
+                    (isNaN(note.string) || note.string < 1 || note.string > 6)
+                ) {
+                    errors.push(
+                        `Measure ${measureNumber}: string ${note.string} in "${token}" is out of range (1-6).`
+                    );
+                }
+
+                if (note.pitches) {
+                    for (const p of note.pitches) {
+                        if (
+                            p.string !== undefined &&
+                            (isNaN(p.string) || p.string < 1 || p.string > 6)
+                        ) {
+                            errors.push(
+                                `Measure ${measureNumber}: string ${p.string} in chord "${token}" is out of range (1-6).`
+                            );
+                        }
+                    }
+                }
+
+                notes.push(note);
+                totalBeats += note.duration;
+            }
+
+            if (notes.length > 0) {
+                const expectedBeats = getExpectedBeats(
+                    currentScore.timeSignature
+                );
+                if (Math.abs(totalBeats - expectedBeats) > 0.01) {
+                    errors.push(
+                        `Measure ${measureNumber}: expected ${expectedBeats} beat(s) but got ${totalBeats}. Check your durations.`
+                    );
+                }
+            }
 
             currentScore.measures.push({
                 measureNumber,
@@ -229,5 +275,5 @@ export const parseShorthandText = shorthandText => {
         );
     }
 
-    return scores;
+    return { scores, errors };
 };

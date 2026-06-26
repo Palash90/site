@@ -22,8 +22,11 @@ export default function TabViewer(props) {
                 return response.text();
             })
             .then(textData => {
-                const parsedData = parseShorthandText(textData);
-                setData(parsedData[0]);
+                const { scores, errors } = parseShorthandText(textData);
+                if (errors.length > 0) {
+                    console.warn("Score validation errors:", errors);
+                }
+                setData(scores[0]);
                 setLoading(false);
             })
             .catch(err => {
