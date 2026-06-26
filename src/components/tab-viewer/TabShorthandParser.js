@@ -21,8 +21,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import slugify from "../../utils/slugify";
 
-const MANUAL_MD = `# Shorthand Tab Notation — Quick Guide
-
+const MANUAL_MD = `
 ## Writing Notes
 
 The basic format: **Fret:String@Duration**
@@ -103,7 +102,7 @@ M1: 0f6hwv2 | 0f6hwv2
 Add \`t\` after duration to hold a note into the next beat without re-plucking:
 
 \`\`\`
-3:2@hq       Half note, tied
+3:2@ht       Half note, tied
 [0:6 | 2:5]@wt   Whole chord, tied
 \`\`\`
 
