@@ -36,7 +36,7 @@ export default function Contents() {
                 scores.push({
                     id,
                     title: data.name,
-                    noLink: !data.published,
+                    noLink: data.published === false,
                     rawTime: data.updatedAt || data.createdAt,
                     publishDate: (data.updatedAt || data.createdAt)
                         ? new Date(data.updatedAt || data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })

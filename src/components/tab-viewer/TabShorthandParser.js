@@ -271,7 +271,7 @@ export default function TabShorthandParser() {
       setPublished(score.published || false);
       setShorthandText(score.rawShorthand || "");
       setUsername(score.username || "");
-      window.history.replaceState(null, "", "/tab-parser");
+      navigate("/tab-parser", { replace: true });
     }
   }, [loadingScores, existingScores, searchParams]);
 
