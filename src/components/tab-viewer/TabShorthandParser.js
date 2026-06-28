@@ -205,6 +205,7 @@ export default function TabShorthandParser() {
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [togglingPublish, setTogglingPublish] = useState(false);
 
   const [name, setName] = useState("");
   const [timeSignature, setTimeSignature] = useState("4/4");
@@ -272,6 +273,19 @@ export default function TabShorthandParser() {
       setShorthandText(score.rawShorthand || "");
       setUsername(score.username || "");
       navigate("/tab-parser", { replace: true });
+
+      const scoreText = "=".repeat(80) +
+        "\nScore: " + (score.name || "") +
+        "\nTime Signature: " + (score.timeSignature || "4/4") +
+        "\nInstrument: " + (score.instrument || "Guitalele") +
+        "\nCapo: " + (score.capo || 0) +
+        "\nDescription: " + (score.desc || "") +
+        "\n" + "=".repeat(80) +
+        "\n" + (score.rawShorthand || "");
+      setFullScore(scoreText);
+      const { scores, errors: parseErrors } = parseShorthandText(scoreText);
+      setParsedData(scores);
+      setValidationErrors(parseErrors);
     }
   }, [loadingScores, existingScores, searchParams]);
 
@@ -368,6 +382,7 @@ export default function TabShorthandParser() {
   const loadExistingScore = (e) => {
     const id = e.target.value;
     setSelectedScoreId(id);
+    setError(null);
     if (!id) {
       setName("");
       setTimeSignature("4/4");
@@ -391,6 +406,40 @@ export default function TabShorthandParser() {
       setPublished(score.published || false);
       setShorthandText(score.rawShorthand || "");
       setUsername(score.username || "");
+      const scoreText = "=".repeat(80) +
+        "\nScore: " + (score.name || "") +
+        "\nTime Signature: " + (score.timeSignature || "4/4") +
+        "\nInstrument: " + (score.instrument || "Guitalele") +
+        "\nCapo: " + (score.capo || 0) +
+        "\nDescription: " + (score.desc || "") +
+        "\n" + "=".repeat(80) +
+        "\n" + (score.rawShorthand || "");
+      setFullScore(scoreText);
+      const { scores, errors: parseErrors } = parseShorthandText(scoreText);
+      setParsedData(scores);
+      setValidationErrors(parseErrors);
+    }
+  };
+
+  const handleTogglePublished = async () => {
+    if (!selectedScoreId) {
+      setPublished((prev) => !prev);
+      return;
+    }
+    setTogglingPublish(true);
+    const prevPublished = published;
+    try {
+      const newPublished = !published;
+      setPublished(newPublished);
+      await updateDoc(doc(db, "scores", selectedScoreId), {
+        published: newPublished,
+        updatedAt: Date.now(),
+      });
+    } catch (e) {
+      setPublished(prevPublished);
+      setError(`Failed to update published state: ${e.message}`);
+    } finally {
+      setTogglingPublish(false);
     }
   };
 
@@ -539,12 +588,12 @@ export default function TabShorthandParser() {
             </Col>
           )}
           <Col xs="auto">
-            <Button variant={published ? "outline-warning" : "outline-success"} onClick={() => setPublished(!published)}>
-              {published ? "Mark as Draft" : "Publish"}
+            <Button variant={published ? "outline-warning" : "outline-success"} onClick={handleTogglePublished} disabled={togglingPublish}>
+              {togglingPublish ? "Updating..." : published ? "Mark as Draft" : "Publish"}
             </Button>
           </Col>
           <Col xs="auto">
-            <Button variant="outline-secondary" onClick={() => {
+            <Button variant="outline-secondary" disabled={saving || togglingPublish} onClick={() => {
               setShorthandText("");
       setParsedData(null);
       setValidationErrors([]);
@@ -562,7 +611,7 @@ export default function TabShorthandParser() {
           </Col>
           {selectedScoreId && (
             <Col xs="auto">
-              <Button variant="outline-danger" onClick={handleDelete}>Delete</Button>
+              <Button variant="outline-danger" onClick={handleDelete} disabled={saving || togglingPublish}>Delete</Button>
             </Col>
           )}
         </Row>
