@@ -6,11 +6,16 @@
   
   .date {
     display: inline-block;
-    width: 110px; /* Set a fixed width based on the longest date */
+    width: 135px;
     text-align: left;
+    font-size: 0.85rem;
+    color: var(--text-muted, #8892b0);
   }
-  
+
   .label {
-    margin-left: 5px; /* Optional: Add some spacing between the date and the label */
+    margin-left: 5px;
   }
+
+  ul { list-style: none; padding-left: 0; }
+  ul li { padding: 3px 0; }
   

@@ -1,6 +1,163 @@
+:root {
+  --bg-deep: #090b10;
+  --bg-surface: #11141c;
+  --bg-elevated: #181d28;
+  --text-main: #e2e8f0;
+  --text-muted: #8892b0;
+  --accent: #22d3ee;
+  --accent-warm: #f59e0b;
+  --border-subtle: rgba(255,255,255,0.06);
+  --content-width: 760px;
+}
+
 body {
   margin: 0;
-  font-family: 'Lora' serif;
+  font-family: 'Open Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-deep);
+  color: var(--text-main);
 }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: #262b36; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #363c4a; }
+
+::selection { background: rgba(34,211,238,0.18); color: #fff; }
+
+.navbar { backdrop-filter: blur(14px); background: rgba(9,11,16,0.88) !important; }
+.navbar-brand { font-family: 'Lora', serif; font-weight: 600; letter-spacing: -0.3px; }
+
+/* Profile image wrapper — vignette overlay to tone down background clutter */
+.profile-img-wrap {
+  position: relative;
+  display: inline-block;
+  border-radius: 14px;
+  overflow: hidden;
+  max-width: 100%;
+}
+.profile-img-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(0,0,0,0.35) 0%, transparent 40%, transparent 70%, rgba(0,0,0,0.5) 100%);
+}
+.profile-img {
+  display: block;
+  border-radius: 14px;
+  border: 2px solid var(--border-subtle);
+  transition: transform 0.35s ease, border-color 0.3s ease;
+  width: 100%;
+}
+.profile-img:hover {
+  transform: scale(1.02);
+  border-color: var(--accent);
+}
+
+/* Bio text — constrain line length for readability */
+.bio-text {
+  max-width: 65ch;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--text-main);
+}
+
+/* Social icons in hero area */
+.hero-socials a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  margin-right: 8px;
+}
+.hero-socials a:hover {
+  color: var(--accent);
+  background: rgba(34,211,238,0.08);
+  border-color: rgba(34,211,238,0.25);
+}
+
+/* Blog section headers */
+.home-section .section-heading {
+  font-family: 'Lora', serif;
+  font-size: 1rem;
+  letter-spacing: -0.2px;
+  margin-bottom: 2px;
+}
+.home-section .section-heading b {
+  color: var(--text-main);
+  font-weight: 600;
+}
+.home-section .section-heading .show-all {
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-family: 'Open Sans', sans-serif;
+  margin-left: 6px;
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.home-section .section-heading .show-all:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+.home-section .section-sub {
+  margin-bottom: 8px;
+}
+
+/* Blog links on home page */
+.home-page .label a {
+  text-decoration: none;
+  color: var(--text-main);
+  line-height: 1.7;
+  border-bottom: none;
+  transition: color 0.2s;
+}
+.home-page .label a:hover {
+  color: var(--accent);
+}
+.home-page ul li {
+  padding: 2px 0;
+}
+
+/* Content containers */
+.tech-blog-content, .blog-content {
+  max-width: var(--content-width);
+  margin: 0 auto;
+}
+.tech-blog-content p, .blog-content p {
+  line-height: 1.8;
+  margin-bottom: 1.25em;
+}
+.tech-blog-content h2, .blog-content h2 {
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+}
+.tech-blog-content pre, .blog-content pre {
+  margin: 1.5em 0;
+}
+
+/* Cards */
+.card {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-subtle) !important;
+  transition: border-color 0.2s;
+}
+.card:hover {
+  border-color: rgba(255,255,255,0.12) !important;
+}
+.card-footer {
+  background: transparent !important;
+  border-top-color: var(--border-subtle) !important;
+}
+
+a { transition: color 0.15s ease; }
+a:hover { color: var(--accent); }

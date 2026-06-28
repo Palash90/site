@@ -1,56 +1,54 @@
 import { Col, Container, Image, Row } from "react-bootstrap";
 import PageIntro from "./PageIntro";
-import Socials from "./Socials";
+import SocialRow from "./SocialRow";
 import ContentList from "./ContentList";
 
 export default function Home() {
     return <>
-        <Container className={window.findProp("pages.home.class")} fluid>
+        <Container className={"home-page " + window.findProp("pages.home.class")} fluid>
             <PageIntro
                 h1={window.findProp('pages.home.greeting') + window.findProp('shortName')}
                 p={window.findProp('pages.home.tag')}
                 h1Color={window.findProp("pages.home.h1Color")}
                 pColor={window.findProp("pages.home.pColor")}
             />
-            <Row>
-                <Col sm={12} md={6} className="order-md-2">
-                    <Image
-                        fluid
-                        src={window.findProp('pages.home.profilePicUrl')}
-                        style={{ background: 'transparent', maxHeight: '250px' }}
-                    />
-                </Col>
-                <Col sm={12} md={6} className="order-md-1  mt-3 mt-md-0">
-                    <div style={{ whiteSpace: "pre-line" }}>
+            <Row className="align-items-start">
+                <Col md={7} className="order-1">
+                    <div className="bio-text" style={{ whiteSpace: "pre-line" }}>
                         {window.findProp('pages.home.desc')}
                     </div>
+                    <div className="hero-socials mt-3 mb-4">
+                        <SocialRow />
+                    </div>
+                    <div className="home-section">
+                        <h6 className="section-heading">
+                            {window.findProp("pages.home.techBlogHeader")}
+                            <a href="/contents/tech" className="show-all">
+                                {window.findProp("pages.home.techBlogShowAll")}
+                            </a>
+                        </h6>
+                        <p className="text-muted small section-sub">{window.findProp("pages.home.techBlogTag")}</p>
+                        <ContentList type="contents.swe" limit={5} />
+                    </div>
                 </Col>
-            </Row>
-            <Row className="mt-3">
-                <Col sm={12} md={6}>
-                    <h6>
-                        <b>{window.findProp("pages.home.techBlogHeader")}</b>
-                        <a href="/contents/tech">
-                            {window.findProp("pages.home.techBlogShowAll")}
-                        </a>
-                    </h6>
-                    <p>{window.findProp("pages.home.techBlogTag")}</p>
-                    <ContentList type="contents.swe" limit={5} />
-                </Col>
-                <Col sm={12} md={6}>
-                    <h6>
-                        <b>{window.findProp("pages.home.musicBlogHeader")}</b>
-                        <a href="/contents/music">
-                            {window.findProp("pages.home.musicBlogShowAll")}
-                        </a>
-                    </h6>
-                    <p>{window.findProp("pages.home.musicBlogTag")}</p>
-                    <ContentList type="contents.music" limit={5} />
-                </Col>
-            </Row>
-            <Row className="mt-1">
-                <Col>
-                    <Socials />
+                <Col md={5} className="order-2">
+                    <div className="profile-img-wrap">
+                        <Image
+                            fluid
+                            className="profile-img"
+                            src={window.findProp('pages.home.profilePicUrl')}
+                        />
+                    </div>
+                    <div className="home-section mt-4">
+                        <h6 className="section-heading">
+                            {window.findProp("pages.home.musicBlogHeader")}
+                            <a href="/contents/music" className="show-all">
+                                {window.findProp("pages.home.musicBlogShowAll")}
+                            </a>
+                        </h6>
+                        <p className="text-muted small section-sub">{window.findProp("pages.home.musicBlogTag")}</p>
+                        <ContentList type="contents.music" limit={5} />
+                    </div>
                 </Col>
             </Row>
         </Container>
