@@ -97,12 +97,12 @@ export default function TabViewer(props) {
     ];
 
     return props.tab && data ? (
-        <div className="bg-slate-950 min-h-screen text-slate-100 p-6 flex flex-col gap-4">
-            <div className="mt-2">
-                <h3 className="text-lg font-bold tracking-tight text-slate-300 mb-2">
+        <div className="bg-slate-950 min-h-screen text-slate-100 px-4 pt-3 pb-2 flex flex-col gap-2">
+            <div className="mt-0">
+                <h3 className="text-sm font-bold tracking-tight text-slate-300 mb-1" style={{ lineHeight: '1.2' }}>
                     Score Viewer - {data.title}
-                    <a href="/content/guitalele-tab-quick-view" target="_blank" rel="noopener noreferrer" className="ms-2 text-decoration-none" style={{ opacity: 0.4, verticalAlign: "middle" }} title="Tab reading guide">
-                        <FaInfoCircle size={14} />
+                    <a href="/content/guitalele-tab-quick-view" target="_blank" rel="noopener noreferrer" className="ms-1 text-decoration-none" style={{ opacity: 0.4, verticalAlign: "middle" }} title="Tab reading guide">
+                        <FaInfoCircle size={11} />
                     </a>
                 </h3>
                 <GuitaleleViewer scoreData={data} editorMode={false} />
