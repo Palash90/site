@@ -547,7 +547,7 @@ export function resumePlaying(isPlaying, isPaused, audioCtxRef, playbackStartTim
 }
 
 /**
- * Synthesizes a highly prominent, punchy metronome click that cuts through the guitar layers.
+ * Synthesizes a highly prominent, punchy metronome click that cuts through the guitalele layers.
  */
 export const playMetronomeClick = (ctx, startTime, isDownbeat = false) => {
     // 1. The Core Woodblock/Clave Body (Thump)

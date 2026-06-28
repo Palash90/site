@@ -145,7 +145,7 @@ export default function Contents() {
             break;
         case "scores":
             header = window.findProp("pages.contents.scoresHeader") || "Scores";
-            intro = window.findProp("pages.contents.scoresIntro") || "Browse and manage your guitar tablature scores";
+            intro = window.findProp("pages.contents.scoresIntro") || "Browse and manage your tablature scores";
             h1Color = window.findProp("pages.contents.scoresHeadColor") || window.findProp("pages.contents.musicHeadColor")
             break;
         default:
@@ -247,9 +247,11 @@ export default function Contents() {
                 {isMusic && (
                     <Col xs={12} className="mt-4">
                         <hr className="text-secondary" />
-                        <h4 style={{ color: h1Color }} className="mb-3">Search Scores</h4>
-                        {searchPanel}
-                        {searchFeedback}
+                        <p className="mb-0">
+                            <Link to="/contents/scores" className="btn btn-outline-info">
+                                Browse Scores
+                            </Link>
+                        </p>
                     </Col>
                 )}
                 {isScores ? (
