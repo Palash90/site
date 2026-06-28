@@ -26,7 +26,11 @@ body {
 
 ::selection { background: rgba(34,211,238,0.18); color: #fff; }
 
-.navbar { backdrop-filter: blur(14px); background: rgba(9,11,16,0.88) !important; }
+.navbar { backdrop-filter: blur(14px); background: rgba(9,11,16,0.88) !important; min-height: 0 !important; }
+.navbar .container-fluid { padding-top: 0 !important; padding-bottom: 0 !important; }
+.navbar-brand { padding-top: 2px !important; padding-bottom: 2px !important; font-size: 1rem !important; }
+.nav-link { padding-top: 4px !important; padding-bottom: 4px !important; }
+.navbar-toggler { padding: 2px 6px !important; font-size: 0.9rem !important; }
 .navbar-brand { font-family: 'Lora', serif; font-weight: 600; letter-spacing: -0.3px; }
 
 /* Page intro — remove extra space from removed <br /> */
@@ -222,15 +226,17 @@ a:hover { color: var(--accent); }
 .footer-socials {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 5px;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 .footer-socials a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 22px;
+  height: 20px;
+  border-radius: 4px;
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);
   transition: color 0.2s, border-color 0.2s, background 0.2s;
@@ -244,4 +250,10 @@ a:hover { color: var(--accent); }
 .site-footer {
   background: #0d0f16 !important;
   border-top-color: rgba(255,255,255,0.04) !important;
+  padding-top: 0.2rem !important;
+  padding-bottom: 0.15rem !important;
+}
+.site-footer .container-fluid {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }

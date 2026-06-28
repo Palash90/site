@@ -23,6 +23,7 @@ export default function GuitaleleViewer({ scoreData }) {
     const [isPaused, setIsPaused] = useState(false);
     const [playbackIndex, setPlaybackIndex] = useState(null);
     const [bpm, setBpm] = useState(100);
+    const [playbackProgress, setPlaybackProgress] = useState(null);
     const [slotWidth, setSlotWidth] = useState(6);
     const containerRef = useRef(null);
     const viewerRef = useRef(null);
@@ -45,6 +46,7 @@ export default function GuitaleleViewer({ scoreData }) {
 
     // --- Responsive Layout State ---
     const [measuresPerRow, setMeasuresPerRow] = useState(4);
+    const [isStackedLayout, setIsStackedLayout] = useState(false);
 
     const audioCtxRef = useRef(null);
     const playbackTimeoutsRef = useRef([]);
@@ -59,14 +61,17 @@ export default function GuitaleleViewer({ scoreData }) {
     useEffect(() => {
         const updateLayoutBoundaries = () => {
             if (window.innerWidth < 480) {
-                setMeasuresPerRow(1); // Extra small mobile layout profile
+                setMeasuresPerRow(1);
                 setSlotWidth(40);
+                setIsStackedLayout(true);
             } else if (window.innerWidth < 768) {
-                setMeasuresPerRow(2); // Mobile layout profile
+                setMeasuresPerRow(2);
                 setSlotWidth(50);
+                setIsStackedLayout(true);
             } else {
-                setMeasuresPerRow(4); // Tablet & Desktop profile
+                setMeasuresPerRow(4);
                 setSlotWidth(50);
+                setIsStackedLayout(false);
             }
         };
 
@@ -311,6 +316,37 @@ export default function GuitaleleViewer({ scoreData }) {
         [activeEvents]
     );
 
+    // Compute global track statistics
+    const trackStats = useMemo(() => {
+        if (!scoreLayout || !scoreData) return null;
+
+        const totalMeasures = scoreData.measures?.length || 0;
+        const timeSig = scoreData.timeSignature || '4/4';
+        const keySig = scoreData.key || scoreData.keySignature || 'C';
+        const numerator = parseInt(timeSig.split('/')[0], 10) || 4;
+        const denominator = parseInt(timeSig.split('/')[1], 10) || 4;
+        const beatsPerMeasure = numerator * (4 / denominator);
+        const totalBeats = totalMeasures * beatsPerMeasure;
+        const totalSeconds = (totalBeats * 60) / bpm;
+
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = Math.round(totalSeconds % 60);
+
+        // Count distinct notes (non-rest, non-metronome)
+        const allEvents = scoreLayout.computedRows?.flatMap(r => r.rowEvents) || [];
+        const noteCount = allEvents.filter(ev => !ev.isRest && !ev.isMetronomeTick).length;
+
+        return {
+            totalMeasures,
+            timeSig,
+            keySig,
+            bpm,
+            totalDuration: `${minutes}:${seconds.toString().padStart(2, '0')}`,
+            noteCount,
+            beatsPerMeasure
+        };
+    }, [scoreLayout, scoreData, bpm]);
+
     const activeDescription = useMemo(() => {
         if (!activeEvents || activeEvents.length === 0) return null;
 
@@ -355,6 +391,39 @@ export default function GuitaleleViewer({ scoreData }) {
             </div>
         );
     }, [activeEvents]);
+
+    // Compute playback progress from beat position (monotonic, unlike event index)
+    const beatRange = useMemo(() => {
+        if (!scoreLayout || !scoreLayout.computedRows) return null;
+        const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
+        if (allEvents.length === 0) return null;
+        const firstBeat = allEvents[0].startBeat;
+        const lastEv = allEvents[allEvents.length - 1];
+        const lastBeat = lastEv.startBeat + (lastEv.beatValue || 1);
+        return { firstBeat, lastBeat, totalBeats: lastBeat - firstBeat };
+    }, [scoreLayout]);
+
+    useEffect(() => {
+        if (isPlaying && playbackIndex !== null && beatRange && beatRange.totalBeats > 0) {
+            if (playbackIndex < 0) {
+                // Count-in beats — progress is 0
+                setPlaybackProgress(0);
+                return;
+            }
+            const allEvents = scoreLayout.computedRows.flatMap(r => r.rowEvents);
+            const currentEvent = allEvents.find(ev => ev.globalIndex === playbackIndex);
+            if (currentEvent) {
+                const currentBeat = currentEvent.startBeat;
+                const rawProgress = ((currentBeat - beatRange.firstBeat) / beatRange.totalBeats) * 100;
+                const progress = Math.max(0, Math.min(100, Math.round(rawProgress)));
+                setPlaybackProgress(progress);
+            } else {
+                setPlaybackProgress(0);
+            }
+        } else if (!isPlaying) {
+            setPlaybackProgress(null);
+        }
+    }, [playbackIndex, isPlaying, beatRange, scoreLayout]);
 
     // 1. Find which row index contains the currently playing note index
     const activeRowIndex = useMemo(() => {
@@ -443,157 +512,227 @@ export default function GuitaleleViewer({ scoreData }) {
                     overflow: 'hidden'
                 }}
             >
-            <div className="bg-dark border-bottom border-secondary text-light p-2 shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
-
-                <div className="d-flex flex-column gap-1" style={{ width: '215px', flexShrink: 0 }}>
-
-                    {/* Row 1: Playback Controls */}
-                    <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '32px', alignItems: 'center' }}>
-                        {!isPlaying ? (
-                            <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start"
-                                disabled={!((voice1Enabled && availableVoices.includes(1)) || (voice2Enabled && availableVoices.includes(2)) || metronomeEnabled)}>
-                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                            </Button>
-                        ) : isPaused ? (
-                            <Button variant="link" onClick={resumePlayback} className="text-warning p-1" title="Resume">
-                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                            </Button>
-                        ) : (
-                            <Button variant="link" onClick={pausePlayback} className="text-warning p-1" title="Pause">
-                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
-                            </Button>
-                        )}
-                        <Button variant="link" onClick={stopPlayback} disabled={!isPlaying} className={`p-1 ${isPlaying ? 'text-danger' : 'text-muted'}`} title="Stop">
-                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
-                        </Button>
-                    </div>
-
-                    <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center gap-2" style={{ height: '32px' }}>
-                        <Form.Range
-                            min="40"
-                            max="240"
-                            value={bpm}
-                            onChange={(e) => setBpm(parseInt(e.target.value, 10))}
-                            disabled={isPlaying}
-                            className="flex-grow-1"
-                        />
-                        <span className="text-warning fw-bold font-monospace" style={{ fontSize: '10px', minWidth: '24px' }}>{bpm}</span>
-                    </div>
-
-                    <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
-
-                        {/* Line 1: V1 and V2 side-by-side */}
-                        <div className="d-flex align-items-center gap-2">
-                            {/* V1 - Takes up 50% width */}
-                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
-                                <span style={{
-                                    fontSize: '10px',
-                                    color: voice1Enabled ? DARK_THEME.voice1Color : '#8892b0',
-                                    fontWeight: 'bold'
-                                }}>V1</span>
-                                <Form.Check
-                                    type="switch"
-                                    id="voice-toggle-0"
-                                    label=""
-                                    className="m-0 d-flex align-items-center"
-                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                    checked={voice1Enabled && availableVoices.includes(1)}
-                                    disabled={isPlaying || !availableVoices.includes(1)}
-                                    onChange={(e) => setVoice1Enabled(e.target.checked)}
-                                />
+            <div className="bg-dark border-bottom border-secondary text-light p-2 shrink-0" style={{ height: 'auto' }}>
+                {isStackedLayout ? (
+                    /* ----- Mobile: stacked rows ----- */
+                    <div className="d-flex flex-column gap-1">
+                        <div className="d-flex gap-2">
+                            <div className="d-flex flex-column gap-1 flex-grow-1">
+                                <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '30px', alignItems: 'center' }}>
+                                    {!isPlaying ? (
+                                        <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start"
+                                            disabled={!((voice1Enabled && availableVoices.includes(1)) || (voice2Enabled && availableVoices.includes(2)) || metronomeEnabled)}>
+                                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                        </Button>
+                                    ) : isPaused ? (
+                                        <Button variant="link" onClick={resumePlayback} className="text-warning p-1" title="Resume">
+                                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                        </Button>
+                                    ) : (
+                                        <Button variant="link" onClick={pausePlayback} className="text-warning p-1" title="Pause">
+                                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                                        </Button>
+                                    )}
+                                    <Button variant="link" onClick={stopPlayback} disabled={!isPlaying} className={`p-1 ${isPlaying ? 'text-danger' : 'text-muted'}`} title="Stop">
+                                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
+                                    </Button>
+                                </div>
+                                <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center" style={{ height: '26px' }}>
+                                    <Form.Range min="40" max="240" value={bpm}
+                                        onChange={(e) => setBpm(parseInt(e.target.value, 10))}
+                                        disabled={isPlaying} className="flex-grow-1" style={{ height: '5px' }} />
+                                    <span className="text-warning fw-bold font-monospace" style={{ fontSize: '9px', minWidth: '22px' }}>{bpm}</span>
+                                </div>
+                                <div className="bg-black px-1 rounded border border-secondary d-flex align-items-center" style={{ height: '12px' }}>
+                                    <div style={{ width: `${isPlaying && playbackProgress !== null ? playbackProgress : 0}%`, height: '4px',
+                                        background: DARK_THEME.progressFill, borderRadius: '2px', transition: 'width 0.3s ease' }} />
+                                </div>
                             </div>
-
-                            {/* V2 - Takes up 50% width */}
-                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
-                                <span style={{
-                                    fontSize: '10px',
-                                    color: voice2Enabled ? DARK_THEME.voice2Color : '#8892b0',
-                                    fontWeight: 'bold'
-                                }}>V2</span>
-                                <Form.Check
-                                    type="switch"
-                                    id="voice-toggle-1"
-                                    label=""
-                                    className="m-0 d-flex align-items-center"
-                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                    checked={voice2Enabled && availableVoices.includes(2)}
-                                    disabled={isPlaying || !availableVoices.includes(2)}
-                                    onChange={(e) => setVoice2Enabled(e.target.checked)}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Thin divider between the voice row and metronome row */}
-                        <div className="border-top border-secondary-subtle opacity-25" style={{ margin: '2px 0' }}></div>
-
-                        {/* Line 2: Metronome and Sheet Music side-by-side */}
-                        <div className="d-flex align-items-center gap-2">
-                            <div className="d-flex align-items-center justify-content-between flex-grow-1" style={{ height: '18px' }}>
-                                <span style={{
-                                    fontSize: '10px',
-                                    color: metronomeEnabled ? DARK_THEME.metronomeControlMedium : '#8892b0',
-                                    fontWeight: 'bold'
-                                }}>
-                                    Met
-                                </span>
-                                <Form.Check
-                                    type="switch"
-                                    id="metronome-toggle"
-                                    label=""
-                                    className="m-0 d-flex align-items-center"
-                                    style={{ transform: 'scale(0.8)', transformOrigin: 'right center' }}
-                                    checked={metronomeEnabled}
-                                    disabled={isPlaying}
-                                    onChange={(e) => setMetronomeEnabled(e.target.checked)}
-                                />
-                            </div>
-
-                            <div className="d-flex align-items-center justify-content-center flex-grow-1 gap-0" style={{ height: '18px' }}>
-                                {['tab','both','sheet'].map(m => (
-                                    <button
-                                        key={m}
-                                        onClick={() => !isPlaying && setViewMode(m)}
-                                        disabled={isPlaying}
-                                        style={{
-                                            fontSize: '10px',
-                                            fontWeight: viewMode === m ? '700' : '400',
-                                            color: viewMode === m ? '#fff' : '#8892b0',
-                                            background: viewMode === m
-                                                ? (m === 'tab' ? '#1a6b4a' : m === 'sheet' ? '#6b4a8a' : '#2a5a7a')
-                                                : 'transparent',
-                                            border: `1px solid ${viewMode === m ? 'transparent' : '#3a3a5a'}`,
-                                            borderRadius: m === 'tab' ? '4px 0 0 4px' : m === 'sheet' ? '0 4px 4px 0' : '0',
-                                            padding: '0 8px',
-                                            lineHeight: '16px',
-                                            cursor: isPlaying ? 'default' : 'pointer',
-                                            opacity: isPlaying ? 0.5 : 1,
-                                            transition: 'all 0.15s ease',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.3px'
-                                        }}
-                                    >
-                                        {m === 'tab' ? 'Tab' : m === 'both' ? 'Both' : 'Staff'}
-                                    </button>
-                                ))}
-
+                            <div className="d-flex flex-column gap-1" style={{ minWidth: '160px', flexShrink: 0 }}>
+                                <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
+                                    <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>Audio Tracks</div>
+                                    <div className="d-flex align-items-center gap-1">
+                                        <div className="d-flex align-items-center justify-content-between" style={{ width: '50px', height: '16px' }}>
+                                            <span style={{ fontSize: '10px', color: voice1Enabled ? DARK_THEME.voice1Color : '#8892b0', fontWeight: 'bold' }}>V1</span>
+                                            <Form.Check type="switch" id="voice-toggle-0" label=""
+                                                className="m-0 d-flex align-items-center"
+                                                style={{ transform: 'scale(0.65)', transformOrigin: 'right center' }}
+                                                checked={voice1Enabled && availableVoices.includes(1)}
+                                                disabled={isPlaying || !availableVoices.includes(1)}
+                                                onChange={(e) => setVoice1Enabled(e.target.checked)} />
+                                        </div>
+                                        <div className="d-flex align-items-center justify-content-between" style={{ width: '50px', height: '16px' }}>
+                                            <span style={{ fontSize: '10px', color: voice2Enabled ? DARK_THEME.voice2Color : '#8892b0', fontWeight: 'bold' }}>V2</span>
+                                            <Form.Check type="switch" id="voice-toggle-1" label=""
+                                                className="m-0 d-flex align-items-center"
+                                                style={{ transform: 'scale(0.65)', transformOrigin: 'right center' }}
+                                                checked={voice2Enabled && availableVoices.includes(2)}
+                                                disabled={isPlaying || !availableVoices.includes(2)}
+                                                onChange={(e) => setVoice2Enabled(e.target.checked)} />
+                                        </div>
+                                        <div className="d-flex align-items-center justify-content-between" style={{ width: '50px', height: '16px' }}>
+                                            <span style={{ fontSize: '10px', color: metronomeEnabled ? DARK_THEME.metronomeControlMedium : '#8892b0', fontWeight: 'bold' }}>Met</span>
+                                            <Form.Check type="switch" id="metronome-toggle" label=""
+                                                className="m-0 d-flex align-items-center"
+                                                style={{ transform: 'scale(0.65)', transformOrigin: 'right center' }}
+                                                checked={metronomeEnabled} disabled={isPlaying}
+                                                onChange={(e) => setMetronomeEnabled(e.target.checked)} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
+                                    <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>View Options</div>
+                                    <div className="d-flex align-items-center gap-1" style={{ height: '18px' }}>
+                                        {['tab','both','sheet'].map(m => (
+                                            <button key={m} onClick={() => !isPlaying && setViewMode(m)} disabled={isPlaying}
+                                                style={{ fontSize: '9px', fontWeight: viewMode === m ? '700' : '400',
+                                                    color: viewMode === m ? '#fff' : '#8892b0',
+                                                    background: viewMode === m ? (m === 'tab' ? '#1a6b4a' : m === 'sheet' ? '#6b4a8a' : '#2a5a7a') : 'transparent',
+                                                    border: `1px solid ${viewMode === m ? 'transparent' : '#3a3a5a'}`,
+                                                    borderRadius: m === 'tab' ? '4px 0 0 4px' : m === 'sheet' ? '0 4px 4px 0' : '0',
+                                                    padding: '0 7px', lineHeight: '16px', cursor: isPlaying ? 'default' : 'pointer',
+                                                    opacity: isPlaying ? 0.5 : 1, transition: 'all 0.15s ease',
+                                                    textTransform: 'uppercase', letterSpacing: '0.3px' }}
+                                            >
+                                                {m === 'tab' ? 'Tab' : m === 'both' ? 'Both' : 'Staff'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
+                        <div className="bg-black border border-secondary rounded p-2 font-monospace"
+                            style={{ fontSize: '12px', lineHeight: '1.2', overflowY: 'auto', height: '74px' }}>
+                            {activeDescription ? (
+                                activeDescription
+                            ) : trackStats ? (
+                                <div className="d-flex flex-column" style={{ gap: '3px', color: '#8892b0' }}>
+                                    <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>Track Info</div>
+                                    <div className="d-flex" style={{ gap: '8px', flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: '10px' }}><span style={{ color: '#64748b' }}>⌛</span> {trackStats.totalDuration}</span>
+                                        <span style={{ fontSize: '10px' }}><span style={{ color: '#64748b' }}>♩</span> {trackStats.timeSig}</span>
+                                        <span style={{ fontSize: '10px' }}><span style={{ color: '#64748b' }}>♯</span> {trackStats.keySig}</span>
+                                        <span style={{ fontSize: '10px' }}><span style={{ color: '#64748b' }}>𝄆</span> {trackStats.totalMeasures} bars</span>
+                                        <span style={{ fontSize: '10px' }}><span style={{ color: '#64748b' }}>♪</span> {trackStats.noteCount} notes</span>
+                                        <span style={{ fontSize: '10px' }}><span style={{ color: '#64748b' }}>BPM</span> {trackStats.bpm}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <span className="text-muted fst-italic" style={{ fontSize: '11px' }}>Select a note to view properties.</span>
+                            )}
+                        </div>
                     </div>
-
-                </div>
-
-                <div
-                    className="bg-black border border-secondary rounded p-2 text-info font-monospace flex-grow-1"
-                    style={{
-                        height: '135px',        // Fixed vertical length
-                        overflowY: 'auto',       // Only the description scrolls
-                        fontSize: '12px',
-                        lineHeight: '1.2'
-                    }}
-                >
-                    {activeDescription || <span className="text-muted fst-italic">Select a note to view properties.</span>}
-                </div>
+                ) : (
+                    /* ----- Desktop: 3-column layout ----- */
+                    <div className="d-flex gap-2" style={{ minHeight: '76px' }}>
+                        <div className="d-flex flex-column gap-1" style={{ minWidth: '150px', flexShrink: 0 }}>
+                            <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '30px', alignItems: 'center' }}>
+                                {!isPlaying ? (
+                                    <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start"
+                                        disabled={!((voice1Enabled && availableVoices.includes(1)) || (voice2Enabled && availableVoices.includes(2)) || metronomeEnabled)}>
+                                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                    </Button>
+                                ) : isPaused ? (
+                                    <Button variant="link" onClick={resumePlayback} className="text-warning p-1" title="Resume">
+                                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                    </Button>
+                                ) : (
+                                    <Button variant="link" onClick={pausePlayback} className="text-warning p-1" title="Pause">
+                                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                                    </Button>
+                                )}
+                                <Button variant="link" onClick={stopPlayback} disabled={!isPlaying} className={`p-1 ${isPlaying ? 'text-danger' : 'text-muted'}`} title="Stop">
+                                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
+                                </Button>
+                            </div>
+                            <div className="bg-black px-2 py-1 rounded border border-secondary d-flex align-items-center" style={{ height: '26px' }}>
+                                <Form.Range min="40" max="240" value={bpm}
+                                    onChange={(e) => setBpm(parseInt(e.target.value, 10))}
+                                    disabled={isPlaying} className="flex-grow-1" style={{ height: '5px' }} />
+                                <span className="text-warning fw-bold font-monospace" style={{ fontSize: '9px', minWidth: '22px' }}>{bpm}</span>
+                            </div>
+                            <div className="bg-black px-1 rounded border border-secondary d-flex align-items-center" style={{ height: '12px' }}>
+                                <div style={{ width: `${isPlaying && playbackProgress !== null ? playbackProgress : 0}%`, height: '4px',
+                                    background: DARK_THEME.progressFill, borderRadius: '2px', transition: 'width 0.3s ease' }} />
+                            </div>
+                        </div>
+                        <div className="d-flex flex-column gap-1" style={{ minWidth: '180px', flexShrink: 0 }}>
+                            <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
+                                <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>Audio Tracks</div>
+                                <div className="d-flex align-items-center gap-2">
+                                    <div className="d-flex align-items-center justify-content-between" style={{ width: '52px', height: '16px' }}>
+                                        <span style={{ fontSize: '10px', color: voice1Enabled ? DARK_THEME.voice1Color : '#8892b0', fontWeight: 'bold' }}>V1</span>
+                                        <Form.Check type="switch" id="voice-toggle-0" label=""
+                                            className="m-0 d-flex align-items-center"
+                                            style={{ transform: 'scale(0.7)', transformOrigin: 'right center' }}
+                                            checked={voice1Enabled && availableVoices.includes(1)}
+                                            disabled={isPlaying || !availableVoices.includes(1)}
+                                            onChange={(e) => setVoice1Enabled(e.target.checked)} />
+                                    </div>
+                                    <div className="d-flex align-items-center justify-content-between" style={{ width: '52px', height: '16px' }}>
+                                        <span style={{ fontSize: '10px', color: voice2Enabled ? DARK_THEME.voice2Color : '#8892b0', fontWeight: 'bold' }}>V2</span>
+                                        <Form.Check type="switch" id="voice-toggle-1" label=""
+                                            className="m-0 d-flex align-items-center"
+                                            style={{ transform: 'scale(0.7)', transformOrigin: 'right center' }}
+                                            checked={voice2Enabled && availableVoices.includes(2)}
+                                            disabled={isPlaying || !availableVoices.includes(2)}
+                                            onChange={(e) => setVoice2Enabled(e.target.checked)} />
+                                    </div>
+                                    <div className="d-flex align-items-center justify-content-between" style={{ width: '52px', height: '16px' }}>
+                                        <span style={{ fontSize: '10px', color: metronomeEnabled ? DARK_THEME.metronomeControlMedium : '#8892b0', fontWeight: 'bold' }}>Met</span>
+                                        <Form.Check type="switch" id="metronome-toggle" label=""
+                                            className="m-0 d-flex align-items-center"
+                                            style={{ transform: 'scale(0.7)', transformOrigin: 'right center' }}
+                                            checked={metronomeEnabled} disabled={isPlaying}
+                                            onChange={(e) => setMetronomeEnabled(e.target.checked)} />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
+                                <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>View Options</div>
+                                <div className="d-flex align-items-center gap-1" style={{ height: '18px' }}>
+                                    {['tab','both','sheet'].map(m => (
+                                        <button key={m} onClick={() => !isPlaying && setViewMode(m)} disabled={isPlaying}
+                                            style={{ fontSize: '9px', fontWeight: viewMode === m ? '700' : '400',
+                                                color: viewMode === m ? '#fff' : '#8892b0',
+                                                background: viewMode === m ? (m === 'tab' ? '#1a6b4a' : m === 'sheet' ? '#6b4a8a' : '#2a5a7a') : 'transparent',
+                                                border: `1px solid ${viewMode === m ? 'transparent' : '#3a3a5a'}`,
+                                                borderRadius: m === 'tab' ? '4px 0 0 4px' : m === 'sheet' ? '0 4px 4px 0' : '0',
+                                                padding: '0 8px', lineHeight: '16px', cursor: isPlaying ? 'default' : 'pointer',
+                                                opacity: isPlaying ? 0.5 : 1, transition: 'all 0.15s ease',
+                                                textTransform: 'uppercase', letterSpacing: '0.3px' }}
+                                        >
+                                            {m === 'tab' ? 'Tab' : m === 'both' ? 'Both' : 'Staff'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-black border border-secondary rounded p-2 font-monospace flex-grow-1 d-flex flex-column justify-content-center"
+                            style={{ fontSize: '12px', lineHeight: '1.2', height: '76px', overflowY: 'auto' }}>
+                            {activeDescription ? (
+                                activeDescription
+                            ) : trackStats ? (
+                                <div className="d-flex flex-column" style={{ gap: '4px', color: '#8892b0' }}>
+                                    <div style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278', marginBottom: '2px' }}>Track Info</div>
+                                    <div className="d-flex" style={{ gap: '12px', flexWrap: 'wrap' }}>
+                                        <span><span style={{ color: '#64748b' }}>⌛</span> {trackStats.totalDuration}</span>
+                                        <span><span style={{ color: '#64748b' }}>♩</span> {trackStats.timeSig}</span>
+                                        <span><span style={{ color: '#64748b' }}>♯</span> {trackStats.keySig}</span>
+                                        <span><span style={{ color: '#64748b' }}>𝄆</span> {trackStats.totalMeasures} bars</span>
+                                        <span><span style={{ color: '#64748b' }}>♪</span> {trackStats.noteCount} notes</span>
+                                        <span><span style={{ color: '#64748b' }}>BPM</span> {trackStats.bpm}</span>
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: '#586278', marginTop: '2px' }}>
+                                        Click any note on the score to inspect its properties.
+                                    </div>
+                                </div>
+                            ) : (
+                                <span className="text-muted fst-italic">Select a note to view properties.</span>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* 3. THE TRUE SCROLL VIEWPORT: Only things inside this box will move or scroll */}

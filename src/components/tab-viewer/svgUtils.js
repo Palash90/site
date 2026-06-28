@@ -64,6 +64,10 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                     className="select-none block shrink-0"
                 >
                     <defs>
+                        <pattern id={`grid-${rowIdx}`} width="24" height="24" patternUnits="userSpaceOnUse">
+                            <path d="M 24 0 L 0 0 0 24" fill="none" stroke={DARK_THEME.gridStroke} strokeWidth="0.5" />
+                            <path d="M 48 0 L 0 0 0 48" fill="none" stroke={DARK_THEME.gridStrokeStrong} strokeWidth="0.5" />
+                        </pattern>
                         <filter
                             id="note-glow"
                             filterUnits="userSpaceOnUse"
@@ -81,6 +85,31 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                             </feMerge>
                         </filter>
                     </defs>
+
+                    {/* Faint background grid for spatial reference */}
+                    <rect
+                        x={0}
+                        y={minY}
+                        width={totalWidth}
+                        height={maxY - minY + 10}
+                        fill={`url(#grid-${rowIdx})`}
+                        pointerEvents="none"
+                    />
+
+                    {/* Playhead sweep line during playback */}
+                    {isPlaying && !isPaused && activePlaybackEvent && (
+                        <line
+                            x1={activePlaybackEvent.cx}
+                            y1={minY}
+                            x2={activePlaybackEvent.cx}
+                            y2={maxY}
+                            stroke={DARK_THEME.progressFill}
+                            strokeWidth="1.5"
+                            opacity="0.4"
+                            strokeDasharray="3 5"
+                            pointerEvents="none"
+                        />
+                    )}
 
                     {metronomeEnabled && (showSheetMusic || showTab) && (
                         <g id="metronome-tick-layer" pointerEvents="none">
@@ -477,6 +506,21 @@ export function buildSvg(paddingX, trebleTopY, bassTopY, lineSpacing, timeSigTop
                                         strokeWidth={1.6}
                                         rx={4}
                                         pointerEvents="none" />
+                                )}
+
+                                {/* Ripple effect on user-tapped notes */}
+                                {isExplicitlyActive && !isPlaying && (
+                                    <g pointerEvents="none">
+                                        <circle cx={ev.cx} cy={highlightY + highlightH / 2} r="6" fill="none" stroke={DARK_THEME.rippleStroke} strokeWidth="2">
+                                            <animate attributeName="r" values="6;32" dur="1s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="0.6;0" dur="1s" repeatCount="indefinite" />
+                                            <animate attributeName="stroke-width" values="2.5;0.5" dur="1s" repeatCount="indefinite" />
+                                        </circle>
+                                        <circle cx={ev.cx} cy={highlightY + highlightH / 2} r="6" fill={DARK_THEME.rippleColor}>
+                                            <animate attributeName="r" values="6;20" dur="1s" repeatCount="indefinite" />
+                                            <animate attributeName="opacity" values="0.35;0" dur="1s" repeatCount="indefinite" />
+                                        </circle>
+                                    </g>
                                 )}
 
                                 {ev.isRest ? (

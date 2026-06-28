@@ -42,6 +42,17 @@ export const DARK_THEME = {
     metronomeDownBeat: "#ff2a5f",      // Deep/Dark Intense ruby pink-red for Downbeats (Beat 1)
     metronomeUpBeat: "#2ae8b2",
 
+    gridFaint: "rgba(255, 255, 255, 0.025)",
+    gridStroke: "rgba(255, 255, 255, 0.05)",
+    gridStrokeStrong: "rgba(255, 255, 255, 0.08)",
+
+    rippleColor: "rgba(56, 189, 248, 0.35)",
+    rippleStroke: "#7dd3fc",
+
+    progressTrack: "rgba(255, 255, 255, 0.08)",
+    progressFill: "#38bdf8",
+    progressThumb: "#7dd3fc",
+
 };
 
 export const CHROMATIC_MAP = {

@@ -24,7 +24,7 @@ function Header() {
 
   return (
     <>
-      <Navbar expanded={expanded} onToggle={(val) => setExpanded(val)} expand="lg" bg="dark" className="border-bottom border-light border-opacity-10" sticky='top'>
+      <Navbar expanded={expanded} onToggle={(val) => setExpanded(val)} expand="lg" bg="dark" className="border-bottom border-light border-opacity-10 py-1" sticky='top'>
       <Container fluid>
         <Navbar.Brand href="/" onClick={() => setExpanded(false)}>{window.findProp("name")}</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -53,7 +53,7 @@ function Header() {
                 align="end"
                 title={
                   <span className="d-flex align-items-center gap-2">
-                    <FaUserCircle size={24} />
+                    <FaUserCircle size={18} />
                     <span className="small text-light">{displayName}</span>
                   </span>
                 }
@@ -81,15 +81,15 @@ function Header() {
 }
 
 function Footer() {
-  return <Navbar className="site-footer border-top border-light border-opacity-10 flex-column py-2" sticky='bottom'>
-    <Container fluid className='justify-content-center py-1 footer-socials'>
+  return <Navbar className="site-footer border-top border-light border-opacity-10 flex-column" sticky='bottom'>
+    <Container fluid className='justify-content-center footer-socials'>
       <a href="https://github.com/palash90" target="_blank" rel="noreferrer"><FaGithub /></a>
       <a href="https://linkedin.com/in/palash90" target="_blank" rel="noreferrer"><FaLinkedin /></a>
       <a href="https://www.youtube.com/@GuitaleleTutorials" target="_blank" rel="noreferrer"><FaYoutube /></a>
       <a href="mailto:connect@palashkantikundu.in" target="_blank" rel="noreferrer"><RiMailSendFill /></a>
     </Container>
     <Container fluid className='justify-content-center'>
-      <Navbar.Text><FaRegCopyright size={14} /> {window.findProp("name") + " " + new Date().getFullYear()}</Navbar.Text>
+      <Navbar.Text style={{ fontSize: '11px', lineHeight: '1' }}><FaRegCopyright size={10} /> {window.findProp("name") + " " + new Date().getFullYear()}</Navbar.Text>
     </Container>
   </Navbar>;
 }
