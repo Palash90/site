@@ -29,13 +29,17 @@ body {
 .navbar { backdrop-filter: blur(14px); background: rgba(9,11,16,0.88) !important; }
 .navbar-brand { font-family: 'Lora', serif; font-weight: 600; letter-spacing: -0.3px; }
 
-/* Profile image wrapper — vignette overlay to tone down background clutter */
+/* Page intro — remove extra space from removed <br /> */
+.page-intro p { margin-bottom: 0.5rem; }
+
+/* Profile image — vignette + desaturate to blend background */
 .profile-img-wrap {
   position: relative;
   display: inline-block;
   border-radius: 14px;
   overflow: hidden;
   max-width: 100%;
+  margin-top: -4px;
 }
 .profile-img-wrap::after {
   content: '';
@@ -43,7 +47,7 @@ body {
   inset: 0;
   border-radius: 14px;
   pointer-events: none;
-  background: linear-gradient(135deg, rgba(0,0,0,0.35) 0%, transparent 40%, transparent 70%, rgba(0,0,0,0.5) 100%);
+  background: linear-gradient(135deg, rgba(0,0,0,0.25) 0%, transparent 40%, transparent 70%, rgba(0,0,0,0.35) 100%);
 }
 .profile-img {
   display: block;
@@ -51,6 +55,7 @@ body {
   border: 2px solid var(--border-subtle);
   transition: transform 0.35s ease, border-color 0.3s ease;
   width: 100%;
+  filter: saturate(0.7) brightness(0.95);
 }
 .profile-img:hover {
   transform: scale(1.02);
@@ -63,26 +68,6 @@ body {
   font-size: 1.05rem;
   line-height: 1.8;
   color: var(--text-main);
-}
-
-/* Social icons in hero area */
-.hero-socials a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  color: var(--text-muted);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
-  margin-right: 8px;
-}
-.hero-socials a:hover {
-  color: var(--accent);
-  background: rgba(34,211,238,0.08);
-  border-color: rgba(34,211,238,0.25);
 }
 
 /* Blog section headers */
@@ -104,28 +89,37 @@ body {
   text-decoration: none;
   opacity: 0.7;
   transition: opacity 0.2s;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 .home-section .section-heading .show-all:hover {
   opacity: 1;
   color: var(--accent);
 }
 .home-section .section-sub {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 0.8rem;
+  font-style: normal;
+  color: #b0b8d0;
 }
 
 /* Blog links on home page */
 .home-page .label a {
   text-decoration: none;
   color: var(--text-main);
-  line-height: 1.7;
-  border-bottom: none;
+  line-height: 1.5;
   transition: color 0.2s;
 }
 .home-page .label a:hover {
   color: var(--accent);
 }
 .home-page ul li {
-  padding: 2px 0;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.home-page ul li:last-child {
+  border-bottom: none;
 }
 
 /* Content containers */
@@ -161,3 +155,31 @@ body {
 
 a { transition: color 0.15s ease; }
 a:hover { color: var(--accent); }
+
+/* Footer social icons */
+.footer-socials {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.footer-socials a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.footer-socials a:hover {
+  color: var(--accent);
+  border-color: rgba(34,211,238,0.3);
+  background: rgba(34,211,238,0.06);
+}
+
+.site-footer {
+  background: #0d0f16 !important;
+  border-top-color: rgba(255,255,255,0.04) !important;
+}

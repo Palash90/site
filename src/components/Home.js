@@ -1,6 +1,5 @@
 import { Col, Container, Image, Row } from "react-bootstrap";
 import PageIntro from "./PageIntro";
-import SocialRow from "./SocialRow";
 import ContentList from "./ContentList";
 
 export default function Home() {
@@ -12,26 +11,13 @@ export default function Home() {
                 h1Color={window.findProp("pages.home.h1Color")}
                 pColor={window.findProp("pages.home.pColor")}
             />
-            <Row className="align-items-start">
-                <Col md={7} className="order-1">
+            <Row className="align-items-start mb-4">
+                <Col md={7}>
                     <div className="bio-text" style={{ whiteSpace: "pre-line" }}>
                         {window.findProp('pages.home.desc')}
                     </div>
-                    <div className="hero-socials mt-3 mb-4">
-                        <SocialRow />
-                    </div>
-                    <div className="home-section">
-                        <h6 className="section-heading">
-                            {window.findProp("pages.home.techBlogHeader")}
-                            <a href="/contents/tech" className="show-all">
-                                {window.findProp("pages.home.techBlogShowAll")}
-                            </a>
-                        </h6>
-                        <p className="text-muted small section-sub">{window.findProp("pages.home.techBlogTag")}</p>
-                        <ContentList type="contents.swe" limit={5} />
-                    </div>
                 </Col>
-                <Col md={5} className="order-2">
+                <Col md={5}>
                     <div className="profile-img-wrap">
                         <Image
                             fluid
@@ -39,15 +25,31 @@ export default function Home() {
                             src={window.findProp('pages.home.profilePicUrl')}
                         />
                     </div>
-                    <div className="home-section mt-4">
+                </Col>
+            </Row>
+            <Row className="align-items-start">
+                <Col md={7}>
+                    <div className="home-section">
+                        <h6 className="section-heading">
+                            {window.findProp("pages.home.techBlogHeader")}
+                            <a href="/contents/tech" className="show-all">
+                                {window.findProp("pages.home.techBlogShowAll")}
+                            </a>
+                        </h6>
+                        <p className="section-sub">{window.findProp("pages.home.techBlogTag")}</p>
+                        <ContentList type="contents.swe" limit={5} truncateAt={55} />
+                    </div>
+                </Col>
+                <Col md={5}>
+                    <div className="home-section">
                         <h6 className="section-heading">
                             {window.findProp("pages.home.musicBlogHeader")}
                             <a href="/contents/music" className="show-all">
                                 {window.findProp("pages.home.musicBlogShowAll")}
                             </a>
                         </h6>
-                        <p className="text-muted small section-sub">{window.findProp("pages.home.musicBlogTag")}</p>
-                        <ContentList type="contents.music" limit={5} />
+                        <p className="section-sub">{window.findProp("pages.home.musicBlogTag")}</p>
+                        <ContentList type="contents.music" limit={5} truncateAt={55} />
                     </div>
                 </Col>
             </Row>

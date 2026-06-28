@@ -1,8 +1,18 @@
 import "./ContentList.css"
 import { FaPen, FaTrash } from "react-icons/fa";
+
+function truncate(str, maxLen) {
+    if (!maxLen || str.length <= maxLen) return str;
+    var s = str.slice(0, maxLen);
+    var last = s.lastIndexOf(' ');
+    if (last > 0) s = s.slice(0, last);
+    return s + '…';
+}
+
 function ContentLink(props) {
     var b = props.content
     var link = process.env.PUBLIC_URL + "/content/" + b.id;
+    var title = truncate(b.title, props.truncateAt);
     return <li key={b.id} className="d-flex align-items-center gap-2">
 
         {b.publishDate && props.showDate ?
@@ -13,9 +23,9 @@ function ContentLink(props) {
 
         <span className="label">
             {b.noLink ? (
-                <span className="text-secondary">{b.title}</span>
+                <span className="text-secondary">{title}</span>
             ) : (
-                <a className={window.findProp("pages.contents.linkClass")} href={link}>{b.title}</a>
+                <a className={window.findProp("pages.contents.linkClass")} href={link}>{title}</a>
             )}
         </span>
 
@@ -59,7 +69,7 @@ export default function ContentList(props) {
             var currentItemIndex = i * itemsPerPage + j;
 
             if (currentItemIndex < allContents.length) {
-                items.push(<ContentLink key={"content" + i + "-" + j} showDate={props.showDate} content={allContents[currentItemIndex]} />)
+                items.push(<ContentLink key={"content" + i + "-" + j} showDate={props.showDate} content={allContents[currentItemIndex]} truncateAt={props.truncateAt} />)
             }
 
         }
@@ -68,4 +78,3 @@ export default function ContentList(props) {
 
     return columns;
 }
-

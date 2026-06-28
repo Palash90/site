@@ -2,7 +2,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { BrowserRouter as Router, useNavigate } from "react-router-dom";
 import RouteResolver from './components/RouteResolver';
 import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
-import { FaRegCopyright, FaUserCircle } from 'react-icons/fa';
+import { FaRegCopyright, FaUserCircle, FaGithub, FaLinkedin, FaYoutube } from 'react-icons/fa';
+import { RiMailSendFill } from 'react-icons/ri';
 import React from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -80,9 +81,15 @@ function Header() {
 }
 
 function Footer() {
-  return <Navbar bg="dark" className="border-top border-light border-opacity-10" sticky='bottom'>
+  return <Navbar className="site-footer border-top border-light border-opacity-10 flex-column py-2" sticky='bottom'>
+    <Container fluid className='justify-content-center py-1 footer-socials'>
+      <a href="https://github.com/palash90" target="_blank" rel="noreferrer"><FaGithub /></a>
+      <a href="https://linkedin.com/in/palash90" target="_blank" rel="noreferrer"><FaLinkedin /></a>
+      <a href="https://www.youtube.com/@GuitaleleTutorials" target="_blank" rel="noreferrer"><FaYoutube /></a>
+      <a href="mailto:connect@palashkantikundu.in" target="_blank" rel="noreferrer"><RiMailSendFill /></a>
+    </Container>
     <Container fluid className='justify-content-center'>
-      <Navbar.Text><FaRegCopyright size={15} /> {window.findProp("name") + " " + new Date().getFullYear()}  </Navbar.Text>
+      <Navbar.Text><FaRegCopyright size={14} /> {window.findProp("name") + " " + new Date().getFullYear()}</Navbar.Text>
     </Container>
   </Navbar>;
 }
