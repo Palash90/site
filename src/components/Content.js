@@ -40,7 +40,7 @@ function ShareRow({ url, title }) {
         Telegram: `https://t.me/share/url?url=${u}&text=${t}`,
     };
     return (
-        <div className="d-flex gap-1 align-items-center">
+        <div className="d-flex gap-1 align-items-center flex-wrap">
             <style>{`.create-score-btn{position:relative;overflow:hidden}.create-score-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.35) 50%,transparent 70%);animation:shimmer 2.5s infinite}@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
             {shareButtons.map(sb => (
                 <button key={sb.name} onClick={() => window.open(links[sb.name], "_blank", "noopener,noreferrer,width=600,height=500")} title={`Share on ${sb.name}`} style={{ width: "28px", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${sb.color}`, borderRadius: "4px", color: sb.color, cursor: "pointer", opacity: 0.7 }} onMouseEnter={e => e.currentTarget.style.opacity = "1"} onMouseLeave={e => e.currentTarget.style.opacity = "0.7"}>{shareSvg[sb.svg]}</button>

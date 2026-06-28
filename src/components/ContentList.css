@@ -3,19 +3,46 @@
     align-items: center;
     margin-bottom: 2px;
   }
-  
+
+  ul { list-style: none; padding-left: 0; }
+
   .date {
     display: inline-block;
-    width: 135px;
+    width: 105px;
     text-align: left;
-    font-size: 0.85rem;
-    color: var(--text-muted, #8892b0);
+    font-size: 0.75rem;
+    color: #6c7a99;
+    flex-shrink: 0;
+  }
+
+  .date + span {
+    opacity: 0.15;
+    margin: 0 2px;
   }
 
   .label {
-    margin-left: 5px;
+    min-width: 0;
   }
 
-  ul { list-style: none; padding-left: 0; }
-  ul li { padding: 3px 0; }
-  
+  .label a {
+    word-break: break-word;
+    font-weight: 500;
+  }
+
+  @media (max-width: 576px) {
+    ul li.d-flex {
+      flex-wrap: wrap;
+    }
+    .date {
+      flex: 0 0 100%;
+      width: 100%;
+      font-size: 0.7rem;
+      margin-bottom: 1px;
+    }
+    .date + span {
+      display: none;
+    }
+    .label {
+      margin-left: 0;
+    }
+  }

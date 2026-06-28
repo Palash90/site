@@ -210,7 +210,7 @@ export default function Contents() {
     );
 
     return <>
-        <Container fluid>
+        <Container fluid className="contents-page">
             <PageIntro
                 h1={header}
                 p={intro}
