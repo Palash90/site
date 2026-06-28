@@ -97,7 +97,7 @@ export default function TabViewer(props) {
     ];
 
     return props.tab && data ? (
-        <div className="bg-slate-950 min-h-screen text-slate-100 px-4 pt-3 pb-2 flex flex-col gap-2">
+        <div className="bg-slate-950 min-h-screen text-slate-100 px-2 pt-3 pb-2 flex flex-col gap-2">
             <div className="mt-0">
                 <h3 className="text-sm font-bold tracking-tight text-slate-300 mb-1" style={{ lineHeight: '1.2' }}>
                     Score Viewer - {data.title}

@@ -352,42 +352,53 @@ export default function GuitaleleViewer({ scoreData }) {
 
         const voiceColors = ['#21cea3', '#fb923c'];
 
-        return (
-            <div className="d-flex flex-column" style={{ gap: '4px' }}>
-                {activeEvents.map((ev, idx) => {
-                    const color = voiceColors[(ev.voice - 1) % voiceColors.length] || voiceColors[0];
-                    const notes = ev.isRest
-                        ? [{ noteName: 'Rest' }]
-                        : ev.processedPitches;
+        const v1Events = activeEvents.filter(ev => ev.voice === 1);
+        const v2Events = activeEvents.filter(ev => ev.voice === 2);
 
-                    return (
-                        <div key={idx} style={{ borderLeft: `3px solid ${color}`, paddingLeft: '10px', marginBottom: '2px' }}>
-                            <div style={{ fontSize: '11px', color: '#8892b0', marginBottom: '2px' }}>
-                                <span style={{ color }}>{ev.voice === 1 ? 'V1' : 'V2'}</span>
-                                {!ev.isRest && <span style={{ marginLeft: '6px' }}>{getDurationLabel(ev.beatValue)}</span>}
+        const renderVoiceColumn = (events, voiceLabel, color) => {
+            if (events.length === 0) return null;
+            return (
+                <div style={{ flex: '1 1 0', minWidth: 0, borderLeft: `2px solid ${color}`, paddingLeft: '8px' }}>
+                    {events.map((ev, idx) => {
+                        const notes = ev.isRest
+                            ? [{ noteName: 'Rest' }]
+                            : ev.processedPitches;
+                        return (
+                            <div key={idx}>
+                                <div style={{ fontSize: '10px', color: '#8892b0', marginBottom: '1px' }}>
+                                    <span style={{ color }}>{voiceLabel}</span>
+                                    {!ev.isRest && <span style={{ marginLeft: '4px' }}>{getDurationLabel(ev.beatValue)}</span>}
+                                </div>
+                                {notes.map((p, pIdx) => (
+                                    <div key={pIdx} style={{ color, fontSize: '13px', fontWeight: '600', lineHeight: 1.3 }}>
+                                        {p.fret === null ? (
+                                            <span style={{ color: '#aaccff', fontStyle: 'italic', fontWeight: '400', fontSize: '11px' }}>
+                                                Muted s{p.string}
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: '#dfe6e9', fontWeight: '400' }}>
+                                                {p.noteName}
+                                                {p.string !== undefined && <span style={{ color: '#8892b0', fontSize: '11px', marginLeft: '4px' }}>s{p.string} f{p.fret}</span>}
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                                {ev.description && (
+                                    <div style={{ fontSize: '10px', color: '#aaccff', fontStyle: 'italic', lineHeight: 1.2, marginTop: '1px' }}>
+                                        {ev.description}
+                                    </div>
+                                )}
                             </div>
-                            {notes.map((p, pIdx) => (
-                                <div key={pIdx} style={{ color, fontSize: '15px', fontWeight: '600', lineHeight: 1.4 }}>
-                                    {p.fret === null ? (
-                                        <span style={{ color: '#aaccff', fontStyle: 'italic', fontWeight: '400' }}>
-                                            Muted string {p.string}
-                                        </span>
-                                    ) : (
-                                        <span style={{ color: '#dfe6e9', fontWeight: '400' }}>
-                                            {p.noteName}
-                                            {p.string !== undefined && <span style={{ color: '#8892b0', fontSize: '12px', marginLeft: '6px' }}>s{p.string} f{p.fret}</span>}
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
-                            {ev.description && (
-                                <div style={{ fontSize: '12px', color: '#aaccff', fontStyle: 'italic', marginTop: '1px', lineHeight: 1.3 }}>
-                                    {ev.description}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
+            );
+        };
+
+        return (
+            <div className="d-flex" style={{ gap: '12px' }}>
+                {v1Events.length > 0 && renderVoiceColumn(v1Events, 'V1', voiceColors[0])}
+                {v2Events.length > 0 && renderVoiceColumn(v2Events, 'V2', voiceColors[1])}
             </div>
         );
     }, [activeEvents]);
@@ -512,12 +523,12 @@ export default function GuitaleleViewer({ scoreData }) {
                     overflow: 'hidden'
                 }}
             >
-            <div className="bg-dark border-bottom border-secondary text-light p-2 shrink-0" style={{ height: 'auto' }}>
+            <div className={`bg-dark border-bottom border-secondary text-light shrink-0 ${isStackedLayout ? 'px-0 py-1' : 'p-2'}`} style={{ height: 'auto' }}>
                 {isStackedLayout ? (
                     /* ----- Mobile: stacked rows ----- */
                     <div className="d-flex flex-column gap-1">
-                        <div className="d-flex gap-2">
-                            <div className="d-flex flex-column gap-1 flex-grow-1">
+                        <div className="d-flex gap-1">
+                            <div className="d-flex flex-column gap-1" style={{ flex: '2 1 auto' }}>
                                 <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '30px', alignItems: 'center' }}>
                                     {!isPlaying ? (
                                         <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start"
@@ -548,7 +559,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                         background: DARK_THEME.progressFill, borderRadius: '2px', transition: 'width 0.3s ease' }} />
                                 </div>
                             </div>
-                            <div className="d-flex flex-column gap-1" style={{ minWidth: '160px', flexShrink: 0 }}>
+                            <div className="d-flex flex-column gap-1" style={{ flex: '1 1 auto' }}>
                                 <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
                                     <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>Audio Tracks</div>
                                     <div className="d-flex align-items-center gap-1">
@@ -581,7 +592,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                     </div>
                                 </div>
                                 <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
-                                    <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>View Options</div>
+                                    <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>Audio Tracks</div>
                                     <div className="d-flex align-items-center gap-1" style={{ height: '18px' }}>
                                         {['tab','both','sheet'].map(m => (
                                             <button key={m} onClick={() => !isPlaying && setViewMode(m)} disabled={isPlaying}
@@ -657,8 +668,8 @@ export default function GuitaleleViewer({ scoreData }) {
                             </div>
                         </div>
                         <div className="d-flex flex-column gap-1" style={{ minWidth: '180px', flexShrink: 0 }}>
-                            <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
-                                <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>Audio Tracks</div>
+                                <div className="bg-black px-2 py-1 rounded border border-secondary d-flex flex-column gap-1">
+                                    <div style={{ fontSize: '8px', textTransform: 'uppercase', letterSpacing: '1px', color: '#586278' }}>View Options</div>
                                 <div className="d-flex align-items-center gap-2">
                                     <div className="d-flex align-items-center justify-content-between" style={{ width: '52px', height: '16px' }}>
                                         <span style={{ fontSize: '10px', color: voice1Enabled ? DARK_THEME.voice1Color : '#8892b0', fontWeight: 'bold' }}>V1</span>
@@ -751,22 +762,22 @@ export default function GuitaleleViewer({ scoreData }) {
                     title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
                     style={{
                         position: 'sticky',
-                        top: '8px',
+                        top: isStackedLayout ? '4px' : '8px',
                         float: 'right',
                         zIndex: 10,
-                        fontSize: '11px',
-                        padding: '4px 6px',
-                        lineHeight: '14px',
+                        fontSize: isStackedLayout ? '9px' : '11px',
+                        padding: isStackedLayout ? '2px 4px' : '4px 6px',
+                        lineHeight: isStackedLayout ? '10px' : '14px',
                         color: isFullscreen ? '#22d3ee' : '#8892b0',
                         background: 'rgba(0,0,0,0.7)',
                         border: '1px solid #3a3a5a',
                         borderRadius: '4px',
                         cursor: 'pointer',
-                        marginRight: '8px',
+                        marginRight: isStackedLayout ? '4px' : '8px',
                         transition: 'all 0.15s ease'
                     }}
                 >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width={isStackedLayout ? 10 : 14} height={isStackedLayout ? 10 : 14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d={isFullscreen ? "M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" : "M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"} />
                     </svg>
                 </button>
@@ -784,7 +795,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                                 borderRadius: '6px',
                                                 border: '1px solid rgba(255,255,255,0.04)',
                                                 marginTop: index === 0 ? 0 : '24px',
-                                                padding: `0 12px ${rowPaddingBottom} 12px`,
+                                                padding: `0 ${isStackedLayout ? '4px' : '12px'} ${rowPaddingBottom} ${isStackedLayout ? '4px' : '12px'}`,
                                             }}
                                         >
                                             {buildSvg(
