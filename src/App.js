@@ -23,13 +23,12 @@ function Header() {
 
   return (
     <>
-      <style>{`.navbar.sticky-top { z-index: 1030 !important; } .dropdown-menu { z-index: 10060 !important; }`}</style>
-      <Navbar expanded={expanded} onToggle={(val) => setExpanded(val)} expand="lg" bg="dark" style={{ borderBottom: "1px solid" }} sticky='top'>
+      <Navbar expanded={expanded} onToggle={(val) => setExpanded(val)} expand="lg" bg="dark" className="border-bottom border-light border-opacity-10" sticky='top'>
       <Container fluid>
         <Navbar.Brand href="/" onClick={() => setExpanded(false)}>{window.findProp("name")}</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="justify-content-end flex-grow-1 pe-6">
+          <Nav className="justify-content-lg-end flex-grow-1 pe-6">
             {window.findProp("navLinks").map((l) => {
               if (user && l.label && l.label.toLowerCase().includes("tech")) {
                 return (
@@ -45,7 +44,7 @@ function Header() {
               );
             })}
           </Nav>
-          <Nav className="align-items-center">
+          <Nav className="align-items-lg-center">
             {loading ? null : !user ? (
               <Nav.Link onClick={() => { setExpanded(false); navigate("/login"); }}>Login</Nav.Link>
             ) : (
@@ -81,7 +80,7 @@ function Header() {
 }
 
 function Footer() {
-  return <Navbar bg="dark" style={{ borderTop: "1px solid" }} sticky='bottom'>
+  return <Navbar bg="dark" className="border-top border-light border-opacity-10" sticky='bottom'>
     <Container fluid className='justify-content-center'>
       <Navbar.Text><FaRegCopyright size={15} /> {window.findProp("name") + " " + new Date().getFullYear()}  </Navbar.Text>
     </Container>
