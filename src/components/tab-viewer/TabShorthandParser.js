@@ -559,19 +559,16 @@ export default function TabShorthandParser() {
               onChange={(e) => setCapo(e.target.value)}
             />
           </Col>
+        </Row>
+        <Row className="mt-2">
           <Col>
             <label>Description</label>
-            <input
+            <textarea
               className="form-control"
-              type="text"
+              rows={2}
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
             />
-          </Col>
-        </Row>
-        <Row>
-          <Col>
-            <br />
           </Col>
         </Row>
         <Row>
@@ -661,30 +658,28 @@ export default function TabShorthandParser() {
           <Col>{showFull ? "Showing" : "Hidden"}</Col>
         </Row>
         {showFull && parsedData && (
-          <>
-            <Row className="mt-2">
-              <Col>
-                <textarea
-                  className="form-control"
-                  readOnly
-                  rows={12}
-                  style={{ fontFamily: "monospace" }}
-                  value={fullScore}
-                />
-              </Col>
-            </Row>
-            <Row className="mt-2">
-              <Col>
-                <textarea
-                  className="form-control"
-                  readOnly
-                  rows={12}
-                  style={{ fontFamily: "monospace" }}
-                  value={JSON.stringify(parsedData, null, 2)}
-                />
-              </Col>
-            </Row>
-          </>
+          <Row className="mt-2">
+            <Col md={6}>
+              <label className="text-secondary small">Constructed Score</label>
+              <textarea
+                className="form-control"
+                readOnly
+                rows={12}
+                style={{ fontFamily: "monospace" }}
+                value={fullScore}
+              />
+            </Col>
+            <Col md={6}>
+              <label className="text-secondary small">Parsed JSON</label>
+              <textarea
+                className="form-control"
+                readOnly
+                rows={12}
+                style={{ fontFamily: "monospace" }}
+                value={JSON.stringify(parsedData, null, 2)}
+              />
+            </Col>
+          </Row>
         )}
         <Row className="mt-3">
           <Col>
