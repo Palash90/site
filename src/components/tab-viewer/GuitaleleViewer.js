@@ -431,8 +431,8 @@ export default function GuitaleleViewer({ scoreData }) {
         <>
             <style>{`
                 @keyframes countin-fade {
-                    0% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
-                    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+                    0% { opacity: 1; transform: scale(1.3); }
+                    100% { opacity: 0; transform: scale(1); }
                 }
             `}</style>
             <div
@@ -634,38 +634,47 @@ export default function GuitaleleViewer({ scoreData }) {
                 <Table responsive bordered={false} style={{ margin: 0, width: '100%' }}>
                     <tbody>
                         {computedRows.map((row, index) => {
-                            // Dynamically adjust padding between layout lines based on screen real estate profile
                             const rowPaddingBottom = measuresPerRow === 1 ? '20px' : measuresPerRow === 2 ? '32px' : '48px';
 
                             return (
                                 <tr key={index}>
-                                    <td style={{ border: "0", padding: `0 12px ${rowPaddingBottom} 12px` }}>
-                                        {buildSvg(
-                                            paddingX,
-                                            trebleTopY,
-                                            bassTopY,
-                                            lineSpacing,
-                                            timeSigTop,
-                                            timeSigBottom,
-                                            tabTopY,
-                                            measureValidityMap,
-                                            rhythmTopY,
-                                            beatsPerMeasure,
-                                            activeIndices,
-                                            rhythm2TopY,
-                                            rhythm1TopY,
-                                            SLOT_WIDTH,
-                                            isPlaying,
-                                            isPaused,
-                                            playbackIndex,
-                                            () => {},
-                                            handleNoteClick,
-                                            measuresPerRow,
-                                            voice1Enabled && availableVoices.includes(1),
-                                            voice2Enabled && availableVoices.includes(2),
-                                            metronomeEnabled,
-                                            viewMode
-                                        )(row, index)}
+                                    <td style={{ border: 0, padding: 0 }}>
+                                        <div
+                                            style={{
+                                                background: 'rgba(255,255,255,0.015)',
+                                                borderRadius: '6px',
+                                                border: '1px solid rgba(255,255,255,0.04)',
+                                                marginTop: index === 0 ? 0 : '24px',
+                                                padding: `0 12px ${rowPaddingBottom} 12px`,
+                                            }}
+                                        >
+                                            {buildSvg(
+                                                paddingX,
+                                                trebleTopY,
+                                                bassTopY,
+                                                lineSpacing,
+                                                timeSigTop,
+                                                timeSigBottom,
+                                                tabTopY,
+                                                measureValidityMap,
+                                                rhythmTopY,
+                                                beatsPerMeasure,
+                                                activeIndices,
+                                                rhythm2TopY,
+                                                rhythm1TopY,
+                                                SLOT_WIDTH,
+                                                isPlaying,
+                                                isPaused,
+                                                playbackIndex,
+                                                () => {},
+                                                handleNoteClick,
+                                                measuresPerRow,
+                                                voice1Enabled && availableVoices.includes(1),
+                                                voice2Enabled && availableVoices.includes(2),
+                                                metronomeEnabled,
+                                                viewMode
+                                            )(row, index)}
+                                        </div>
                                     </td>
                                 </tr>
                             );
@@ -679,20 +688,30 @@ export default function GuitaleleViewer({ scoreData }) {
                         key={countInBeat}
                         style={{
                             position: 'fixed',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            fontSize: '140px',
-                            color: 'rgba(167, 139, 250, 0.95)',
-                            fontWeight: 'bold',
-                            pointerEvents: 'none',
+                            top: 0,
+                            left: 0,
+                            width: '100vw',
+                            height: '100vh',
+                            backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             zIndex: 9999,
-                            fontFamily: 'monospace',
-                            textShadow: '0 0 40px rgba(167, 139, 250, 0.5)',
-                            animation: 'countin-fade 0.8s ease-out forwards',
+                            pointerEvents: 'none',
                         }}
                     >
-                        {countInBeat}
+                        <div
+                            style={{
+                                fontSize: '140px',
+                                color: 'rgba(167, 139, 250, 0.95)',
+                                fontWeight: 'bold',
+                                fontFamily: 'monospace',
+                                textShadow: '0 0 40px rgba(167, 139, 250, 0.5)',
+                                animation: 'countin-fade 0.8s ease-out forwards',
+                            }}
+                        >
+                            {countInBeat}
+                        </div>
                     </div>
                 )}
             </div>

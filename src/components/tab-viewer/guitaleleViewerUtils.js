@@ -3,9 +3,9 @@ export const DARK_THEME = {
     bgScore: "bg-slate-900",
     borderScore: "border-transparent",
 
-    lineStaff: "#4a4a83",
-    lineTab: "#57576e",
-    lineBar: "#103466",
+    lineStaff: "#6a80b8",
+    lineTab: "#7a90b0",
+    lineBar: "#3060a8",
     lineTie: "#8aa8d1",
 
     textClef: "#64748b",
