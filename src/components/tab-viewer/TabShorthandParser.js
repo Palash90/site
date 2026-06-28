@@ -110,12 +110,18 @@ Add \`t\` after duration to hold a note into the next beat without re-plucking:
 
 ## Annotations
 
-Add \`d:text\` for notes to yourself (doesn't affect sound):
+Add \`d:text\` for notes to the readers (doesn't affect sound):
 
 \`\`\`
-3:1@qd:Melody starts here
-[0:6 | 2:5]@qd:C major chord
+3:1@qd:Melody_starts_here
+[0:6 | 2:5]@qd:C_major_chord
 \`\`\`
+
+The parser stops at spaces, so use \`_\` as a stand-in:
+\`\`\`
+3:1@qd:slide_to_fret_7
+\`\`\`
+renders as "slide to fret 7"
 
 ---
 

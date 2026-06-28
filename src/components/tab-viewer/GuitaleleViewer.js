@@ -18,7 +18,6 @@ import { buildSvg } from "./svgUtils";
 import { useBuildScoreLayout } from "./scoreBuilder";
 
 export default function GuitaleleViewer({ scoreData }) {
-    const [hoveredNoteIndex, setHoveredNoteIndex] = useState(null);
     const [clickedNoteIndex, setClickedNoteIndex] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
@@ -259,13 +258,14 @@ export default function GuitaleleViewer({ scoreData }) {
     }, []);
 
     const countInBeat = isPlaying && playbackIndex !== null && playbackIndex < 0 ? -playbackIndex : 0;
-    const activeTargetIndex = (isPlaying && !isPaused) ? playbackIndex : (hoveredNoteIndex !== null ? hoveredNoteIndex : clickedNoteIndex);
+    const activeTargetIndex = isPlaying
+        ? (isPaused && clickedNoteIndex !== null ? clickedNoteIndex : playbackIndex)
+        : clickedNoteIndex;
 
     const handleNoteClick = (globalIndex) => {
-        if (isPlaying) return; // Do nothing if the score is playing
+        if (isPlaying && !isPaused) return;
 
         setClickedNoteIndex(prevIndex => {
-            // If they click the already selected note, toggle it off
             return prevIndex === globalIndex ? null : globalIndex;
         });
     };
@@ -287,7 +287,7 @@ export default function GuitaleleViewer({ scoreData }) {
                 ev.measureNumber === targetEvent.measureNumber &&
                 ev.startBeat === targetEvent.startBeat &&
                 !ev.isMetronomeTick
-        );
+        ).sort((a, b) => (a.voice || 1) - (b.voice || 1));
     }, [activeTargetIndex, scoreLayout]);
 
     const activeIndices = useMemo(
@@ -298,67 +298,38 @@ export default function GuitaleleViewer({ scoreData }) {
     const activeDescription = useMemo(() => {
         if (!activeEvents || activeEvents.length === 0) return null;
 
-        const voiceColors = ['#21cea3', '#fb923c', '#6c5ce7', '#e17055']; // Match theme colors
+        const voiceColors = ['#21cea3', '#fb923c'];
 
         return (
-            <div className="d-flex flex-column" style={{ gap: '6px' }}>
-                <div style={{ color: '#8892b0', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    Measure {activeEvents[0].measureNumber}
-                </div>
+            <div className="d-flex flex-column" style={{ gap: '4px' }}>
+                {activeEvents.map((ev, idx) => {
+                    const color = voiceColors[(ev.voice - 1) % voiceColors.length] || voiceColors[0];
+                    const notes = ev.isRest
+                        ? [{ noteName: 'Rest' }]
+                        : ev.processedPitches;
 
-                <div className="d-flex flex-column" style={{ gap: '8px' }}>
-                    {activeEvents.map((ev, idx) => {
-                        const color = voiceColors[(ev.voice - 1) % voiceColors.length] || voiceColors[0];
-
-                        return (
-                            <div key={idx} className="d-flex align-items-start" style={{
-                                borderLeft: `3px solid ${color}`,
-                                paddingLeft: '12px'
-                            }}>
-                                <div className="d-flex flex-column flex-grow-1">
-                                    {ev.isRest ? (
-                                        <span style={{ color: '#636e72', fontSize: '11px', fontStyle: 'italic' }}>
-                                            <span style={{ color }}>V{ev.voice}</span> • Rest • {getDurationLabel(ev.beatValue)}
-                                        </span>
-                                    ) : (
-                                        <>
-                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                <span style={{ color: '#fdcb6e', fontSize: '10px', fontWeight: 'bold', minWidth: '40px' }}>
-                                                    {getDurationLabel(ev.beatValue).toUpperCase()}
-                                                </span>
-                                                <span style={{ color, fontSize: '10px', fontWeight: 'bold' }}>VOICE {ev.voice}</span>
-                                            </div>
-
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px', paddingLeft: '8px' }}>
-                                                {ev.processedPitches.map((p, pIdx) => (
-                                                    <div key={pIdx} style={{ fontSize: '11px', color: '#dfe6e9' }}>
-                                                        • Note {p.noteName} - 
-                                                        <span style={{ color: '#d4ecf5', marginLeft: '4px' }}>String {p.string} Fret {p.fret}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {/* --- FIXED: DISPLAY BEAT DESCRIPTIONS --- */}
-                                    {ev.description && (
-                                        <div style={{
-                                            fontSize: '11px',
-                                            color: '#aaccff',
-                                            fontStyle: 'italic',
-                                            marginTop: '4px',
-                                            background: 'rgba(255,255,255,0.03)',
-                                            padding: '4px 6px',
-                                            borderRadius: '3px'
-                                        }}>
-                                            {ev.description}
-                                        </div>
-                                    )}
-                                </div>
+                    return (
+                        <div key={idx} style={{ borderLeft: `3px solid ${color}`, paddingLeft: '10px', marginBottom: '2px' }}>
+                            <div style={{ fontSize: '11px', color: '#8892b0', marginBottom: '2px' }}>
+                                <span style={{ color }}>{ev.voice === 1 ? 'V1' : 'V2'}</span>
+                                {!ev.isRest && <span style={{ marginLeft: '6px' }}>{getDurationLabel(ev.beatValue)}</span>}
                             </div>
-                        );
-                    })}
-                </div>
+                            {notes.map((p, pIdx) => (
+                                <div key={pIdx} style={{ color, fontSize: '15px', fontWeight: '600', lineHeight: 1.4 }}>
+                                    <span style={{ color: '#dfe6e9', fontWeight: '400' }}>
+                                        {p.noteName}
+                                        {p.string !== undefined && <span style={{ color: '#8892b0', fontSize: '12px', marginLeft: '6px' }}>s{p.string} f{p.fret}</span>}
+                                    </span>
+                                </div>
+                            ))}
+                            {ev.description && (
+                                <div style={{ fontSize: '12px', color: '#aaccff', fontStyle: 'italic', marginTop: '1px', lineHeight: 1.3 }}>
+                                    {ev.description}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
         );
     }, [activeEvents]);
@@ -638,7 +609,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                             isPlaying,
                                             isPaused,
                                             playbackIndex,
-                                            setHoveredNoteIndex,
+                                            () => {},
                                             handleNoteClick,
                                             measuresPerRow,
                                             voice1Enabled && availableVoices.includes(1),
