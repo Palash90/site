@@ -25,6 +25,8 @@ export default function GuitaleleViewer({ scoreData }) {
     const [bpm, setBpm] = useState(100);
     const [slotWidth, setSlotWidth] = useState(6);
     const containerRef = useRef(null);
+    const viewerRef = useRef(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [isAudioCompiled, setIsAudioCompiled] = useState(false);
 
     const [voice1Enabled, setVoice1Enabled] = useState(true);
@@ -79,6 +81,20 @@ export default function GuitaleleViewer({ scoreData }) {
             setClickedNoteIndex(null);
         }
     }, [isPlaying]);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            viewerRef.current?.requestFullscreen?.();
+        } else {
+            document.exitFullscreen?.();
+        }
+    };
+
+    useEffect(() => {
+        const handler = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', handler);
+        return () => document.removeEventListener('fullscreenchange', handler);
+    }, []);
 
     const scoreLayout = useBuildScoreLayout(scoreData, slotWidth, measuresPerRow);
 
@@ -420,13 +436,14 @@ export default function GuitaleleViewer({ scoreData }) {
                 }
             `}</style>
             <div
+                ref={viewerRef}
                 className="d-flex flex-column bg-dark"
                 style={{
-                    height: 'calc(100vh - 20px)', // Takes up full screen height minus a small margin
-                    overflow: 'hidden'             // Prevents the window scrollbar from appearing
+                    height: isFullscreen ? '100vh' : 'calc(100vh - 56px)',
+                    overflow: 'hidden'
                 }}
             >
-            <div className="bg-dark border-bottom border-secondary text-light p-2 sticky-top shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
+            <div className="bg-dark border-bottom border-secondary text-light p-2 shrink-0 d-flex gap-2" style={{ height: 'auto' }}>
 
                 <div className="d-flex flex-column gap-1" style={{ width: '215px', flexShrink: 0 }}>
 
@@ -558,6 +575,7 @@ export default function GuitaleleViewer({ scoreData }) {
                                         {m === 'tab' ? 'Tab' : m === 'both' ? 'Both' : 'Staff'}
                                     </button>
                                 ))}
+
                             </div>
                         </div>
 
@@ -586,8 +604,33 @@ export default function GuitaleleViewer({ scoreData }) {
                     overflowY: 'auto',
                     paddingTop: '12px',
                     paddingBottom: '150px',
+                    position: 'relative'
                 }}
             >
+                <button
+                    onClick={toggleFullscreen}
+                    title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                    style={{
+                        position: 'sticky',
+                        top: '8px',
+                        float: 'right',
+                        zIndex: 10,
+                        fontSize: '11px',
+                        padding: '4px 6px',
+                        lineHeight: '14px',
+                        color: isFullscreen ? '#22d3ee' : '#8892b0',
+                        background: 'rgba(0,0,0,0.7)',
+                        border: '1px solid #3a3a5a',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        marginRight: '8px',
+                        transition: 'all 0.15s ease'
+                    }}
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d={isFullscreen ? "M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" : "M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"} />
+                    </svg>
+                </button>
                 <Table responsive bordered={false} style={{ margin: 0, width: '100%' }}>
                     <tbody>
                         {computedRows.map((row, index) => {
