@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   deleteDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
@@ -231,7 +232,19 @@ export default function TabShorthandParser() {
       const q = query(scoresRef, where("userId", "==", user.uid));
       const snap = await getDocs(q);
       const list = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      const batch = writeBatch(db);
+      let needsCommit = false;
+      snap.forEach((d) => {
+        const data = d.data();
+        list.push({ id: d.id, ...data });
+        if (!data.nameLower && data.name) {
+          batch.update(doc(db, "scores", d.id), { nameLower: data.name.toLowerCase() });
+          needsCommit = true;
+        }
+      });
+      if (needsCommit) {
+        await batch.commit();
+      }
       list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setExistingScores(list);
     } catch (e) {
@@ -352,6 +365,7 @@ export default function TabShorthandParser() {
       await setDoc(doc(db, "scores", newDocId), {
         userId: user.uid,
         name: trimmedName,
+        nameLower: trimmedName.toLowerCase(),
         timeSignature,
         instrument: instr,
         capo: Number(capo),

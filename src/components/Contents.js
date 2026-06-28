@@ -92,27 +92,39 @@ export default function Contents() {
 
     const searchScores = useCallback(async (q) => {
         if (!q.trim()) { setScoreResults([]); setSearchError(""); return; }
+        setSearchError("");
+        const lower = q.toLowerCase().trim();
+        const seen = new Map();
+        const addResult = (d) => {
+            const data = d.data();
+            if (!data.published) return;
+            const hasComposite = data.username && data.slug && data.instrument;
+            const urlId = hasComposite
+                ? `${data.username}/${slugify(data.instrument)}/${data.slug}`
+                : "u-" + d.id;
+            if (!seen.has(urlId)) {
+                seen.set(urlId, { id: urlId, name: data.name, username: data.username });
+            }
+        };
         try {
-            setSearchError("");
             const snap = await getDocs(query(collection(db, "scores"),
-                where("published", "==", true),
                 where("name", ">=", q),
                 where("name", "<=", q + "\uf8ff"),
-                limit(5)));
-            const results = [];
-            snap.forEach(d => {
-                const data = d.data();
-                const hasComposite = data.username && data.slug && data.instrument;
-                const urlId = hasComposite
-                    ? `${data.username}/${slugify(data.instrument)}/${data.slug}`
-                    : "u-" + d.id;
-                results.push({ id: urlId, name: data.name, username: data.username });
-            });
-            setScoreResults(results);
+                limit(10)));
+            snap.forEach(addResult);
         } catch (e) {
-            console.error("Score search error", e);
-            setSearchError(e.message);
+            console.error("Score name search error", e);
         }
+        try {
+            const snap = await getDocs(query(collection(db, "scores"),
+                where("nameLower", ">=", lower),
+                where("nameLower", "<=", lower + "\uf8ff"),
+                limit(10)));
+            snap.forEach(addResult);
+        } catch (e) {
+            console.error("Score lowercase search error", e);
+        }
+        setScoreResults(Array.from(seen.values()).slice(0, 5));
     }, []);
 
     useEffect(() => {
@@ -147,8 +159,55 @@ export default function Contents() {
     const isDefault = !type;
     const isMusic = type === "music";
     const isScores = type === "scores";
-    const showSearch = isScores;
+    const showSearch = isScores || isMusic;
     const filterProp = searchQuery.trim() || undefined;
+
+    const searchPanel = (
+        <div className="position-relative mb-3" style={{ maxWidth: 400 }}>
+            <FaSearch className="position-absolute text-secondary" style={{ left: 12, top: 10, fontSize: 13 }} />
+            <Form.Control
+                type="text"
+                placeholder="Search users &amp; scores..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="bg-dark text-light border-secondary ps-5"
+            />
+            {(profiles.length > 0 || scoreResults.length > 0) && searchQuery.trim() && (
+                <div className="position-absolute w-100 mt-1 rounded shadow-lg" style={{ background: "#1e1e1e", zIndex: 9999, border: "1px solid #333", maxHeight: "calc(100vh - 250px)", overflowY: "auto" }}>
+                    {profiles.map(p => (
+                        <Link key={p.id} to={`/profile/${p.username ? `@${p.username}` : p.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
+                            {p.photoURL ? <img src={p.photoURL} alt="" width={28} height={28} className="rounded-circle" /> : <FaUserCircle size={28} className="text-secondary" />}
+                            <div>
+                                <div className="small">{p.displayName}</div>
+                                {p.username && <span className="text-secondary" style={{ fontSize: "11px" }}>@{p.username}</span>}
+                                {p.email && <span className="text-secondary ms-2" style={{ fontSize: "11px" }}>{p.email}</span>}
+                            </div>
+                        </Link>
+                    ))}
+                    {scoreResults.map(s => (
+                        <Link key={"score-" + s.id} to={`/content/${s.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
+                            <FaMusic size={20} className="text-info" />
+                            <div>
+                                <div className="small">{s.name}</div>
+                                <span className="text-secondary" style={{ fontSize: "11px" }}>Score{s.username ? ` by @${s.username}` : ""}</span>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
+    const searchFeedback = (
+        <>
+            {searchQuery.trim() && profiles.length === 0 && scoreResults.length === 0 && showSearch && !searchError && (
+                <p className="text-secondary small mb-3">No users or scores found for &ldquo;{searchQuery}&rdquo;</p>
+            )}
+            {searchError && (
+                <p className="text-warning small mb-3">Search error: {searchError}</p>
+            )}
+        </>
+    );
 
     return <>
         <Container fluid>
@@ -159,48 +218,8 @@ export default function Contents() {
                 pColor={window.findProp("pages.contents.pColor")}
             />
 
-            {showSearch && (
-                <div className="position-relative mb-3" style={{ maxWidth: 400 }}>
-                    <FaSearch className="position-absolute text-secondary" style={{ left: 12, top: 10, fontSize: 13 }} />
-                    <Form.Control
-                        type="text"
-                        placeholder="Search users &amp; scores..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="bg-dark text-light border-secondary ps-5"
-                    />
-                    {(profiles.length > 0 || scoreResults.length > 0) && searchQuery.trim() && (
-                        <div className="position-absolute w-100 mt-1 rounded shadow-lg" style={{ background: "#1e1e1e", zIndex: 9999, border: "1px solid #333", maxHeight: "calc(100vh - 250px)", overflowY: "auto" }}>
-                            {profiles.map(p => (
-                                <Link key={p.id} to={`/profile/${p.username ? `@${p.username}` : p.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
-                                    {p.photoURL ? <img src={p.photoURL} alt="" width={28} height={28} className="rounded-circle" /> : <FaUserCircle size={28} className="text-secondary" />}
-                                    <div>
-                                        <div className="small">{p.displayName}</div>
-                                        {p.username && <span className="text-secondary" style={{ fontSize: "11px" }}>@{p.username}</span>}
-                                        {p.email && <span className="text-secondary ms-2" style={{ fontSize: "11px" }}>{p.email}</span>}
-                                    </div>
-                                </Link>
-                            ))}
-                            {scoreResults.map(s => (
-                                <Link key={"score-" + s.id} to={`/content/${s.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
-                                    <FaMusic size={20} className="text-info" />
-                                    <div>
-                                        <div className="small">{s.name}</div>
-                                        <span className="text-secondary" style={{ fontSize: "11px" }}>Score{s.username ? ` by @${s.username}` : ""}</span>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {searchQuery.trim() && profiles.length === 0 && scoreResults.length === 0 && showSearch && !searchError && (
-                <p className="text-secondary small mb-3">No users or scores found for &ldquo;{searchQuery}&rdquo;</p>
-            )}
-            {searchError && (
-                <p className="text-warning small mb-3">Search error: {searchError}</p>
-            )}
+            {isScores && searchPanel}
+            {isScores && searchFeedback}
 
             <Row>
                 {
@@ -225,6 +244,14 @@ export default function Contents() {
             <Row>
                 {isDefault || type === "tech" ? <Col><ContentList showDate type="contents.swe" filter={filterProp} /></Col> : <></>}
                 {isDefault || isMusic ? <Col><ContentList showDate type="contents.music" filter={filterProp} /></Col> : <></>}
+                {isMusic && (
+                    <Col xs={12} className="mt-4">
+                        <hr className="text-secondary" />
+                        <h4 style={{ color: h1Color }} className="mb-3">Search Scores</h4>
+                        {searchPanel}
+                        {searchFeedback}
+                    </Col>
+                )}
                 {isScores ? (
                     <Col>
                         {user && (
