@@ -16,6 +16,7 @@ export default function Contents() {
     const [searchQuery, setSearchQuery] = useState("");
     const [profiles, setProfiles] = useState([]);
     const [scoreResults, setScoreResults] = useState([]);
+    const [searchError, setSearchError] = useState("");
     var intro, header, h1Color;
 
     const loadScores = async () => {
@@ -90,8 +91,9 @@ export default function Contents() {
     }, []);
 
     const searchScores = useCallback(async (q) => {
-        if (!q.trim()) { setScoreResults([]); return; }
+        if (!q.trim()) { setScoreResults([]); setSearchError(""); return; }
         try {
+            setSearchError("");
             const snap = await getDocs(query(collection(db, "scores"),
                 where("published", "==", true),
                 where("name", ">=", q),
@@ -104,11 +106,12 @@ export default function Contents() {
                 const urlId = hasComposite
                     ? `${data.username}/${slugify(data.instrument)}/${data.slug}`
                     : "u-" + d.id;
-                results.push({ id: urlId, name: data.name });
+                results.push({ id: urlId, name: data.name, username: data.username });
             });
             setScoreResults(results);
         } catch (e) {
             console.error("Score search error", e);
+            setSearchError(e.message);
         }
     }, []);
 
@@ -167,7 +170,7 @@ export default function Contents() {
                         className="bg-dark text-light border-secondary ps-5"
                     />
                     {(profiles.length > 0 || scoreResults.length > 0) && searchQuery.trim() && (
-                        <div className="position-absolute w-100 mt-1 rounded shadow-lg" style={{ background: "#1e1e1e", zIndex: 10, border: "1px solid #333" }}>
+                        <div className="position-absolute w-100 mt-1 rounded shadow-lg" style={{ background: "#1e1e1e", zIndex: 9999, border: "1px solid #333", maxHeight: "calc(100vh - 250px)", overflowY: "auto" }}>
                             {profiles.map(p => (
                                 <Link key={p.id} to={`/profile/${p.username ? `@${p.username}` : p.id}`} className="d-flex align-items-center gap-2 p-2 text-decoration-none text-light" style={{ borderBottom: "1px solid #333" }}>
                                     {p.photoURL ? <img src={p.photoURL} alt="" width={28} height={28} className="rounded-circle" /> : <FaUserCircle size={28} className="text-secondary" />}
@@ -183,7 +186,7 @@ export default function Contents() {
                                     <FaMusic size={20} className="text-info" />
                                     <div>
                                         <div className="small">{s.name}</div>
-                                        <span className="text-secondary" style={{ fontSize: "11px" }}>Score</span>
+                                        <span className="text-secondary" style={{ fontSize: "11px" }}>Score{s.username ? ` by @${s.username}` : ""}</span>
                                     </div>
                                 </Link>
                             ))}
@@ -192,8 +195,11 @@ export default function Contents() {
                 </div>
             )}
 
-            {searchQuery.trim() && profiles.length === 0 && scoreResults.length === 0 && showSearch && (
+            {searchQuery.trim() && profiles.length === 0 && scoreResults.length === 0 && showSearch && !searchError && (
                 <p className="text-secondary small mb-3">No users or scores found for &ldquo;{searchQuery}&rdquo;</p>
+            )}
+            {searchError && (
+                <p className="text-warning small mb-3">Search error: {searchError}</p>
             )}
 
             <Row>
