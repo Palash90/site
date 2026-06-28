@@ -308,6 +308,17 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
 
                     const processedPitches = ev.pitches.map(p => {
                         const tabY = tabTopY + (p.string - 1) * lineSpacing;
+                        if (p.fret === null) {
+                            return {
+                                ...p,
+                                tabY,
+                                staffY: null,
+                                isSharp: false,
+                                midi: null,
+                                noteName: null,
+                                clef: null
+                            };
+                        }
                         const midi = TUNING[p.string].baseMidi + p.fret;
                         const clef = midi >= 60 ? "treble" : "bass";
                         const clefTopY = clef === "treble" ? trebleTopY : bassTopY;
@@ -323,7 +334,6 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
                             staffY: pitchProps.y,
                             isSharp: pitchProps.isSharp,
                             midi,
-                            clef,
                             noteName: `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`
                         };
                     });
@@ -352,8 +362,16 @@ export function useBuildScoreLayout(scoreData, slotWidth, measuresPerRow) {
                         return { lowestY, highestY, stemDown };
                     };
 
+                    const hasMutedPitch = processedPitches.some(p => p.fret === null);
+                    const updatedDescription = hasMutedPitch
+                        ? ev.description
+                            ? `${ev.description}`
+                            : "Muted string"
+                        : ev.description;
+
                     return {
                         ...ev,
+                        description: updatedDescription,
                         cx,
                         processedPitches,
                         trebleStem: computeStaffStemData(treblePitches, 71),

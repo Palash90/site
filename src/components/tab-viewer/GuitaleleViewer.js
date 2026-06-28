@@ -316,10 +316,16 @@ export default function GuitaleleViewer({ scoreData }) {
                             </div>
                             {notes.map((p, pIdx) => (
                                 <div key={pIdx} style={{ color, fontSize: '15px', fontWeight: '600', lineHeight: 1.4 }}>
-                                    <span style={{ color: '#dfe6e9', fontWeight: '400' }}>
-                                        {p.noteName}
-                                        {p.string !== undefined && <span style={{ color: '#8892b0', fontSize: '12px', marginLeft: '6px' }}>s{p.string} f{p.fret}</span>}
-                                    </span>
+                                    {p.fret === null ? (
+                                        <span style={{ color: '#aaccff', fontStyle: 'italic', fontWeight: '400' }}>
+                                            Muted string {p.string}
+                                        </span>
+                                    ) : (
+                                        <span style={{ color: '#dfe6e9', fontWeight: '400' }}>
+                                            {p.noteName}
+                                            {p.string !== undefined && <span style={{ color: '#8892b0', fontSize: '12px', marginLeft: '6px' }}>s{p.string} f{p.fret}</span>}
+                                        </span>
+                                    )}
                                 </div>
                             ))}
                             {ev.description && (
