@@ -1,18 +1,21 @@
+import React, { Suspense } from "react"
 import { Routes, Route, Navigate } from "react-router-dom"
-import Home from "./Home"
-import Projects from "./Projects"
-import About from "./About"
-import Contents from "./Contents"
-import Content from "./Content"
-import CustomComponent from "./CustomComponent"
-import { Container, Alert } from "react-bootstrap"
-import TabViewerDemo from "./tab-viewer/TabViewerDemo"
-import TabShorthandParser from "./tab-viewer/TabShorthandParser"
-import Login from "./Login"
-import SetupUsername from "./SetupUsername"
-import Profile from "./Profile"
-import ProfileEdit from "./ProfileEdit"
+import { Container, Alert, Spinner } from "react-bootstrap"
 import { useAuth } from "../contexts/AuthContext"
+
+const Home = React.lazy(() => import("./Home"))
+const Projects = React.lazy(() => import("./Projects"))
+const About = React.lazy(() => import("./About"))
+const Contents = React.lazy(() => import("./Contents"))
+const Content = React.lazy(() => import("./Content"))
+const CustomComponent = React.lazy(() => import("./CustomComponent"))
+const TabViewerDemo = React.lazy(() => import("./tab-viewer/TabViewerDemo"))
+const TabShorthandParser = React.lazy(() => import("./tab-viewer/TabShorthandParser"))
+const Login = React.lazy(() => import("./Login"))
+const Analytics = React.lazy(() => import("./Analytics"))
+const SetupUsername = React.lazy(() => import("./SetupUsername"))
+const Profile = React.lazy(() => import("./Profile"))
+const ProfileEdit = React.lazy(() => import("./ProfileEdit"))
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -37,25 +40,36 @@ function VerifiedRoute({ children }) {
   return children;
 }
 
+function Fallback() {
+  return (
+    <Container className="text-center py-5">
+      <Spinner animation="border" variant="light" />
+    </Container>
+  );
+}
+
 export default function RouteResolver() {
   return (
     <Container fluid className={window.findProp("pages.home.secondaryStyle") + " m-1"} >
-      <Routes>
-        <Route path='/' element={<Home />} />
-        <Route path='/contents' element={<Contents />} />
-        <Route path='/contents/:type' element={<Contents />} />
-        <Route path='/content/:username/:instrument/:titleSlug' element={<Content />} />
-        <Route path='/content/:contentId' element={<Content />} />
-        <Route path='/projects' element={<Projects />} />
-        <Route path='/tab-demo' element={<TabViewerDemo />} />
-        <Route path='/tab-parser' element={<VerifiedRoute><TabShorthandParser /></VerifiedRoute>} />
-        <Route path='/component/:componentId' element={<CustomComponent />} />
-        <Route path='/about' element={<About />} />
-        <Route path='/login' element={<Login />} />
-        <Route path='/setup-username' element={<ProtectedRoute><SetupUsername /></ProtectedRoute>} />
-        <Route path='/profile/:identifier' element={<Profile />} />
-        <Route path='/profile/edit' element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
-      </Routes>
+      <Suspense fallback={<Fallback />}>
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/contents' element={<Contents />} />
+          <Route path='/contents/:type' element={<Contents />} />
+          <Route path='/content/:username/:instrument/:titleSlug' element={<Content />} />
+          <Route path='/content/:contentId' element={<Content />} />
+          <Route path='/projects' element={<Projects />} />
+          <Route path='/tab-demo' element={<TabViewerDemo />} />
+          <Route path='/tab-parser' element={<VerifiedRoute><TabShorthandParser /></VerifiedRoute>} />
+          <Route path='/component/:componentId' element={<CustomComponent />} />
+          <Route path='/analytics' element={<Analytics />} />
+          <Route path='/about' element={<About />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/setup-username' element={<ProtectedRoute><SetupUsername /></ProtectedRoute>} />
+          <Route path='/profile/:identifier' element={<Profile />} />
+          <Route path='/profile/edit' element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
+        </Routes>
+      </Suspense>
     </Container>
   )
 }
