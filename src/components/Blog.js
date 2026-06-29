@@ -8,6 +8,7 @@ import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 import 'katex/dist/katex.min.css';
 import SocialRow from "./SocialRow";
+import { fetchWithCache } from "../utils/cache";
 
 export default function Blog(props) {
     const [mdData, setMdData] = useState(null);
@@ -34,13 +35,7 @@ export default function Blog(props) {
     }
 
     useEffect(() => {
-        fetch(props.mdUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.text();
-            })
+        fetchWithCache(props.mdUrl)
             .then(data => {
                 setMdData(data);
                 setLoading(false);

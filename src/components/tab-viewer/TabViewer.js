@@ -3,6 +3,7 @@ import GuitaleleViewer from "./GuitaleleViewer";
 import { parseShorthandText } from "./parseShorthandUtils";
 import ShareButtons from "../ShareButtons";
 import { FaInfoCircle } from "react-icons/fa";
+import { fetchWithCache } from "../../utils/cache";
 
 export default function TabViewer(props) {
 
@@ -15,13 +16,7 @@ export default function TabViewer(props) {
         setLoading(true);
         setError(null);
 
-        fetch(props.tab)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.text();
-            })
+        fetchWithCache(props.tab)
             .then(textData => {
                 const { scores, errors } = parseShorthandText(textData);
                 if (errors.length > 0) {
