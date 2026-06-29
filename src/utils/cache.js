@@ -22,23 +22,6 @@ export function setCached(key, data, ttl = DEFAULT_TTL) {
   } catch {}
 }
 
-export function sweepExpired() {
-  try {
-    const now = Date.now();
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(CACHE_PREFIX)) {
-        try {
-          const { expiry } = JSON.parse(localStorage.getItem(key));
-          if (now > expiry) localStorage.removeItem(key);
-        } catch {}
-      }
-    }
-  } catch {}
-}
-
-sweepExpired();
-
 export async function fetchWithCache(url, ttl = DEFAULT_TTL) {
   const cached = getCached(url);
   if (cached !== null) return cached;

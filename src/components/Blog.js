@@ -30,7 +30,7 @@ export default function Blog(props) {
 
     const components = {
         img: (props) => {
-            return <Image fluid src={props.src} />
+            return <Image fluid loading="lazy" src={props.src} />
         }
     }
 
