@@ -1,5 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { BrowserRouter as Router, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, useNavigate, useLocation } from "react-router-dom";
 import RouteResolver from './components/RouteResolver';
 import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import { FaRegCopyright, FaUserCircle, FaGithub, FaLinkedin, FaYoutube } from 'react-icons/fa';
@@ -9,7 +9,18 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import ReactGA from 'react-ga4';
 ReactGA.initialize('G-R0XE0Q4Z0Q');
-ReactGA.send({hitType:"pageview",page:window.location.pathname+window.location.search});
+
+function RouteTracker() {
+  const location = useLocation();
+  React.useEffect(() => {
+    ReactGA.send({
+      hitType: "pageview",
+      page: location.pathname + location.search,
+      title: document.title,
+    });
+  }, [location]);
+  return null;
+}
 
 function Header() {
   const [expanded, setExpanded] = React.useState(false);
@@ -99,6 +110,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <RouteTracker />
         <div className={window.findProp("pages.home.mainStyle")}>
           <Header/>
           <RouteResolver />
