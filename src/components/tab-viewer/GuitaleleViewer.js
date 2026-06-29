@@ -279,7 +279,7 @@ export default function GuitaleleViewer({ scoreData }) {
     }, []);
 
     const countInBeat = isPlaying && playbackIndex !== null && playbackIndex < 0 ? -playbackIndex : 0;
-    const lastActiveEventsRef = useRef([]);
+    const lastVoiceEventsRef = useRef({ v1: [], v2: [] });
     const activeTargetIndex = isPlaying
         ? (isPaused && clickedNoteIndex !== null ? clickedNoteIndex : playbackIndex)
         : clickedNoteIndex;
@@ -349,17 +349,35 @@ export default function GuitaleleViewer({ scoreData }) {
     }, [scoreLayout, scoreData, bpm]);
 
     useEffect(() => {
-        if (activeEvents.length > 0 && isPlaying) {
-            lastActiveEventsRef.current = activeEvents;
-        }
         if (!isPlaying) {
-            lastActiveEventsRef.current = [];
+            lastVoiceEventsRef.current = { v1: [], v2: [] };
+            return;
         }
+
+        const currentV1 = activeEvents.filter(ev => ev.voice === 1);
+        const currentV2 = activeEvents.filter(ev => ev.voice === 2);
+
+        if (currentV1.length > 0) lastVoiceEventsRef.current.v1 = currentV1;
+        if (currentV2.length > 0) lastVoiceEventsRef.current.v2 = currentV2;
     }, [activeEvents, isPlaying]);
 
-    const displayEvents = isPlaying && activeEvents.length === 0 && lastActiveEventsRef.current.length > 0
-        ? lastActiveEventsRef.current
-        : activeEvents;
+    const displayEvents = useMemo(() => {
+        if (!isPlaying) return activeEvents;
+
+        const currentV1 = activeEvents.filter(ev => ev.voice === 1);
+        const currentV2 = activeEvents.filter(ev => ev.voice === 2);
+
+        const merged = [...activeEvents];
+
+        if (currentV1.length === 0 && lastVoiceEventsRef.current.v1.length > 0) {
+            merged.push(...lastVoiceEventsRef.current.v1);
+        }
+        if (currentV2.length === 0 && lastVoiceEventsRef.current.v2.length > 0) {
+            merged.push(...lastVoiceEventsRef.current.v2);
+        }
+
+        return merged;
+    }, [activeEvents, isPlaying]);
 
     const activeDescription = useMemo(() => {
         if (!displayEvents || displayEvents.length === 0) return null;
