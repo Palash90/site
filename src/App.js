@@ -13,6 +13,7 @@ ReactGA.initialize('G-R0XE0Q4Z0Q');
 function RouteTracker() {
   const location = useLocation();
   React.useEffect(() => {
+    if (!window.location.hostname.endsWith("palashkantikundu.in")) return;
     ReactGA.send({
       hitType: "pageview",
       page: location.pathname + location.search,
