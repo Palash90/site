@@ -108,6 +108,16 @@ service cloud.firestore {
 
       allow update: if false;
     }
+
+    // ── Page tracking (analytics) ──
+    match /page_stats/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /visits/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }
 // v2 — email_verified required for scores/comments writes

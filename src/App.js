@@ -8,18 +8,24 @@ import React from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import ReactGA from 'react-ga4';
-ReactGA.initialize('G-R0XE0Q4Z0Q');
+import useTracker from './hooks/useTracker';
+
+const isLiveDomain = window.location.hostname.endsWith('palashkantikundu.in');
+
+if (isLiveDomain) {
+  ReactGA.initialize('G-R0XE0Q4Z0Q');
+}
 
 function RouteTracker() {
   const location = useLocation();
   React.useEffect(() => {
-    if (!window.location.hostname.endsWith("palashkantikundu.in")) return;
+    if (!isLiveDomain) return;
     ReactGA.send({
       hitType: "pageview",
       page: location.pathname + location.search,
-      title: document.title,
     });
   }, [location]);
+  useTracker();
   return null;
 }
 

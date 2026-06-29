@@ -279,6 +279,7 @@ export default function GuitaleleViewer({ scoreData }) {
     }, []);
 
     const countInBeat = isPlaying && playbackIndex !== null && playbackIndex < 0 ? -playbackIndex : 0;
+    const lastActiveEventsRef = useRef([]);
     const activeTargetIndex = isPlaying
         ? (isPaused && clickedNoteIndex !== null ? clickedNoteIndex : playbackIndex)
         : clickedNoteIndex;
@@ -347,13 +348,26 @@ export default function GuitaleleViewer({ scoreData }) {
         };
     }, [scoreLayout, scoreData, bpm]);
 
+    useEffect(() => {
+        if (activeEvents.length > 0 && isPlaying) {
+            lastActiveEventsRef.current = activeEvents;
+        }
+        if (!isPlaying) {
+            lastActiveEventsRef.current = [];
+        }
+    }, [activeEvents, isPlaying]);
+
+    const displayEvents = isPlaying && activeEvents.length === 0 && lastActiveEventsRef.current.length > 0
+        ? lastActiveEventsRef.current
+        : activeEvents;
+
     const activeDescription = useMemo(() => {
-        if (!activeEvents || activeEvents.length === 0) return null;
+        if (!displayEvents || displayEvents.length === 0) return null;
 
         const voiceColors = ['#21cea3', '#fb923c'];
 
-        const v1Events = activeEvents.filter(ev => ev.voice === 1);
-        const v2Events = activeEvents.filter(ev => ev.voice === 2);
+        const v1Events = displayEvents.filter(ev => ev.voice === 1);
+        const v2Events = displayEvents.filter(ev => ev.voice === 2);
 
         const renderVoiceColumn = (events, voiceLabel, color) => {
             if (events.length === 0) return null;
@@ -401,7 +415,7 @@ export default function GuitaleleViewer({ scoreData }) {
                 {v2Events.length > 0 && renderVoiceColumn(v2Events, 'V2', voiceColors[1])}
             </div>
         );
-    }, [activeEvents]);
+    }, [displayEvents]);
 
     // Compute playback progress from beat position (monotonic, unlike event index)
     const beatRange = useMemo(() => {
