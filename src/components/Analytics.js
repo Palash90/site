@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Container, Spinner } from 'react-bootstrap';
+import { col } from '../utils/firestorePath';
 
 export default function Analytics() {
   const [data, setData] = useState([]);
@@ -12,7 +13,7 @@ export default function Analytics() {
   useEffect(() => {
     const load = async () => {
       try {
-        const q = query(collection(db, 'page_stats'), orderBy('views', 'desc'));
+        const q = query(collection(db, col('page_stats')), orderBy('views', 'desc'));
         const snap = await getDocs(q);
         const rows = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))

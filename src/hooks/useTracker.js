@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { doc, setDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { col } from '../utils/firestorePath';
 
 function encodePath(path) {
   return btoa(path).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -37,7 +38,7 @@ export default function useTracker() {
     const isReturning = !!currentUser || !!localStorage.getItem('tracker_id');
     getVisitorId(currentUser);
 
-    setDoc(doc(db, 'page_stats', encoded), {
+    setDoc(doc(db, col('page_stats'), encoded), {
       path: pathKey,
       views: increment(1),
       newUsers: increment(isReturning ? 0 : 1),

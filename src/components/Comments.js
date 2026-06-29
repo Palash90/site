@@ -23,6 +23,7 @@ import {
 } from "react-icons/fa";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import gravatarUrl from "../utils/gravatar";
+import { col } from "../utils/firestorePath";
 
 export default function Comments({ contentId }) {
   const { user, profile, signInWithGoogle } = useAuth();
@@ -45,7 +46,7 @@ export default function Comments({ contentId }) {
     if (!contentId) return;
     try {
       const q = query(
-        collection(db, "comments"),
+        collection(db, col("comments")),
         where("contentId", "==", contentId),
         orderBy("createdAt", "asc")
       );
@@ -61,7 +62,7 @@ export default function Comments({ contentId }) {
   const loadClaps = useCallback(async () => {
     if (!contentId) return;
     try {
-      const snap = await getDoc(doc(db, "claps", contentId));
+      const snap = await getDoc(doc(db, col("claps"), contentId));
       if (snap.exists()) {
         const data = snap.data();
         setClapCount(data.count || 0);
@@ -91,7 +92,7 @@ export default function Comments({ contentId }) {
   const autoClap = async () => {
     setClapLoading(true);
     try {
-      const ref = doc(db, "claps", contentId);
+      const ref = doc(db, col("claps"), contentId);
       const snap = await getDoc(ref);
       if (snap.exists()) {
         const data = snap.data();
@@ -122,7 +123,7 @@ export default function Comments({ contentId }) {
   const toggleClap = async () => {
     setClapLoading(true);
     try {
-      const ref = doc(db, "claps", contentId);
+      const ref = doc(db, col("claps"), contentId);
       const snap = await getDoc(ref);
       if (snap.exists()) {
         const data = snap.data();
@@ -154,7 +155,7 @@ export default function Comments({ contentId }) {
     setSending(true);
     setError("");
     try {
-      await addDoc(collection(db, "comments"), {
+      await addDoc(collection(db, col("comments")), {
         contentId,
         parentId: parentId || null,
         userId: user.uid,
@@ -184,12 +185,12 @@ export default function Comments({ contentId }) {
   };
 
   const handleApprove = async (commentId) => {
-    try { await updateDoc(doc(db, "comments", commentId), { status: "approved" }); await loadComments(); }
+    try { await updateDoc(doc(db, col("comments"), commentId), { status: "approved" }); await loadComments(); }
     catch (e) { console.error(e); }
   };
 
   const handleReject = async (commentId) => {
-    try { await updateDoc(doc(db, "comments", commentId), { status: "rejected" }); await loadComments(); }
+    try { await updateDoc(doc(db, col("comments"), commentId), { status: "rejected" }); await loadComments(); }
     catch (e) { console.error(e); }
   };
 
@@ -198,7 +199,7 @@ export default function Comments({ contentId }) {
   const handleDelete = async (commentId) => {
     if (!window.confirm("Remove this comment?")) return;
     try {
-      await updateDoc(doc(db, "comments", commentId), {
+      await updateDoc(doc(db, col("comments"), commentId), {
         status: "deleted",
         text: "",
       });

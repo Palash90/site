@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { Container, Form, Button, Alert, Spinner, Row, Col, InputGroup } from "react-bootstrap";
+import { col } from "../utils/firestorePath";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_-]+$/;
 
@@ -28,7 +29,7 @@ export default function ProfileEdit() {
       return;
     }
     setCheckingUser(true);
-    const snap = await getDoc(doc(db, "usernames", val.toLowerCase()));
+    const snap = await getDoc(doc(db, col("usernames"), val.toLowerCase()));
     setUsernameAvail(!snap.exists());
     setCheckingUser(false);
   }, [originalUsername]);
@@ -40,7 +41,7 @@ export default function ProfileEdit() {
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
-    const snap = await getDoc(doc(db, "profiles", user.uid));
+    const snap = await getDoc(doc(db, col("profiles"), user.uid));
     if (snap.exists()) {
       const d = snap.data();
       setDisplayName(d.displayName || "");
@@ -77,12 +78,12 @@ export default function ProfileEdit() {
         if (usernameAvail !== true) {
           throw new Error("Username is not available.");
         }
-        await setDoc(doc(db, "usernames", newUsername), { uid: user.uid });
+        await setDoc(doc(db, col("usernames"), newUsername), { uid: user.uid });
         if (oldUsername) {
-          await deleteDoc(doc(db, "usernames", oldUsername));
+          await deleteDoc(doc(db, col("usernames"), oldUsername));
         }
       }
-      await updateDoc(doc(db, "profiles", user.uid), {
+      await updateDoc(doc(db, col("profiles"), user.uid), {
         displayName: displayName.trim() || user.email?.split("@")[0] || "Anonymous",
         username: newUsername,
         website: website.trim(),

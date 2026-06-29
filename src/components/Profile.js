@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { Container, Spinner, Row, Col } from "react-bootstrap";
 import { FaGlobe, FaBirthdayCake, FaEdit, FaUserCircle } from "react-icons/fa";
 import slugify from "../utils/slugify";
+import { col } from "../utils/firestorePath";
 
 export default function Profile() {
   const { identifier } = useParams();
@@ -20,15 +21,15 @@ export default function Profile() {
     const key = identifier.startsWith("@") ? identifier.slice(1) : identifier;
 
     // Try as profile UID first
-    let pSnap = await getDoc(doc(db, "profiles", key));
+    let pSnap = await getDoc(doc(db, col("profiles"), key));
     let uid = key;
 
     if (!pSnap.exists()) {
       // Not a UID — try as username
-      const uSnap = await getDoc(doc(db, "usernames", key.toLowerCase()));
+      const uSnap = await getDoc(doc(db, col("usernames"), key.toLowerCase()));
       if (!uSnap.exists()) { setLoading(false); return; }
       uid = uSnap.data().uid;
-      pSnap = await getDoc(doc(db, "profiles", uid));
+      pSnap = await getDoc(doc(db, col("profiles"), uid));
       if (!pSnap.exists()) { setLoading(false); return; }
     }
 
@@ -36,7 +37,7 @@ export default function Profile() {
     setProfileUid(uid);
 
     const q = query(
-      collection(db, "scores"),
+      collection(db, col("scores")),
       where("userId", "==", uid),
       where("published", "==", true),
       orderBy("updatedAt", "desc")

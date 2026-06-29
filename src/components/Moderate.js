@@ -13,6 +13,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { Container, Spinner, Button, Form } from "react-bootstrap";
 import { FaCheck, FaBan, FaExternalLinkAlt, FaUserCircle } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { col } from "../utils/firestorePath";
 
 export default function Moderate() {
   const { profile } = useAuth();
@@ -24,7 +25,7 @@ export default function Moderate() {
     setLoading(true);
     try {
       const q = query(
-        collection(db, "comments"),
+        collection(db, col("comments")),
         orderBy("createdAt", "desc"),
         limit(100)
       );
@@ -40,12 +41,12 @@ export default function Moderate() {
   useEffect(() => { loadComments(); }, []);
 
   const handleApprove = async (id) => {
-    try { await updateDoc(doc(db, "comments", id), { status: "approved" }); await loadComments(); }
+    try { await updateDoc(doc(db, col("comments"), id), { status: "approved" }); await loadComments(); }
     catch (e) { console.error(e); }
   };
 
   const handleReject = async (id) => {
-    try { await updateDoc(doc(db, "comments", id), { status: "rejected" }); await loadComments(); }
+    try { await updateDoc(doc(db, col("comments"), id), { status: "rejected" }); await loadComments(); }
     catch (e) { console.error(e); }
   };
 

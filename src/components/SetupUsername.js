@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { Container, Card, Form, Button, Alert, Spinner, InputGroup } from "react-bootstrap";
+import { col } from "../utils/firestorePath";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_-]+$/;
 const USERNAME_MIN = 3;
@@ -25,7 +26,7 @@ export default function SetupUsername() {
     }
     setChecking(true);
     try {
-      const snap = await getDoc(doc(db, "usernames", val.toLowerCase()));
+      const snap = await getDoc(doc(db, col("usernames"), val.toLowerCase()));
       setAvailable(!snap.exists());
     } catch {
       setAvailable(null);
@@ -56,7 +57,7 @@ export default function SetupUsername() {
     setSaving(true);
     try {
       const targetUsername = username.toLowerCase();
-      const usernameRef = doc(db, "usernames", targetUsername);
+      const usernameRef = doc(db, col("usernames"), targetUsername);
       const existing = await getDoc(usernameRef);
 
       if (existing.exists()) {
@@ -68,7 +69,7 @@ export default function SetupUsername() {
         await setDoc(usernameRef, { uid: user.uid });
       }
 
-      await updateDoc(doc(db, "profiles", user.uid), { username: targetUsername });
+      await updateDoc(doc(db, col("profiles"), user.uid), { username: targetUsername });
 
       await refreshProfile();
       setNeedsUsername(false);

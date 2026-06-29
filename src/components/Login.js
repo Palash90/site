@@ -6,6 +6,7 @@ import { db } from "../firebase";
 import { Container, Card, Button, Form, Alert, Spinner, InputGroup } from "react-bootstrap";
 import { FcGoogle } from "react-icons/fc";
 import { FaEnvelope } from "react-icons/fa";
+import { col } from "../utils/firestorePath";
 
 const friendlyError = (code) => {
   const map = {
@@ -35,7 +36,7 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_-]+$/;
 
 async function checkUsernameAvailable(username) {
   if (!username || username.length < 3) return null;
-  const snap = await getDoc(doc(db, "usernames", username.toLowerCase()));
+  const snap = await getDoc(doc(db, col("usernames"), username.toLowerCase()));
   return !snap.exists();
 }
 
@@ -79,7 +80,7 @@ export default function Login() {
 
   const redirectAfterLogin = async (uid) => {
     for (let i = 0; i < 10; i++) {
-      const snap = await getDoc(doc(db, "profiles", uid));
+      const snap = await getDoc(doc(db, col("profiles"), uid));
       if (snap.exists()) {
         if (!snap.data()?.username) {
           navigate("/setup-username");
@@ -119,8 +120,8 @@ export default function Login() {
           throw new Error(uErr || "Choose a different username.");
         }
         const cred = await signUpWithEmail(email, password);
-        await setDoc(doc(db, "usernames", username.toLowerCase()), { uid: cred.user.uid });
-        await setDoc(doc(db, "profiles", cred.user.uid), { username: username.toLowerCase() }, { merge: true });
+        await setDoc(doc(db, col("usernames"), username.toLowerCase()), { uid: cred.user.uid });
+        await setDoc(doc(db, col("profiles"), cred.user.uid), { username: username.toLowerCase() }, { merge: true });
         await refreshProfile();
         setVerificationSent(true);
       } else {

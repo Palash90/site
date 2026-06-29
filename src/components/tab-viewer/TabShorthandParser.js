@@ -21,6 +21,7 @@ import { FaInfoCircle } from "react-icons/fa";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import slugify from "../../utils/slugify";
+import { col } from "../../utils/firestorePath";
 
 const MANUAL_MD = `
 ## Writing Notes
@@ -325,7 +326,7 @@ export default function TabShorthandParser() {
 
   const [username, setUsername] = useState("");
 
-  const scoresRef = collection(db, "scores");
+  const scoresRef = collection(db, col("scores"));
 
   const loadScores = useCallback(async () => {
     if (!user) return;
@@ -341,7 +342,7 @@ export default function TabShorthandParser() {
         const data = d.data();
         list.push({ id: d.id, ...data });
         if (!data.nameLower && data.name) {
-          batch.update(doc(db, "scores", d.id), { nameLower: data.name.toLowerCase() });
+          batch.update(doc(db, col("scores"), d.id), { nameLower: data.name.toLowerCase() });
           needsCommit = true;
         }
       });
@@ -365,7 +366,7 @@ export default function TabShorthandParser() {
   const getUserName = useCallback(async () => {
     if (!user) return "";
     try {
-      const snap = await getDoc(doc(db, "profiles", user.uid));
+      const snap = await getDoc(doc(db, col("profiles"), user.uid));
       if (snap.exists()) return snap.data().username || "";
     } catch (e) {
       console.error("Failed to get username", e);
@@ -454,7 +455,7 @@ export default function TabShorthandParser() {
       const slug = slugify(trimmedName);
       const newDocId = makeScoreDocId(uname, instr, trimmedName);
 
-      const existing = await getDoc(doc(db, "scores", newDocId));
+      const existing = await getDoc(doc(db, col("scores"), newDocId));
       if (existing.exists()) {
         if (existing.data().userId !== user.uid || (selectedScoreId && selectedScoreId !== newDocId)) {
           throw new Error(`A score named "${trimmedName}" for ${instrument} already exists.`);
@@ -462,10 +463,10 @@ export default function TabShorthandParser() {
       }
 
       if (selectedScoreId && selectedScoreId !== newDocId) {
-        await deleteDoc(doc(db, "scores", selectedScoreId));
+await deleteDoc(doc(db, col("scores"), selectedScoreId));
       }
 
-      await setDoc(doc(db, "scores", newDocId), {
+      await setDoc(doc(db, col("scores"), newDocId), {
         userId: user.uid,
         name: trimmedName,
         nameLower: trimmedName.toLowerCase(),
@@ -548,7 +549,7 @@ export default function TabShorthandParser() {
     try {
       const newPublished = !published;
       setPublished(newPublished);
-      await updateDoc(doc(db, "scores", selectedScoreId), {
+      await updateDoc(doc(db, col("scores"), selectedScoreId), {
         published: newPublished,
         updatedAt: Date.now(),
       });

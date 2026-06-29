@@ -8,6 +8,7 @@ import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { FaUserCircle, FaSearch, FaMusic, FaPen, FaTrash } from "react-icons/fa";
 import slugify from "../utils/slugify";
+import { col } from "../utils/firestorePath";
 
 export default function Contents() {
     const type = useParams().type;
@@ -25,7 +26,7 @@ export default function Contents() {
             return;
         }
         try {
-            const q = query(collection(db, "scores"), where("userId", "==", user.uid));
+            const q = query(collection(db, col("scores")), where("userId", "==", user.uid));
             const snap = await getDocs(q);
             const scores = [];
             snap.forEach((d) => {
@@ -46,7 +47,7 @@ export default function Contents() {
                     onDelete: async () => {
                         if (!window.confirm(`Delete "${data.name}"?`)) return;
                         try {
-                            await deleteDoc(doc(db, "scores", d.id));
+                            await deleteDoc(doc(db, col("scores"), d.id));
                             await loadScores();
                         } catch (e) {
                             console.error("Failed to delete score", e.code, e.message);
@@ -71,11 +72,11 @@ export default function Contents() {
             const lower = q.toLowerCase().trim();
 
             const [dnSnap, emailSnap, uSnap] = await Promise.all([
-                getDocs(query(collection(db, "profiles"),
+                getDocs(query(collection(db, col("profiles")),
                     where("displayName", ">=", q), where("displayName", "<=", q + "\uf8ff"), limit(5))),
-                getDocs(query(collection(db, "profiles"),
+                getDocs(query(collection(db, col("profiles")),
                     where("email", ">=", q), where("email", "<=", q + "\uf8ff"), limit(5))),
-                getDocs(query(collection(db, "profiles"),
+                getDocs(query(collection(db, col("profiles")),
                     where("username", ">=", lower), where("username", "<=", lower + "\uf8ff"), limit(5))),
             ]);
 
@@ -107,7 +108,7 @@ export default function Contents() {
             }
         };
         try {
-            const snap = await getDocs(query(collection(db, "scores"),
+            const snap = await getDocs(query(collection(db, col("scores")),
                 where("name", ">=", q),
                 where("name", "<=", q + "\uf8ff"),
                 limit(10)));
@@ -116,7 +117,7 @@ export default function Contents() {
             console.error("Score name search error", e);
         }
         try {
-            const snap = await getDocs(query(collection(db, "scores"),
+            const snap = await getDocs(query(collection(db, col("scores")),
                 where("nameLower", ">=", lower),
                 where("nameLower", "<=", lower + "\uf8ff"),
                 limit(10)));

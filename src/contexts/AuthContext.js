@@ -10,13 +10,14 @@ import {
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { auth, googleProvider, db } from "../firebase";
 import gravatarUrl from "../utils/gravatar";
+import { col } from "../utils/firestorePath";
 
 const AuthContext = createContext(null);
 
 async function ensureProfile(user) {
   if (!user) return;
   try {
-    const ref = doc(db, "profiles", user.uid);
+    const ref = doc(db, col("profiles"), user.uid);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
       await setDoc(ref, {
@@ -76,7 +77,7 @@ export function AuthProvider({ children }) {
 
   const refreshProfile = async () => {
     if (!user) return;
-    const snap = await getDoc(doc(db, "profiles", user.uid));
+    const snap = await getDoc(doc(db, col("profiles"), user.uid));
     setProfile(snap.data() || null);
   };
 
