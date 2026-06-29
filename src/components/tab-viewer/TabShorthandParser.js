@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   collection,
@@ -192,6 +192,100 @@ function ShorthandManualModal() {
   );
 }
 
+const COLOR_SCHEME = {
+  separator: '#334155',
+  headerLabel: '#67e8f9',
+  headerValue: '#e2e8f0',
+  measureLabel: '#c084fc',
+  pipe: '#475569',
+  bracket: '#fbbf24',
+  chordContent: '#fde68a',
+  duration: '#4ade80',
+  voice: '#22d3ee',
+  tie: '#f87171',
+  annotation: '#fb923c',
+  open: '#22d3ee',
+  muted: '#f87171',
+  rest: '#6b7280',
+  fretNum: '#e2e8f0',
+  stringNum: '#94a3b8',
+  colon: '#64748b',
+  compactF: '#fbbf24',
+  compactS: '#22d3ee',
+  comment: '#475569',
+};
+
+function highlightShorthand(text) {
+  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const lines = escaped.split('\n');
+  const coloredLines = lines.map((line) => {
+    if (/^={2,}|^---+/.test(line)) {
+      return `<span style="color:${COLOR_SCHEME.separator}">${line}</span>`;
+    }
+    if (/^(Score|Time Signature|Instrument|Capo|Description|ID):/.test(line)) {
+      return line.replace(
+        /^(Score|Time Signature|Instrument|Capo|Description|ID):(.*)$/,
+        (_, label, val) =>
+          `<span style="color:${COLOR_SCHEME.headerLabel}">${label}</span><span style="color:${COLOR_SCHEME.headerValue}">:${val}</span>`
+      );
+    }
+    if (/^(M(?:easure)?\s*\d+):/i.test(line)) {
+      let rest = line.replace(/^(M(?:easure)?\s*\d+):/i, '');
+      let label = line.match(/^(M(?:easure)?\s*\d+:)/i)[0];
+      rest = colorizeTokens(rest);
+      return `<span style="color:${COLOR_SCHEME.measureLabel}">${label}</span>${rest}`;
+    }
+    return colorizeTokens(line);
+  });
+  return coloredLines.join('\n');
+}
+
+function colorizeTokens(line) {
+  return line
+    .replace(/(\|)/g, `<span style="color:${COLOR_SCHEME.pipe}">$1</span>`)
+    .replace(
+      /(\[)([^\]]*)(\])/g,
+      (_, open, inner, close) => {
+        const coloredInner = inner
+          .replace(/(\d+|[OXox])f(\d+)s?/gi,
+            (_, fret, str) => `<span style="color:${COLOR_SCHEME.compactF}">${fret}</span><span style="color:${COLOR_SCHEME.compactS}">f</span><span style="color:${COLOR_SCHEME.stringNum}">${str}</span><span style="color:${COLOR_SCHEME.compactS}">s</span>`
+          )
+          .replace(/([OXox])(:)/g,
+            (_, o, c) => (o === 'O' || o === 'o'
+              ? `<span style="color:${COLOR_SCHEME.open}">${o}</span><span style="color:${COLOR_SCHEME.colon}">${c}</span>`
+              : `<span style="color:${COLOR_SCHEME.muted}">${o}</span><span style="color:${COLOR_SCHEME.colon}">${c}</span>`)
+          )
+          .replace(/(\d+)(:)(\d+)/g,
+            (_, f, c, s) => `<span style="color:${COLOR_SCHEME.fretNum}">${f}</span><span style="color:${COLOR_SCHEME.colon}">${c}</span><span style="color:${COLOR_SCHEME.stringNum}">${s}</span>`
+          );
+        return `<span style="color:${COLOR_SCHEME.bracket}">${open}</span>${coloredInner}<span style="color:${COLOR_SCHEME.bracket}">${close}</span>`;
+      }
+    )
+    .replace(/(-)(@?(?:w|h|q|e|s)\.?)/g, (_, rest, dur) =>
+      `<span style="color:${COLOR_SCHEME.rest}">${rest}</span><span style="color:${COLOR_SCHEME.duration}">${dur}</span>`
+    )
+    .replace(/(\d+|[OXox])f(\d+)s([whqes]\.?)/gi, (_, fret, str, dur) => {
+      const fretSpan = (fret === 'O' || fret === 'o')
+        ? `<span style="color:${COLOR_SCHEME.open}">${fret}</span>`
+        : (fret === 'X' || fret === 'x')
+          ? `<span style="color:${COLOR_SCHEME.muted}">${fret}</span>`
+          : `<span style="color:${COLOR_SCHEME.compactF}">${fret}</span>`;
+      return `${fretSpan}<span style="color:${COLOR_SCHEME.compactS}">f</span><span style="color:${COLOR_SCHEME.stringNum}">${str}</span><span style="color:${COLOR_SCHEME.compactS}">s</span><span style="color:${COLOR_SCHEME.duration}">${dur}</span>`;
+    })
+    .replace(/(\d+|[OXox])(:)(\d+)/g, (_, f, c, s) => {
+      const fretSpan = (f === 'O' || f === 'o')
+        ? `<span style="color:${COLOR_SCHEME.open}">${f}</span>`
+        : (f === 'X' || f === 'x')
+          ? `<span style="color:${COLOR_SCHEME.muted}">${f}</span>`
+          : `<span style="color:${COLOR_SCHEME.fretNum}">${f}</span>`;
+      return `${fretSpan}<span style="color:${COLOR_SCHEME.colon}">${c}</span><span style="color:${COLOR_SCHEME.stringNum}">${s}</span>`;
+    })
+    .replace(/(@(?:w|h|q|e|s)\.?)/g, (_, d) => `<span style="color:${COLOR_SCHEME.duration}">${d}</span>`)
+    .replace(/\b(v[12])\b/g, (_, v) => `<span style="color:${COLOR_SCHEME.voice}">${v}</span>`)
+    .replace(/\b(t)\b(?!\w)/g, (_, t) => `<span style="color:${COLOR_SCHEME.tie}">${t}</span>`)
+    .replace(/(d:[^\s|]+)/g, (_, a) => `<span style="color:${COLOR_SCHEME.annotation}">${a}</span>`);
+}
+
 export default function TabShorthandParser() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -207,6 +301,15 @@ export default function TabShorthandParser() {
   const [validationErrors, setValidationErrors] = useState([]);
   const [saving, setSaving] = useState(false);
   const [togglingPublish, setTogglingPublish] = useState(false);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    }
+  }, [shorthandText]);
 
   const [name, setName] = useState("");
   const [timeSignature, setTimeSignature] = useState("4/4");
@@ -561,16 +664,33 @@ export default function TabShorthandParser() {
 
         <Row>
           <Col>
-            <textarea
-              className="form-control border-0"
-              rows={12}
-              style={{ fontFamily: "'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace", fontSize: '12px', background: '#0a0e17', color: '#e2e8f0', resize: 'vertical', tabSize: 2 }}
-              placeholder="Paste your scores_shorthand.txt content here..."
-              value={shorthandText}
-              onChange={(e) => {
-                setShorthandText(e.target.value);
-              }}
-            />
+            <div style={{ display: 'flex', minHeight: '300px', maxHeight: '600px', overflow: 'auto', background: '#0a0e17', borderRadius: '4px', fontFamily: "'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace", fontSize: '12px', lineHeight: 1.5 }}>
+              <div style={{ flex: '0 0 auto', width: '48px', borderRight: '1px solid #1e293b', userSelect: 'none', pointerEvents: 'none', padding: '6px 0', alignSelf: 'stretch' }}>
+                <pre style={{ margin: 0, padding: '0 8px', textAlign: 'right', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', color: '#475569', whiteSpace: 'pre', tabSize: 2, minHeight: '100%' }}>{(shorthandText || '').split('\n').map((_, i) => `${i + 1}\n`).join('').replace(/\n$/, '')}</pre>
+              </div>
+              <div style={{ flex: 1, minWidth: 0, display: 'grid', alignSelf: 'stretch' }}>
+                <pre aria-hidden="true" style={{ gridArea: '1 / 1', margin: 0, padding: '6px 12px', fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: '#94a3b8', pointerEvents: 'none', tabSize: 2 }} dangerouslySetInnerHTML={{ __html: shorthandText ? highlightShorthand(shorthandText) : '' }} />
+                <textarea
+                  ref={textareaRef}
+                  className="form-control border-0"
+                  style={{
+                    gridArea: '1 / 1', width: '100%',
+                    fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit',
+                    background: 'transparent', color: 'transparent', caretColor: '#f1f5f9',
+                    resize: 'vertical', tabSize: 2, overflow: 'hidden',
+                    WebkitTextFillColor: 'transparent',
+                    whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowWrap: 'break-word',
+                  }}
+                  placeholder="Paste your scores_shorthand.txt content here..."
+                  value={shorthandText}
+                  onChange={(e) => {
+                    setShorthandText(e.target.value);
+                    const ta = textareaRef.current;
+                    if (ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+                  }}
+                />
+              </div>
+            </div>
           </Col>
         </Row>
         <Row className="mt-2 g-1">
@@ -652,7 +772,7 @@ export default function TabShorthandParser() {
                 <div className="d-flex align-items-center px-2 py-1 border-bottom" style={{ borderColor: '#334155' }}>
                   <span style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px' }}>ASCII Preview</span>
                 </div>
-                <pre style={{ margin: 0, padding: '8px', fontSize: '10px', lineHeight: 1.4, color: '#94a3b8', maxHeight: '400px', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{fullScore}</pre>
+                <pre style={{ margin: 0, padding: '8px', fontSize: '10px', lineHeight: 1.4, color: '#94a3b8', maxHeight: '400px', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }} dangerouslySetInnerHTML={{ __html: highlightShorthand(fullScore) }} />
               </div>
             </Col>
             <Col md={6}>

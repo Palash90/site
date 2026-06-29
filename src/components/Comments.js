@@ -7,21 +7,29 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
+  doc,
+  updateDoc,
+  deleteDoc,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { Row, Col, Button, Form, Alert, Spinner } from "react-bootstrap";
-import { FaUserCircle, FaGoogle } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { FaUserCircle, FaGoogle, FaThumbsUp, FaTrash, FaCheck, FaBan } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
 import gravatarUrl from "../utils/gravatar";
 
 export default function Comments({ contentId }) {
-  const { user, signInWithGoogle } = useAuth();
+  const { user, profile, signInWithGoogle } = useAuth();
+  const navigate = useNavigate();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+
+  const isModerator = profile?.role === "moderator";
 
   const loadComments = useCallback(async () => {
     if (!contentId) return;
@@ -32,13 +40,17 @@ export default function Comments({ contentId }) {
         orderBy("createdAt", "asc")
       );
       const snap = await getDocs(q);
-      setComments(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const filtered = isModerator
+        ? all
+        : all.filter((c) => c.status !== "rejected" && c.status !== "spam");
+      setComments(filtered);
     } catch (e) {
       console.error("Failed to load comments", e);
     } finally {
       setLoading(false);
     }
-  }, [contentId]);
+  }, [contentId, isModerator]);
 
   useEffect(() => {
     loadComments();
@@ -56,6 +68,8 @@ export default function Comments({ contentId }) {
         userName: user.displayName || user.email?.split("@")[0] || "Anonymous",
         userPhoto: user.photoURL || gravatarUrl(user.email) || null,
         text: text.trim(),
+        claps: [],
+        status: "approved",
         createdAt: serverTimestamp(),
       });
       setText("");
@@ -71,6 +85,72 @@ export default function Comments({ contentId }) {
       setSending(false);
     }
   };
+
+  const handleClap = async (commentId, claps = []) => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    const hasClapped = claps.includes(user.uid);
+    try {
+      await updateDoc(doc(db, "comments", commentId), {
+        claps: hasClapped ? arrayRemove(user.uid) : arrayUnion(user.uid),
+      });
+      await loadComments();
+    } catch (e) {
+      console.error("Failed to update clap", e);
+    }
+  };
+
+  const handleDelete = async (commentId) => {
+    if (!window.confirm("Delete this comment?")) return;
+    try {
+      await deleteDoc(doc(db, "comments", commentId));
+      await loadComments();
+    } catch (e) {
+      console.error("Failed to delete comment", e);
+    }
+  };
+
+  const handleModerate = async (commentId, status) => {
+    try {
+      await updateDoc(doc(db, "comments", commentId), { status });
+      await loadComments();
+    } catch (e) {
+      console.error("Failed to moderate comment", e);
+    }
+  };
+
+  const commentActions = (c) => (
+    <div className="d-flex gap-1">
+      <Button
+        variant="link"
+        size="sm"
+        className={`p-0 text-decoration-none ${c.claps?.includes(user?.uid) ? "text-warning" : "text-secondary"}`}
+        onClick={() => handleClap(c.id, c.claps)}
+        title="Like"
+        style={{ fontSize: "12px" }}
+      >
+        <FaThumbsUp className="me-1" />{(c.claps?.length || 0) > 0 && <span>{c.claps.length}</span>}
+      </Button>
+      {isModerator && (
+        <>
+          {c.status !== "rejected" ? (
+            <Button variant="link" size="sm" className="p-0 text-secondary text-decoration-none" onClick={() => handleModerate(c.id, "rejected")} title="Reject" style={{ fontSize: "12px" }}>
+              <FaBan />
+            </Button>
+          ) : (
+            <Button variant="link" size="sm" className="p-0 text-success text-decoration-none" onClick={() => handleModerate(c.id, "approved")} title="Approve" style={{ fontSize: "12px" }}>
+              <FaCheck />
+            </Button>
+          )}
+          <Button variant="link" size="sm" className="p-0 text-danger text-decoration-none" onClick={() => handleDelete(c.id)} title="Delete" style={{ fontSize: "12px" }}>
+            <FaTrash />
+          </Button>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div className="mt-5" style={{ borderTop: "1px solid #333", paddingTop: "2rem" }}>
@@ -91,14 +171,17 @@ export default function Comments({ contentId }) {
                   <FaUserCircle size={36} className="text-secondary" />
                 )}
               </Link>
-              <div>
+              <div className="flex-grow-1">
                 <div className="d-flex gap-2 align-items-baseline">
                   <Link to={`/profile/${c.userId}`} className="text-decoration-none"><strong className="small text-light">{c.userName}</strong></Link>
                   <span className="text-secondary" style={{ fontSize: "11px" }}>
                     {c.createdAt?.toDate?.()?.toLocaleDateString() || ""}
                   </span>
+                  {c.status === "rejected" && <span className="badge bg-danger" style={{ fontSize: "9px" }}>Rejected</span>}
+                  {c.status === "spam" && <span className="badge bg-warning text-dark" style={{ fontSize: "9px" }}>Spam</span>}
                 </div>
                 <p className="mb-0 small mt-1" style={{ whiteSpace: "pre-wrap" }}>{c.text}</p>
+                <div className="mt-1">{commentActions(c)}</div>
               </div>
             </div>
           ))}
@@ -123,7 +206,8 @@ export default function Comments({ contentId }) {
                   placeholder="Write a comment..."
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  className="bg-dark text-light border-secondary"
+                  className="text-light border-secondary"
+                  style={{ background: '#2a2a2a', borderRadius: '6px' }}
                   required
                 />
               </Form.Group>

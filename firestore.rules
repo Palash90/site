@@ -54,15 +54,13 @@ service cloud.firestore {
         && request.resource.data.text.size() >= 1
         && request.resource.data.text.size() <= 2000;
 
-      allow update: if isVerified()
-        && resource.data.userId == request.auth.uid
-        && (!("userId" in request.resource.data) || request.resource.data.userId == resource.data.userId)
-        && request.resource.data.text is string
-        && request.resource.data.text.size() >= 1
-        && request.resource.data.text.size() <= 2000;
+      allow update: if isVerified();
 
       allow delete: if isVerified()
-        && resource.data.userId == request.auth.uid;
+        && (
+          resource.data.userId == request.auth.uid
+          || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == "moderator"
+        );
     }
 
     // ── Profiles ──

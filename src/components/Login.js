@@ -204,6 +204,14 @@ export default function Login() {
             </Button>
           </Form>
 
+          {isSignUp && (
+            <div className="text-center mt-3">
+              <small className="text-secondary" style={{ fontSize: '11px', lineHeight: 1.4 }}>
+                We only store your email, username, and avatar for authentication and display purposes. No personal data is shared or sold.
+              </small>
+            </div>
+          )}
+
           <div className="text-center mt-2">
             <Button variant="link" size="sm" onClick={toggleMode}>
               {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}

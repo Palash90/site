@@ -13,7 +13,7 @@ export default function Home() {
             />
             <Row className="align-items-start mb-4">
                 <Col md={7}>
-                    <div className="bio-text" style={{ whiteSpace: "pre-line" }}>
+                    <div className="bio-text" style={{ whiteSpace: "pre-line", lineHeight: 1.8 }}>
                         {window.findProp('pages.home.desc')}
                     </div>
                 </Col>
