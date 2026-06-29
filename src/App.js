@@ -48,20 +48,16 @@ function Header() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="justify-content-lg-end flex-grow-1 pe-6">
-            {window.findProp("navLinks").map((l) => {
-              if (user && l.label && l.label.toLowerCase().includes("tech")) {
-                return (
-                  <Nav.Link key="scores" onClick={() => { setExpanded(false); navigate("/contents/scores"); }}>
-                    All Scores
-                  </Nav.Link>
-                );
-              }
-              return (
-                <Nav.Link key={l.link} href={l.link} onClick={() => setExpanded(false)}>
-                  {l.label}
-                </Nav.Link>
-              );
-            })}
+            {window.findProp("navLinks").map((l) => (
+              <Nav.Link key={l.link} href={l.link} onClick={() => setExpanded(false)}>
+                {l.label}
+              </Nav.Link>
+            ))}
+            {user && (
+              <Nav.Link onClick={() => { setExpanded(false); navigate("/contents/scores"); }}>
+                All Scores
+              </Nav.Link>
+            )}
           </Nav>
           <Nav className="align-items-lg-center">
             {loading ? null : !user ? (
@@ -84,8 +80,18 @@ function Header() {
                 <NavDropdown.Item onClick={() => { setExpanded(false); navigate("/contents/scores"); }}>
                   My Scores
                 </NavDropdown.Item>
+                {profile?.role === "moderator" && (
+                  <NavDropdown.Item onClick={() => { setExpanded(false); navigate("/moderate"); }}>
+                    Moderate
+                  </NavDropdown.Item>
+                )}
                 <NavDropdown.Divider />
-                <NavDropdown.Item onClick={() => { setExpanded(false); logout(); navigate("/"); }}>
+                <NavDropdown.Item onClick={() => {
+                  setExpanded(false);
+                  logout();
+                  const p = window.location.pathname;
+                  if (p.startsWith("/contents/") || p === "/setup-username") navigate("/");
+                }}>
                   Logout
                 </NavDropdown.Item>
               </NavDropdown>

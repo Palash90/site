@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { Container, Card, Button, Form, Alert, Spinner, InputGroup } from "react-bootstrap";
@@ -42,6 +42,10 @@ async function checkUsernameAvailable(username) {
 export default function Login() {
   const { signInWithGoogle, signUpWithEmail, signInWithEmail, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectBase = searchParams.get("redirect") || "/contents/scores";
+  const likeParam = searchParams.get("like");
+  const redirectTo = redirectBase + (likeParam ? "?like=1" : "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -80,7 +84,7 @@ export default function Login() {
         if (!snap.data()?.username) {
           navigate("/setup-username");
         } else {
-          navigate("/contents/scores");
+          navigate(redirectTo);
         }
         return;
       }
@@ -204,13 +208,11 @@ export default function Login() {
             </Button>
           </Form>
 
-          {isSignUp && (
-            <div className="text-center mt-3">
-              <small className="text-secondary" style={{ fontSize: '11px', lineHeight: 1.4 }}>
-                We only store your email, username, and avatar for authentication and display purposes. No personal data is shared or sold.
-              </small>
-            </div>
-          )}
+          <div className="text-center mt-3">
+            <small className="text-secondary" style={{ fontSize: '11px', lineHeight: 1.4 }}>
+              We only store your email, username, and avatar for authentication and display purposes. No personal data is shared or sold.
+            </small>
+          </div>
 
           <div className="text-center mt-2">
             <Button variant="link" size="sm" onClick={toggleMode}>

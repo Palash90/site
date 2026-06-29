@@ -16,6 +16,7 @@ const Analytics = React.lazy(() => import("./Analytics"))
 const SetupUsername = React.lazy(() => import("./SetupUsername"))
 const Profile = React.lazy(() => import("./Profile"))
 const ProfileEdit = React.lazy(() => import("./ProfileEdit"))
+const Moderate = React.lazy(() => import("./Moderate"))
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -37,6 +38,14 @@ function VerifiedRoute({ children }) {
       </Container>
     );
   }
+  return children;
+}
+
+function ModeratorRoute({ children }) {
+  const { user, profile, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" />;
+  if (profile?.role !== "moderator") return <Navigate to="/" />;
   return children;
 }
 
@@ -68,6 +77,7 @@ export default function RouteResolver() {
           <Route path='/setup-username' element={<ProtectedRoute><SetupUsername /></ProtectedRoute>} />
           <Route path='/profile/:identifier' element={<Profile />} />
           <Route path='/profile/edit' element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
+          <Route path='/moderate' element={<ModeratorRoute><Moderate /></ModeratorRoute>} />
         </Routes>
       </Suspense>
     </Container>

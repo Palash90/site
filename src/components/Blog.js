@@ -146,15 +146,15 @@ export default function Blog(props) {
     const components = {
         img: (props) => {
             return (
-              <div style={{ display: 'flex', justifyContent: 'center', margin: '1.5em 0' }}>
-                <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #333', boxShadow: '0 2px 8px rgba(0,0,0,0.4)', background: '#1e1e1e', padding: '8px' }}>
+              <span style={{ display: 'flex', justifyContent: 'center', margin: '1.5em 0' }}>
+                <span style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #333', boxShadow: '0 2px 8px rgba(0,0,0,0.4)', background: '#1e1e1e', padding: '8px' }}>
                   <Image fluid loading="lazy" src={props.src} alt={props.alt || ''} style={{ borderRadius: '4px', display: 'block' }} />
-                </div>
-              </div>
+                </span>
+              </span>
             );
         },
         pre: ({ children }) => <>{children}</>,
-        code: (props) => <CodeBlock {...props} />
+        code: (props) => <CodeBlock {...props} />,
     }
 
     useEffect(() => {
