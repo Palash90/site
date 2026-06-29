@@ -498,21 +498,19 @@ export default function TabShorthandParser() {
             <ShorthandManualModal />
           </Col>
         </Row>
-        <Row className="flex-nowrap">
+        <Row xs={1} sm={2} md={3} lg={5} className="g-2">
           <Col>
             <label>Existing Scores</label>
-            <div className="d-flex gap-2">
-              <select
-                className="form-select"
-                value={selectedScoreId}
-                onChange={loadExistingScore}
-              >
-                <option value="">-- New Score --</option>
-                {existingScores.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
+            <select
+              className="form-select"
+              value={selectedScoreId}
+              onChange={loadExistingScore}
+            >
+              <option value="">-- New Score --</option>
+              {existingScores.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
           </Col>
           <Col>
             <label>Name:</label>
@@ -560,23 +558,13 @@ export default function TabShorthandParser() {
             />
           </Col>
         </Row>
-        <Row className="mt-2">
-          <Col>
-            <label>Description</label>
-            <textarea
-              className="form-control"
-              rows={2}
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-            />
-          </Col>
-        </Row>
+
         <Row>
           <Col>
             <textarea
-              className="form-control"
+              className="form-control border-0"
               rows={12}
-              style={{ fontFamily: "monospace" }}
+              style={{ fontFamily: "'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace", fontSize: '12px', background: '#0a0e17', color: '#e2e8f0', resize: 'vertical', tabSize: 2 }}
               placeholder="Paste your scores_shorthand.txt content here..."
               value={shorthandText}
               onChange={(e) => {
@@ -585,9 +573,9 @@ export default function TabShorthandParser() {
             />
           </Col>
         </Row>
-        <Row className="mt-2">
+        <Row className="mt-2 g-1">
           <Col xs="auto">
-            <Button variant="outline-primary" onClick={handleParse} disabled={!name || saving}>
+            <Button variant="primary" onClick={handleParse} disabled={!name || saving}>
               {saving ? "Saving..." : selectedScoreId ? "Update" : "Save & Parse"}
             </Button>
           </Col>
@@ -660,24 +648,30 @@ export default function TabShorthandParser() {
         {showFull && parsedData && (
           <Row className="mt-2">
             <Col md={6}>
-              <label className="text-secondary small">Constructed Score</label>
-              <textarea
-                className="form-control"
-                readOnly
-                rows={12}
-                style={{ fontFamily: "monospace" }}
-                value={fullScore}
-              />
+              <div className="rounded border" style={{ background: '#0f172a', borderColor: '#334155' }}>
+                <div className="d-flex align-items-center px-2 py-1 border-bottom" style={{ borderColor: '#334155' }}>
+                  <span style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px' }}>ASCII Preview</span>
+                </div>
+                <pre style={{ margin: 0, padding: '8px', fontSize: '10px', lineHeight: 1.4, color: '#94a3b8', maxHeight: '400px', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{fullScore}</pre>
+              </div>
             </Col>
             <Col md={6}>
-              <label className="text-secondary small">Parsed JSON</label>
-              <textarea
-                className="form-control"
-                readOnly
-                rows={12}
-                style={{ fontFamily: "monospace" }}
-                value={JSON.stringify(parsedData, null, 2)}
-              />
+              <div className="rounded border" style={{ background: '#0a0e17', borderColor: '#334155' }}>
+                <div className="d-flex align-items-center px-2 py-1 border-bottom" style={{ borderColor: '#334155' }}>
+                  <span style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px' }}>JSON Output</span>
+                </div>
+                <pre style={{ margin: 0, padding: '8px', fontSize: '10px', lineHeight: 1.4, maxHeight: '400px', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}
+                  dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(parsedData, null, 2)
+                      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                      .replace(/"([^"]+)":/g, '<span style="color:#7dd3fc">"$1"</span>:')
+                      .replace(/: "([^"]+)"/g, ': <span style="color:#a5d6a7">"$1"</span>')
+                      .replace(/: (\d+\.?\d*)/g, ': <span style="color:#f9a825">$1</span>')
+                      .replace(/: (true|false)/g, ': <span style="color:#ce93d8">$1</span>')
+                      .replace(/: (null)/g, ': <span style="color:#ef9a9a">$1</span>')
+                  }}
+                />
+              </div>
             </Col>
           </Row>
         )}

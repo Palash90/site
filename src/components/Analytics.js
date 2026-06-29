@@ -6,13 +6,17 @@ import { Container, Spinner } from 'react-bootstrap';
 export default function Analytics() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredPath, setHoveredPath] = useState(null);
+  const [hoveredTz, setHoveredTz] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         const q = query(collection(db, 'page_stats'), orderBy('views', 'desc'));
         const snap = await getDocs(q);
-        const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const rows = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(r => r.path !== '/analytics');
         setData(rows);
       } catch (e) {
         console.error('Analytics load error:', e);
@@ -79,12 +83,13 @@ export default function Analytics() {
         <div className="rounded border p-2 flex-fill" style={{ minWidth: 280, background: '#1e293b', borderColor: '#334155' }}>
           <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '8px' }}>Views by Page</div>
           {data.map(row => (
-            <div key={row.id} className="d-flex align-items-center mb-1" style={{ gap: '6px' }}>
+            <div key={row.id} className="d-flex align-items-center mb-1" style={{ gap: '6px', cursor: 'pointer' }}
+              onMouseEnter={() => setHoveredPath(row.path)} onMouseLeave={() => setHoveredPath(null)}>
               <div style={{ width: '24px', textAlign: 'right', color: '#94a3b8', fontSize: '11px', flexShrink: 0 }}>{row.views}</div>
               <div style={{ flex: 1, background: '#0f172a', borderRadius: '3px' }}>
-                <div style={barStyle(row.views, maxViews, '#22d3ee')} />
+                <div style={{ ...barStyle(row.views, maxViews, '#22d3ee'), opacity: hoveredPath && hoveredPath !== row.path ? 0.4 : 1 }} />
               </div>
-              <div style={{ fontSize: '10px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px', flexShrink: 1 }} title={row.path}>{row.path}</div>
+              <div style={{ fontSize: '10px', color: hoveredPath === row.path ? '#22d3ee' : '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '200px', flexShrink: 0 }} title={row.path}>{row.path}</div>
             </div>
           ))}
         </div>
@@ -94,12 +99,13 @@ export default function Analytics() {
           <div className="rounded border p-2 flex-fill" style={{ minWidth: 200, background: '#1e293b', borderColor: '#334155' }}>
             <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '8px' }}>By Timezone</div>
             {Object.entries(allTz).sort((a, b) => b[1] - a[1]).map(([tz, count]) => (
-              <div key={tz} className="d-flex align-items-center mb-1" style={{ gap: '6px' }}>
+              <div key={tz} className="d-flex align-items-center mb-1" style={{ gap: '6px', cursor: 'pointer' }}
+                onMouseEnter={() => setHoveredTz(tz)} onMouseLeave={() => setHoveredTz(null)}>
                 <div style={{ width: '20px', textAlign: 'right', color: '#94a3b8', fontSize: '11px', flexShrink: 0 }}>{count}</div>
                 <div style={{ flex: 1, background: '#0f172a', borderRadius: '3px' }}>
-                  <div style={barStyle(count, maxTz, '#a78bfa')} />
+                  <div style={{ ...barStyle(count, maxTz, '#a78bfa'), opacity: hoveredTz && hoveredTz !== tz ? 0.4 : 1 }} />
                 </div>
-                <div style={{ fontSize: '10px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px', flexShrink: 1 }}>{tz.split('/').pop()}</div>
+                <div style={{ fontSize: '10px', color: hoveredTz === tz ? '#a78bfa' : '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100px', flexShrink: 0 }}>{tz.split('/').pop()}</div>
               </div>
             ))}
           </div>
@@ -121,7 +127,7 @@ export default function Analytics() {
           </thead>
           <tbody>
             {data.map(row => (
-              <tr key={row.id}>
+              <tr key={row.id} style={{ background: hoveredPath === row.path ? '#1e3a5f' : undefined }}>
                 <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.path}</td>
                 <td>{row.views}</td>
                 <td>{row.newUsers}</td>

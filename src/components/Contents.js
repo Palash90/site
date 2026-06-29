@@ -6,7 +6,7 @@ import ContentList from "./ContentList";
 import { collection, query, where, getDocs, deleteDoc, doc, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { FaUserCircle, FaSearch, FaMusic } from "react-icons/fa";
+import { FaUserCircle, FaSearch, FaMusic, FaPen, FaTrash } from "react-icons/fa";
 import slugify from "../utils/slugify";
 
 export default function Contents() {
@@ -255,7 +255,7 @@ export default function Contents() {
                     </Col>
                 )}
                 {isScores ? (
-                    <Col>
+                    <Col xs={12} md={9} lg={8}>
                         {user && (
                             <div id="your-scores">
                                 <hr className="text-secondary" />
@@ -266,7 +266,42 @@ export default function Contents() {
                                     <a href="/tab-parser" className="btn btn-sm btn-outline-info">+ New</a>
                                 </div>
                                 {userScores.length > 0 ? (
-                                    <ContentList showDate type="__user_scores__" extraContents={userScores} filter={filterProp} />
+                                    <div className="d-flex flex-column" style={{ gap: '6px' }}>
+                                        {userScores.map(s => (
+                                            <div key={s.id} className="d-flex align-items-center rounded border p-2"
+                                                style={{ gap: '10px', background: '#1e293b', borderColor: '#334155', transition: 'background 0.15s, border-color 0.15s', cursor: 'default' }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = '#243150'; e.currentTarget.style.borderColor = '#22d3ee'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.borderColor = '#334155'; }}>
+                                                {s.publishDate && (
+                                                    <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap', width: '85px', flexShrink: 0 }}>
+                                                        {s.publishDate}
+                                                    </span>
+                                                )}
+                                                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px' }}>
+                                                    {s.noLink ? (
+                                                        <span className="text-secondary">{s.title}</span>
+                                                    ) : (
+                                                        <a href={"/content/" + s.id} className="text-decoration-none" style={{ color: '#e2e8f0' }}>
+                                                            {s.title}
+                                                        </a>
+                                                    )}
+                                                </span>
+                                                <span className="d-flex gap-1 flex-shrink-0">
+                                                    {s.editLink && (
+                                                        <a href={s.editLink} className="text-info text-decoration-none" title="Edit" style={{ padding: '2px 6px', border: '1px solid #334155', borderRadius: '3px', fontSize: '11px' }}>
+                                                            <FaPen size={10} />
+                                                        </a>
+                                                    )}
+                                                    {s.onDelete && (
+                                                        <a href="#" className="text-danger text-decoration-none" title="Delete" style={{ padding: '2px 6px', border: '1px solid #334155', borderRadius: '3px', fontSize: '11px' }}
+                                                            onClick={(e) => { e.preventDefault(); s.onDelete(); }}>
+                                                            <FaTrash size={10} />
+                                                        </a>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 ) : (
                                     <p className="text-secondary small">No scores yet. <a href="/tab-parser" className="text-info">Create one</a>.</p>
                                 )}

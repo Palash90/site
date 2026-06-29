@@ -28,6 +28,7 @@ export default function useTracker() {
 
   useEffect(() => {
     if (!window.location.hostname.endsWith('palashkantikundu.in')) return;
+    if (pathKey.startsWith('/analytics')) return;
 
     const encoded = encodePath(pathKey);
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';

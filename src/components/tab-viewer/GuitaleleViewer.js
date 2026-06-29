@@ -667,8 +667,8 @@ export default function GuitaleleViewer({ scoreData }) {
                     </div>
                 ) : (
                     /* ----- Desktop: 3-column layout ----- */
-                    <div className="d-flex gap-2" style={{ minHeight: '76px' }}>
-                        <div className="d-flex flex-column gap-1" style={{ minWidth: '150px', flexShrink: 0 }}>
+                    <div className="d-flex gap-3" style={{ minHeight: '76px' }}>
+                        <div className="d-flex flex-column gap-1" style={{ minWidth: '160px', flexShrink: 0 }}>
                             <div className="btn-group bg-black p-1 rounded border border-secondary" style={{ height: '30px', alignItems: 'center' }}>
                                 {!isPlaying ? (
                                     <Button variant="link" onClick={startPlayback} className="text-success p-1" title="Start"
