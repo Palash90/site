@@ -83,7 +83,7 @@ export default function Content() {
                     return;
                 }
                 data = { id: snap.id, ...snap.data() };
-                setCached(cacheKey, data, 5 * 60 * 1000);
+                setCached(cacheKey, data);
             }
             if (!data.published && data.userId !== user?.uid) {
                 console.error("Score unpublished:", { owner: data.userId, viewer: user?.uid });

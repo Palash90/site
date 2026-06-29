@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'content_';
-const DEFAULT_TTL = 30 * 60 * 1000;
+const DEFAULT_TTL = 24 * 60 * 60 * 1000;
 
 export function getCached(key) {
   try {
