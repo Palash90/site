@@ -2,14 +2,59 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Helpers ──
+    // ── Helpers (check both prod and dev_ prefixed collections) ──
     function isVerified() {
       return request.auth != null
-        && exists(/databases/$(database)/documents/profiles/$(request.auth.uid))
-        && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.emailVerified == true;
+        && (
+          (exists(/databases/$(database)/documents/profiles/$(request.auth.uid))
+            && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.emailVerified == true)
+          ||
+          (exists(/databases/$(database)/documents/dev_profiles/$(request.auth.uid))
+            && get(/databases/$(database)/documents/dev_profiles/$(request.auth.uid)).data.emailVerified == true)
+        );
     }
 
-    // ── Scores (require email verification for mutations) ──
+    function isOwnUsername(uname) {
+      return uname == "" ||
+        (
+          uname is string
+          && uname.size() >= 3
+          && (
+            (exists(/databases/$(database)/documents/usernames/$(uname))
+              && get(/databases/$(database)/documents/usernames/$(uname)).data.uid == request.auth.uid)
+            ||
+            (exists(/databases/$(database)/documents/dev_usernames/$(uname))
+              && get(/databases/$(database)/documents/dev_usernames/$(uname)).data.uid == request.auth.uid)
+          )
+        );
+    }
+
+    function userRole(uid) {
+      return exists(/databases/$(database)/documents/profiles/$(uid))
+        ? get(/databases/$(database)/documents/profiles/$(uid)).data.role
+        : exists(/databases/$(database)/documents/dev_profiles/$(uid))
+          ? get(/databases/$(database)/documents/dev_profiles/$(uid)).data.role
+          : null;
+    }
+
+    function profileData(uid) {
+      return exists(/databases/$(database)/documents/profiles/$(uid))
+        ? get(/databases/$(database)/documents/profiles/$(uid))
+        : get(/databases/$(database)/documents/dev_profiles/$(uid));
+    }
+
+    function profileExists(uid) {
+      return exists(/databases/$(database)/documents/profiles/$(uid))
+        || exists(/databases/$(database)/documents/dev_profiles/$(uid));
+    }
+
+    function usernameData(uname) {
+      return exists(/databases/$(database)/documents/usernames/$(uname))
+        ? get(/databases/$(database)/documents/usernames/$(uname))
+        : get(/databases/$(database)/documents/dev_usernames/$(uname));
+    }
+
+    // ── Production: scores ──
     match /scores/{docId} {
       allow read: if true;
 
@@ -44,7 +89,42 @@ service cloud.firestore {
         && request.auth.uid == resource.data.userId;
     }
 
-    // ── Comments (require email verification for mutations) ──
+    // ── Dev: scores ──
+    match /dev_scores/{docId} {
+      allow read: if true;
+
+      allow create: if isVerified()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.rawShorthand is string
+        && request.resource.data.rawShorthand.size() >= 2
+        && request.resource.data.rawShorthand.size() <= 10000
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 1
+        && request.resource.data.slug is string
+        && request.resource.data.slug.size() >= 1
+        && (!("published" in request.resource.data) || request.resource.data.published is bool);
+
+      allow update: if isVerified()
+        && request.auth.uid == resource.data.userId
+        && (!("userId" in request.resource.data) || request.resource.data.userId == resource.data.userId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.rawShorthand is string
+        && request.resource.data.rawShorthand.size() >= 2
+        && request.resource.data.rawShorthand.size() <= 10000
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 1
+        && request.resource.data.slug is string
+        && request.resource.data.slug.size() >= 1
+        && (!("published" in request.resource.data) || request.resource.data.published is bool);
+
+      allow delete: if isVerified()
+        && request.auth.uid == resource.data.userId;
+    }
+
+    // ── Production: comments ──
     match /comments/{docId} {
       allow read: if true;
 
@@ -59,24 +139,32 @@ service cloud.firestore {
       allow delete: if isVerified()
         && (
           resource.data.userId == request.auth.uid
-          || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == "moderator"
+          || userRole(request.auth.uid) == "moderator"
         );
     }
 
-    // ── Profiles ──
-    match /profiles/{userId} {
+    // ── Dev: comments ──
+    match /dev_comments/{docId} {
       allow read: if true;
 
-      // ── Helpers ──
-      function isOwnUsername(uname) {
-        return uname == "" ||
-          (
-            uname is string
-            && uname.size() >= 3
-            && exists(/databases/$(database)/documents/usernames/$(uname))
-            && get(/databases/$(database)/documents/usernames/$(uname)).data.uid == request.auth.uid
-          );
-      }
+      allow create: if isVerified()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 2000;
+
+      allow update: if isVerified();
+
+      allow delete: if isVerified()
+        && (
+          resource.data.userId == request.auth.uid
+          || userRole(request.auth.uid) == "moderator"
+        );
+    }
+
+    // ── Production: profiles ──
+    match /profiles/{userId} {
+      allow read: if true;
 
       allow create, update: if request.auth != null
         && request.auth.uid == userId
@@ -86,28 +174,55 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ── Usernames (uniqueness registry) ──
+    // ── Dev: profiles ──
+    match /dev_profiles/{userId} {
+      allow read: if true;
+
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && (!("displayName" in request.resource.data) || request.resource.data.displayName is string)
+        && (!("username" in request.resource.data) || isOwnUsername(request.resource.data.username));
+
+      allow delete: if false;
+    }
+
+    // ── Production: usernames ──
     match /usernames/{username} {
       allow read: if true;
 
-      // Only claim a username when the caller's profile either has no username yet
-      // or already owns this exact username (for re-claim during change flows).
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid
         && (
-          !exists(/databases/$(database)/documents/profiles/$(request.auth.uid))
-          || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.username == ""
-          || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.username == username
+          !profileExists(request.auth.uid)
+          || profileData(request.auth.uid).data.username == ""
+          || profileData(request.auth.uid).data.username == username
         );
 
-      // Only the owner can release their username.
       allow delete: if request.auth != null
         && resource.data.uid == request.auth.uid;
 
       allow update: if false;
     }
 
-    // ── Page tracking (analytics) ──
+    // ── Dev: usernames ──
+    match /dev_usernames/{username} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && (
+          !profileExists(request.auth.uid)
+          || profileData(request.auth.uid).data.username == ""
+          || profileData(request.auth.uid).data.username == username
+        );
+
+      allow delete: if request.auth != null
+        && resource.data.uid == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    // ── Production: page tracking ──
     match /page_stats/{docId} {
       allow read: if true;
       allow write: if true;
@@ -117,11 +232,26 @@ service cloud.firestore {
       allow write: if true;
     }
 
-    // ── Article claps / likes ──
+    // ── Dev: page tracking ──
+    match /dev_page_stats/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /dev_visits/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── Production: article claps ──
     match /claps/{contentId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── Dev: article claps ──
+    match /dev_claps/{contentId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
   }
 }
-// v2 — email_verified required for scores/comments writes
