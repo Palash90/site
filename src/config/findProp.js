@@ -6,6 +6,7 @@ import baseConfig from './baseConfig';
 
 let mergedData = { ...baseConfig };
 let contentsPromise = null;
+let contentsLoadError = null;
 
 export function findProp(path) {
   if (!mergedData) return undefined;
@@ -24,18 +25,31 @@ export async function loadContents() {
     try {
       const url = 'https://palash90.github.io/site-assets/data.json';
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          await res.clone().text();
+        } catch (_) {
+          detail = `CORS blocked (${res.status})`;
+        }
+        throw new Error(detail);
+      }
       const remote = await res.json();
       if (remote.contents) {
         mergedData = { ...baseConfig, contents: remote.contents };
       }
       return mergedData.contents;
     } catch (err) {
+      contentsLoadError = err.message;
       console.warn('Failed to load contents from GitHub Pages:', err.message);
       return null;
     }
   })();
   return contentsPromise;
+}
+
+export function getContentsLoadError() {
+  return contentsLoadError;
 }
 
 export default findProp;

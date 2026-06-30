@@ -17,6 +17,23 @@ import { getAllEnriched, extractHeadings } from "../utils/mockData";
 import slugify from "../utils/slugify";
 import { getCached, setCached } from "../utils/cache";
 import { col } from "../utils/firestorePath";
+import { getContentsLoadError } from "../config/findProp";
+
+function friendlyFetchError(msg) {
+    if (!msg) return "Content data failed to load.";
+    const m = msg.toLowerCase();
+    if (m.includes("cors"))
+        return "The site is not allowed to fetch content.";
+    if (m.includes("failed to fetch") || m.includes("networkerror"))
+        return "Content blocked by browser.";
+    if (m.includes("http 404") || m.includes("not found"))
+        return "Content not found (404).";
+    if (m.includes("http 403") || m.includes("forbidden"))
+        return "Access forbidden (403).";
+    if (m.includes("http 500") || m.includes("internal server"))
+        return "Server error (500).";
+    return `Content data failed to load: ${msg}`;
+}
 
 const shareSvg = {
     facebook: <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>,
@@ -175,9 +192,11 @@ export default function Content() {
             setYtId(content.videoId);
             setTab(content.tab);
         } else {
-            setError({
-                message: window.findProp("labels.contentNotExists")
-            });
+            const loadErr = getContentsLoadError();
+            const reason = allContents.length === 0 && loadErr
+                ? friendlyFetchError(loadErr)
+                : window.findProp("labels.contentNotExists");
+            setError({ message: reason });
         }
     }, [params.contentId, params.username, params.instrument, params.titleSlug, user]);
 

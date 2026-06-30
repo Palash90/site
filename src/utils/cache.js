@@ -27,7 +27,7 @@ export async function fetchWithCache(url, ttl = DEFAULT_TTL) {
   if (cached !== null) return cached;
 
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+  if (!res.ok) throw new Error(`Failed to fetch ${url} (${res.status} ${res.statusText})`);
   const text = await res.text();
   setCached(url, text, ttl);
   return text;

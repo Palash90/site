@@ -1,5 +1,22 @@
 import { Link } from "react-router-dom";
 import { getEnrichedSwe, getEnrichedMusic } from "../utils/mockData";
+import { getContentsLoadError } from "../config/findProp";
+
+function friendlyFetchError(msg) {
+    if (!msg) return "Content data failed to load.";
+    const m = msg.toLowerCase();
+    if (m.includes("cors"))
+        return "The site is not allowed to fetch content.";
+    if (m.includes("failed to fetch") || m.includes("networkerror"))
+        return "Content blocked by browser.";
+    if (m.includes("http 404") || m.includes("not found"))
+        return "Content not found (404).";
+    if (m.includes("http 403") || m.includes("forbidden"))
+        return "Access forbidden (403).";
+    if (m.includes("http 500") || m.includes("internal server"))
+        return "Server error (500).";
+    return `Content data failed to load: ${msg}`;
+}
 
 function getDateVal(c) {
   return c.sortBy
@@ -84,7 +101,11 @@ export default function SeriesList({ type, filter, showDate, limit, truncateAt, 
   }
 
   if (rows.length === 0) {
-    return <p className="text-secondary small">No content found.</p>;
+    const loadErr = getContentsLoadError();
+    const msg = allItems.length === 0 && loadErr
+      ? friendlyFetchError(loadErr)
+      : "No content found.";
+    return <p className="text-secondary small">{msg}</p>;
   }
 
   return (
