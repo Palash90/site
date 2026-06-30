@@ -3,23 +3,14 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { IconContext } from 'react-icons';
+import { findProp, loadContents } from './config/findProp';
 
-// Safe wrapper for window.findProp — script.js from GitHub Pages may be blocked
-const _origFindProp = window.findProp;
-window.findProp = function safeFindProp(path) {
-  try {
-    if (typeof _origFindProp !== 'function') {
-      console.warn(`findProp: script.js not available (GitHub Pages blocked?), cannot resolve "${path}"`);
-      return undefined;
-    }
-    return _origFindProp(path);
-  } catch (e) {
-    console.warn(`findProp: error resolving "${path}"`, e);
-    return undefined;
-  }
-};
+// Provide findProp globally (local function; contents fetched async from GitHub Pages)
+window.findProp = findProp;
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
+// Render immediately — base config is bundled, only contents load async
 root.render(
   <React.StrictMode>
       <IconContext.Provider value={{ size: "2em" }}>
@@ -28,3 +19,5 @@ root.render(
   </React.StrictMode>
 );
 
+// Fetch blog contents in background — findProp resolves all other paths immediately
+loadContents();

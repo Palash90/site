@@ -257,3 +257,247 @@ a:hover { color: var(--accent); }
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
+
+/* ===== Imported from site-assets/styles.css ===== */
+:root {
+    --md-body-text: #e2e8f0;
+    --md-light: #38bdf8;
+    --md-ultra-light: #7dd3fc;
+    --md-hyper-light: #bae6fd;
+    --md-dark: #1e293b;
+    --md-ultra-dark: #0f172a;
+    --md-complimentary-blockquote: #f59e0b;
+}
+.custom-theme {
+    --bs-heading-color: var(--md-light) !important;
+    --bs-card-title-color: var(--md-complimentary-blockquote) !important;
+}
+.custom-theme p {
+    color: var(--md-body-text);
+}
+.main-app-mw {
+    font-family: "Merriweather", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: italic;
+}
+.main-app-lora {
+    font-family: "Lora", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: italic;
+}
+.content-body-roboto {
+    font-family: "Roboto", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+.content-body-opensans {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+table td,
+table th {
+    padding: 0.5em 1em;
+}
+.note-group {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.note-group:hover .note-element {
+  stroke: #e11d48 !important;
+  fill: #e11d48 !important;
+}
+.markdown-color p {
+  color: var(--md-body-text);
+}
+.markdown-color h1 {
+  color: var(--md-light);
+}
+.markdown-color h2 {
+  color: var(--md-ultra-light);
+}
+.markdown-color h3 {
+  color: var(--md-hyper-light);
+}
+.markdown-color h4 {
+  color: var(--md-ultra-light);
+}
+.markdown-color h5 {
+  color: var(--md-light);
+}
+.markdown-color h6 {
+  color: var(--md-dark);
+}
+.markdown-color a {
+  color: var(--md-light);
+}
+.markdown-color a:hover {
+  color: var(--md-ultra-light);
+}
+.markdown-color ul,
+.markdown-color ol {
+  color: var(--md-body-text);
+}
+.markdown-color li strong {
+  color: var(--md-hyper-light);
+}
+.markdown-color pre {
+  background-color: var(--md-ultra-light);
+}
+.markdown-color blockquote {
+  background-color: var(--md-ultra-dark);
+  border-left: 10px solid var(--md-complimentary-blockquote);
+  color: var(--md-body-text);
+}
+.markdown-color del {
+  color: var(--md-hyper-light);
+}
+.markdown-color hr {
+  border: 1px solid var(--md-light);
+}
+.markdown-color th,
+.markdown-color td {
+  border: 1px solid var(--md-light);
+  color: var(--md-dark);
+}
+.markdown-color th {
+  background-color: var(--md-dark);
+  color: var(--md-ultra-dark);
+}
+.markdown-color tr:nth-child(even) {
+  background-color: var(--md-ultra-dark);
+}
+.markdown-color tr:hover {
+  background-color: var(--md-hyper-light);
+}
+.markdown-color tr:hover td{
+  color: var(--md-ultra-dark);
+}
+.markdown-color td {
+  color: var(--md-body-text);
+}
+.tech-blog-content {
+    font-family: "Roboto", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.75;
+}
+.tech-blog-content h1,
+.tech-blog-content h2,
+.tech-blog-content h3 {
+    line-height: 1.3;
+}
+.tech-blog-content h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+}
+.tech-blog-content h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+.tech-blog-content h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+.tech-blog-content p {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 1.1rem;
+}
+.tech-blog-content img {
+    max-height: 250px;
+    height: auto;
+}
+.tech-blog-content pre,
+.tech-blog-content code {
+    color: #dfe6e9;
+    font-family: "Fira Code", monospace;
+    border-radius: 4px;
+}
+.tech-blog-content code {
+    font-size: 0.95rem;
+    color: #81ecec;
+}
+.tech-blog-content blockquote {
+    font-style: italic;
+    color: #fab1a0;
+    border-left: 4px solid #fab1a0;
+    padding-left: 1em;
+}
+.tech-blog-content li {
+    font-family: 'Open Sans', sans-serif;
+    margin: 0.5em 0;
+}
+.tech-blog-content a {
+    font-weight: 500;
+}
+.tech-blog-content a:hover {
+    text-decoration: underline;
+}
+.tech-blog-content pre {
+    color: #00ff9d;
+    background-color: #1e1e1e;
+    font-family: "Fira Code", monospace;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    border-left: 4px solid #e3f988;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+.tech-blog-content code {
+    color: #9acd32;
+    background-color: #1e1e1e;
+    font-family: 'Fira Code', monospace;
+    border-radius: 3px;
+}
+.tech-blog-content blockquote {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    padding-left: 15px;
+    font-style: italic;
+}
+.blog-content {
+    line-height: 1.6;
+    font-family: "Roboto", sans-serif;
+    font-style: normal;
+}
+.blog-content img {
+    max-height: 250px;
+    height: auto;
+}
+.blog-content h1, .blog-content h2, .blog-content h3 {
+    font-family: "Lora", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: italic;
+}
+.blog-content a {
+    text-decoration: none;
+}
+.blog-content a:hover {
+    text-decoration: underline;
+}
+.blog-content ul, .blog-content ol {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+.blog-content blockquote {
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+    padding: 15px;
+    font-style: italic;
+}
+.blog-content pre,
+.blog-content code {
+    font-family: "Fira Code", monospace;
+    border-radius: 4px;
+    background-color: #0d0d0f;
+}
+.blog-content code {
+    font-size: 0.95rem;
+    color: #b8a2f6;
+}

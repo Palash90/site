@@ -85,11 +85,13 @@ export default function SetupUsername() {
     }
   };
 
+  useEffect(() => {
+    if (user && !needsUsername) {
+      navigate("/", { replace: true });
+    }
+  }, [user, needsUsername, navigate]);
+
   if (!user) return null;
-  if (!needsUsername) {
-    navigate("/", { replace: true });
-    return null;
-  }
 
   const errMsg = validationError();
   const canSubmit = username.length >= USERNAME_MIN && available === true && !errMsg;
