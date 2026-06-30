@@ -9,7 +9,6 @@ const About = React.lazy(() => import("./About"))
 const Contents = React.lazy(() => import("./Contents"))
 const Content = React.lazy(() => import("./Content"))
 const CustomComponent = React.lazy(() => import("./CustomComponent"))
-const Sitemap = React.lazy(() => import("./Sitemap"))
 const TabViewerDemo = React.lazy(() => import("./tab-viewer/TabViewerDemo"))
 const TabShorthandParser = React.lazy(() => import("./tab-viewer/TabShorthandParser"))
 const Login = React.lazy(() => import("./Login"))
@@ -71,7 +70,6 @@ export default function RouteResolver() {
           <Route path='/projects' element={<Projects />} />
           <Route path='/tab-demo' element={<TabViewerDemo />} />
           <Route path='/tab-parser' element={<VerifiedRoute><TabShorthandParser /></VerifiedRoute>} />
-          <Route path='/sitemap' element={<Sitemap />} />
           <Route path='/component/:componentId' element={<CustomComponent />} />
           <Route path='/analytics' element={<Analytics />} />
           <Route path='/about' element={<About />} />
