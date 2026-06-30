@@ -6,7 +6,7 @@ export default function Home() {
     return <>
         <Container className={"home-page " + window.findProp("pages.home.class")} fluid>
             <PageIntro
-                h1={window.findProp('pages.home.greeting') + window.findProp('shortName')}
+                h1={(window.findProp('pages.home.greeting') || '') + (window.findProp('shortName') || '')}
                 p={window.findProp('pages.home.tag')}
                 h1Color={window.findProp("pages.home.h1Color")}
                 pColor={window.findProp("pages.home.pColor")}

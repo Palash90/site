@@ -112,7 +112,7 @@ export default function Projects() {
                 pColor={window.findProp("pages.projects.pColor")}
             />
             <Row>
-                {window.findProp("projects").map(p => <Col key={p.id}>
+                {(window.findProp("projects") || []).map(p => <Col key={p.id}>
                     <ProjectCard
                         name={p.name}
                         desc={p.desc}

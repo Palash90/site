@@ -48,7 +48,7 @@ function Header() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="justify-content-lg-end flex-grow-1 pe-6">
-            {window.findProp("navLinks").map((l) => (
+            {(window.findProp("navLinks") || []).map((l) => (
               <Nav.Link key={l.link} href={l.link} onClick={() => setExpanded(false)}>
                 {l.label}
               </Nav.Link>
@@ -113,7 +113,7 @@ function Footer() {
       <a href="mailto:connect@palashkantikundu.in" target="_blank" rel="noreferrer"><RiMailSendFill /></a>
     </Container>
     <Container fluid className='justify-content-center'>
-      <Navbar.Text style={{ fontSize: '11px', lineHeight: '1' }}><FaRegCopyright size={10} /> {window.findProp("name") + " " + new Date().getFullYear()}</Navbar.Text>
+      <Navbar.Text style={{ fontSize: '11px', lineHeight: '1' }}><FaRegCopyright size={10} /> {(window.findProp("name") || "Site") + " " + new Date().getFullYear()}</Navbar.Text>
     </Container>
   </Navbar>;
 }

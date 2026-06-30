@@ -59,7 +59,7 @@ function Fallback() {
 
 export default function RouteResolver() {
   return (
-    <Container fluid className={window.findProp("pages.home.secondaryStyle") + " m-1"} >
+    <Container fluid className={(window.findProp("pages.home.secondaryStyle") || "") + " m-1"} >
       <Suspense fallback={<Fallback />}>
         <Routes>
           <Route path='/' element={<Home />} />
