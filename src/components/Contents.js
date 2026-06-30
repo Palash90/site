@@ -3,6 +3,7 @@ import { Col, Container, Row, Form } from "react-bootstrap"
 import PageIntro from "./PageIntro"
 import { useParams, Link } from "react-router-dom";
 import ContentList from "./ContentList";
+import SeriesList from "./SeriesList";
 import { collection, query, where, getDocs, deleteDoc, doc, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
@@ -243,8 +244,8 @@ export default function Contents() {
                 }
             </Row>
             <Row>
-                {isDefault || type === "tech" ? <Col><ContentList showDate type="contents.swe" filter={filterProp} /></Col> : <></>}
-                {isDefault || isMusic ? <Col><ContentList showDate type="contents.music" filter={filterProp} /></Col> : <></>}
+                {isDefault || type === "tech" ? <Col><SeriesList showDate type="contents.swe" filter={filterProp} /></Col> : <></>}
+                {isDefault || isMusic ? <Col><SeriesList showDate type="contents.music" filter={filterProp} /></Col> : <></>}
                 {isMusic && (
                     <Col xs={12} className="mt-4">
                         <hr className="text-secondary" />

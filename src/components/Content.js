@@ -10,7 +10,10 @@ import Yt from "./Yt";
 import Both from "./Both";
 import TabViewer from "./tab-viewer/TabViewer";
 import Comments from "./Comments";
+import LeftSidebar from "./LeftSidebar";
+import RightSidebar from "./RightSidebar";
 import { Row, Col, Container, Spinner, Alert } from "react-bootstrap";
+import { getAllEnriched, extractHeadings } from "../utils/mockData";
 import slugify from "../utils/slugify";
 import { getCached, setCached } from "../utils/cache";
 import { col } from "../utils/firestorePath";
@@ -43,7 +46,7 @@ function ShareRow({ url, title }) {
     };
     return (
         <div className="d-flex gap-1 align-items-center flex-wrap">
-            <style>{`.create-score-btn{position:relative;overflow:hidden}.create-score-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.35) 50%,transparent 70%);animation:shimmer 2.5s infinite}@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
+            <style>{`.create-score-btn{position:relative;overflow:hidden}.create-score-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.35) 50%,transparent 70%);animation:shimmer 2.5s infinite}@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}`}</style>
             {shareButtons.map(sb => (
                 <button key={sb.name} onClick={() => window.open(links[sb.name], "_blank", "noopener,noreferrer,width=600,height=500")} title={`Share on ${sb.name}`} style={{ width: "22px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${sb.color}`, borderRadius: "3px", color: sb.color, cursor: "pointer", opacity: 0.7 }} onMouseEnter={e => e.currentTarget.style.opacity = "1"} onMouseLeave={e => e.currentTarget.style.opacity = "0.7"}>{shareSvg[sb.svg]}</button>
             ))}
@@ -66,6 +69,11 @@ export default function Content() {
 
     const [userScoreData, setUserScoreData] = useState(null);
     const [loadingUserScore, setLoadingUserScore] = useState(false);
+
+    const [currentContent, setCurrentContent] = useState(null);
+    const [allEnriched, setAllEnriched] = useState([]);
+    const [headings, setHeadings] = useState([]);
+    const [mdText, setMdText] = useState("");
 
     let params = useParams()
     const { user } = useAuth();
@@ -145,14 +153,12 @@ export default function Content() {
         }
 
         setUserScoreData(null);
-        const sweContents = window.findProp("contents.swe")
-            .map(c => { return { ...c, "contentType": "swe" } })
-        const musicContents = window.findProp("contents.music")
-            .map(c => { return { ...c, "contentType": "music" } })
-        var allContents = sweContents.concat(musicContents).concat(window.findProp("contents.drafts"))
+        const allContents = getAllEnriched();
+        setAllEnriched(allContents);
 
         var content = allContents.find(b => b.id === contentId)
         if (content) {
+            setCurrentContent(content);
             if (content.mdUrl && content.videoId) {
                 setType("both")
             } else if (content.mdUrl && !content.videoId) {
@@ -174,6 +180,11 @@ export default function Content() {
             });
         }
     }, [params.contentId, params.username, params.instrument, params.titleSlug, user]);
+
+    const handleMdLoaded = (text) => {
+        setMdText(text);
+        setHeadings(extractHeadings(text));
+    };
 
     if (error) return (
         <Container className="mt-4">
@@ -217,7 +228,7 @@ export default function Content() {
         switch (type) {
             case "markdown": return (
                 <>
-                    <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} />
+                    <Blog lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} mdUrl={mdUrl} onMdLoaded={handleMdLoaded} />
                     {tab ?
                         <>
                             <br />
@@ -243,7 +254,7 @@ export default function Content() {
 
                     </> : <></>}
                 </>)
-            case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} tab={tab} />
+            case "both": return <Both lastUpdated={lastUpdated} publishDate={publishDate} contentType={contentType} ytId={ytId} mdUrl={mdUrl} tab={tab} onMdLoaded={handleMdLoaded} />
 
             default: {
                 if (tab) {
@@ -262,10 +273,35 @@ export default function Content() {
         }
     })();
 
+    const sameTypeContents = allEnriched.filter(
+        (c) => c.contentType === currentContent?.contentType
+    );
+    const seriesArticles = currentContent?.series
+        ? sameTypeContents.filter((c) => c.series === currentContent.series)
+        : [];
+
     return (
-        <>
-            {contentBody}
-            <Comments contentId={params.contentId} />
-        </>
+        <Container fluid>
+            <Row>
+                <Col md={3} className="d-none d-md-block">
+                    <LeftSidebar
+                        content={currentContent}
+                        seriesArticles={seriesArticles}
+                        headings={headings}
+                        error={error}
+                    />
+                </Col>
+                <Col md={6} lg={6}>
+                    {contentBody}
+                    <Comments contentId={params.contentId} />
+                </Col>
+                <Col md={3} className="d-none d-md-block">
+                    <RightSidebar
+                        allContents={sameTypeContents}
+                        contentType={contentType}
+                    />
+                </Col>
+            </Row>
+        </Container>
     );
 }

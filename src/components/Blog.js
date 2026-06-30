@@ -125,6 +125,19 @@ function CodeBlock({ className, children, inline }) {
   );
 }
 
+function slugifyId(text) {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function extractText(children) {
+    if (typeof children === 'string') return children;
+    if (Array.isArray(children)) return children.map(extractText).join('');
+    if (children?.props?.children) return extractText(children.props.children);
+    return '';
+}
+
+let headingIdx = 0;
+
 export default function Blog(props) {
     const [mdData, setMdData] = useState(null);
     const [loading, setLoading] = useState(null);
@@ -143,7 +156,23 @@ export default function Blog(props) {
             break;
     }
 
+    const makeHeading = (Tag) => {
+        const Comp = ({ children, ...rest }) => {
+            const text = extractText(children);
+            const id = slugifyId(text) || `h-${headingIdx++}`;
+            return <Tag id={id} {...rest}>{children}</Tag>;
+        };
+        Comp.displayName = `Heading${Tag}`;
+        return Comp;
+    };
+
     const components = {
+        h1: makeHeading('h1'),
+        h2: makeHeading('h2'),
+        h3: makeHeading('h3'),
+        h4: makeHeading('h4'),
+        h5: makeHeading('h5'),
+        h6: makeHeading('h6'),
         img: (props) => {
             return (
               <span style={{ display: 'flex', justifyContent: 'center', margin: '1.5em 0' }}>
@@ -158,10 +187,12 @@ export default function Blog(props) {
     }
 
     useEffect(() => {
+        headingIdx = 0;
         fetchWithCache(props.mdUrl)
             .then(data => {
                 setMdData(data);
                 setLoading(false);
+                if (props.onMdLoaded) props.onMdLoaded(data);
             })
             .catch(error => {
                 setError(error);

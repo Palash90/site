@@ -1,6 +1,6 @@
 import { Col, Container, Image, Row } from "react-bootstrap";
 import PageIntro from "./PageIntro";
-import ContentList from "./ContentList";
+import SeriesList from "./SeriesList";
 
 export default function Home() {
     return <>
@@ -37,7 +37,7 @@ export default function Home() {
                             </a>
                         </h6>
                         <p className="section-sub">{window.findProp("pages.home.techBlogTag")}</p>
-                        <ContentList type="contents.swe" limit={5} truncateAt={55} />
+                        <SeriesList type="contents.swe" limit={5} truncateAt={55} flat />
                     </div>
                 </Col>
                 <Col md={5}>
@@ -49,7 +49,7 @@ export default function Home() {
                             </a>
                         </h6>
                         <p className="section-sub">{window.findProp("pages.home.musicBlogTag")}</p>
-                        <ContentList type="contents.music" limit={5} truncateAt={55} />
+                        <SeriesList type="contents.music" limit={5} truncateAt={55} flat />
                     </div>
                 </Col>
             </Row>
