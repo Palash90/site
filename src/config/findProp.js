@@ -22,9 +22,11 @@ export function findProp(path) {
 export async function loadContents() {
   if (contentsPromise) return contentsPromise;
   contentsPromise = (async () => {
-    try {
-      const url = 'https://palash90.github.io/site-assets/data.json';
-      const res = await fetch(url);
+    const url = 'https://palash90.github.io/site-assets/data.json';
+    const fallbackUrl = 'https://raw.githubusercontent.com/palash90/site-assets/main/data.json';
+
+    async function tryFetch(fetchUrl) {
+      const res = await fetch(fetchUrl);
       if (!res.ok) {
         let detail = `HTTP ${res.status}`;
         try {
@@ -34,7 +36,21 @@ export async function loadContents() {
         }
         throw new Error(detail);
       }
-      const remote = await res.json();
+      return res.json();
+    }
+
+    try {
+      let remote;
+      try {
+        remote = await tryFetch(url);
+      } catch (primaryErr) {
+        console.warn('Primary content URL failed, trying fallback:', primaryErr.message);
+        try {
+          remote = await tryFetch(fallbackUrl);
+        } catch (fbErr) {
+          throw new Error(`Primary: ${primaryErr.message} | Fallback: ${fbErr.message}`);
+        }
+      }
       if (remote.contents) {
         mergedData = { ...baseConfig, contents: remote.contents };
       }
