@@ -63,8 +63,8 @@ const baseConfig = {
       "bodyColor": ""
     },
     "about": {
-      "mdUrl": "https://palash90.github.io/site-assets/assets/ME.md",
-      "resume": "https://palash90.github.io/site-assetsPalash_Kanti_Kundu_14YOE_BackEnd_AI.pdf",
+      "mdUrl": "/assets/ME.md",
+      "resume": "/assets/Palash_Kanti_Kundu_14YOE_BackEnd_AI.pdf",
       "resumeName": "Palash_Kanti_Kundu_14YOE_BackEnd_AI.pdf",
       "blogClass": "blog-content markdown-color"
     }
