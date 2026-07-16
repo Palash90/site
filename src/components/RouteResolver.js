@@ -1,5 +1,5 @@
 import React, { Suspense } from "react"
-import { Routes, Route, Navigate } from "react-router-dom"
+import { Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { Container, Alert, Spinner } from "react-bootstrap"
 import { useAuth } from "../contexts/AuthContext"
 
@@ -20,14 +20,16 @@ const Moderate = React.lazy(() => import("./Moderate"))
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return null;
-  return user ? children : <Navigate to="/login" />;
+  return user ? children : <Navigate to={"/login?redirect=" + encodeURIComponent(location.pathname)} />;
 }
 
 function VerifiedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return null;
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return <Navigate to={"/login?redirect=" + encodeURIComponent(location.pathname)} />;
   if (!user.emailVerified) {
     return (
       <Container className="py-5 text-center" style={{ maxWidth: 500 }}>
@@ -43,8 +45,9 @@ function VerifiedRoute({ children }) {
 
 function ModeratorRoute({ children }) {
   const { user, profile, loading } = useAuth();
+  const location = useLocation();
   if (loading) return null;
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return <Navigate to={"/login?redirect=" + encodeURIComponent(location.pathname)} />;
   if (profile?.role !== "moderator") return <Navigate to="/" />;
   return children;
 }

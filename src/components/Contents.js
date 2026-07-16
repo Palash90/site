@@ -341,7 +341,7 @@ export default function Contents() {
 
                         {!user && (
                             <div className="text-center mt-3">
-                                <a href="/login" className="btn btn-sm btn-outline-secondary">Sign In to Create Scores</a>
+                                <a href={"/login?redirect=" + encodeURIComponent("/contents/scores")} className="btn btn-sm btn-outline-secondary">Sign In to Create Scores</a>
                             </div>
                         )}
                     </Col>

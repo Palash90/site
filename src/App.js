@@ -33,6 +33,7 @@ function RouteTracker() {
 function Header({ siteName, navLinks }) {
   const [expanded, setExpanded] = React.useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, loading, logout } = useAuth();
 
   const profileLink = profile?.username
@@ -62,7 +63,7 @@ function Header({ siteName, navLinks }) {
           </Nav>
           <Nav className="align-items-lg-center">
             {loading ? null : !user ? (
-              <Nav.Link onClick={() => { setExpanded(false); navigate("/login"); }}>Login</Nav.Link>
+              <Nav.Link onClick={() => { setExpanded(false); navigate("/login?redirect=" + encodeURIComponent(location.pathname)); }}>Login</Nav.Link>
             ) : (
               <NavDropdown
                 align="end"
