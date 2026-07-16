@@ -40,7 +40,7 @@ const baseConfig = {
         "Create",
         "Inspire"
       ],
-      "desc": "Senior Technologist with 14+ years of experience building scalable systems, cloud architectures, and distributed applications. Currently at Infosys, specializing in React.js, Python, and Rust with deep expertise in system design and machine learning.\n\nPassionate about open source — built a ML library in Rust, implemented a distributed file system, and created interactive web applications. I share knowledge through technical blogs and believe in continuous learning.\n\n",
+      "desc": "Senior Technologist with 14+ years of experience building scalable systems, cloud architectures, and distributed applications. Currently at Infosys, specializing in React.js, Python, and Rust with deep expertise in system design and machine learning.\n\nAuthor of \"Build Your Own Neural Network\" — a published book guiding readers through building neural networks from scratch. Passionate about open source, continuous learning, and sharing knowledge through technical blogs.\n\n",
       "profilePicUrl": "/assets/profile.jpg",
       "mainStyle": "main-app-lora custom-theme",
       "secondaryStyle": "content-body-opensans",

@@ -166,6 +166,26 @@ body {
   font-weight: 500;
 }
 
+/* Book stat */
+.book-stat {
+  transition: all 0.3s ease;
+}
+.book-stat:hover {
+  transform: translateY(-2px);
+}
+.book-icon {
+  font-size: 1.8rem;
+  -webkit-text-fill-color: unset;
+  background: none;
+  margin-bottom: 6px;
+}
+.book-title {
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
 /* Organization hover tooltip */
 .stat-hover-wrapper {
   position: relative;

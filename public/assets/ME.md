@@ -57,8 +57,9 @@ Burdwan, West Bengal, India
 
 ## Crafting Ideas Outside of Work
 
-With a solid foundation in software engineering, I’ve had the opportunity to:
+With a solid foundation in software engineering, I've had the opportunity to:
 
+- Author **"Build Your Own Neural Network"** — a published book guiding readers through building neural networks from scratch using Python and math fundamentals.
 - Develop a [machine learning library](https://github.com/Palash90/iron_learn) in Rust as a personal project.
 - Implement parts of a [distributed system](https://github.com/Palash90/dist-fs) inspired by the Google File System.
 - Implement a fully audio video synchronized [tab viewer](https://palashkantikundu.in/content/ode-to-joy).

@@ -59,7 +59,7 @@ export default function Home() {
                 <Col>
                     <div className="professional-summary">
                         <Row className="text-center">
-                            <Col md={3}>
+                            <Col md={2}>
                                 <div className="stat-item stat-hover-wrapper">
                                     <div className="stat-number">14+</div>
                                     <div className="stat-label">Years Experience</div>
@@ -76,7 +76,7 @@ export default function Home() {
                                     </div>
                                 </div>
                             </Col>
-                            <Col md={3}>
+                            <Col md={2}>
                                 <div className="stat-item stat-hover-wrapper">
                                     <div className="stat-number">5+</div>
                                     <div className="stat-label">Organizations</div>
@@ -90,7 +90,7 @@ export default function Home() {
                                     </div>
                                 </div>
                             </Col>
-                            <Col md={3}>
+                            <Col md={2}>
                                 <div className="stat-item stat-hover-wrapper">
                                     <div className="stat-number">11+</div>
                                     <div className="stat-label">Technologies</div>
@@ -103,7 +103,7 @@ export default function Home() {
                                     </div>
                                 </div>
                             </Col>
-                            <Col md={3}>
+                            <Col md={2}>
                                 <div className="stat-item stat-hover-wrapper">
                                     <div className="stat-number">3</div>
                                     <div className="stat-label">Open Source</div>
@@ -117,6 +117,15 @@ export default function Home() {
                                         ))}
                                     </div>
                                 </div>
+                            </Col>
+                            <Col md={4}>
+                                <a href="https://ai.palashkantikundu.in" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                    <div className="stat-item book-stat">
+                                        <div className="stat-number book-icon">📖</div>
+                                        <div className="stat-label">Published Book</div>
+                                        <div className="book-title">Build Your Own Neural Network</div>
+                                    </div>
+                                </a>
                             </Col>
                         </Row>
                     </div>
