@@ -2,36 +2,55 @@ import { useState, useEffect, useCallback } from "react"
 import { Col, Container, Row, Form } from "react-bootstrap"
 import PageIntro from "./PageIntro"
 import { useParams, Link } from "react-router-dom";
-import ContentList from "./ContentList";
 import SeriesList from "./SeriesList";
-import { collection, query, where, getDocs, deleteDoc, doc, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, limit, orderBy, startAfter } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { FaUserCircle, FaSearch, FaMusic, FaPen, FaTrash } from "react-icons/fa";
+import { FaUserCircle, FaSearch, FaMusic } from "react-icons/fa";
 import slugify from "../utils/slugify";
 import { col } from "../utils/firestorePath";
+
+const SCORES_PER_PAGE = 10;
 
 export default function Contents() {
     const type = useParams().type;
     const { user } = useAuth();
-    const [userScores, setUserScores] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [profiles, setProfiles] = useState([]);
     const [scoreResults, setScoreResults] = useState([]);
     const [searchError, setSearchError] = useState("");
+    const [latestScores, setLatestScores] = useState([]);
+    const [lastDoc, setLastDoc] = useState(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingLatest, setLoadingLatest] = useState(false);
     var intro, header, h1Color;
 
-    const loadScores = async () => {
-        if (!user) {
-            setUserScores([]);
-            return;
-        }
+    const loadLatestScores = async (loadMore = false) => {
+        setLoadingLatest(true);
         try {
-            const q = query(collection(db, col("scores")), where("userId", "==", user.uid));
+            let q;
+            if (loadMore && lastDoc) {
+                q = query(
+                    collection(db, col("scores")),
+                    orderBy("createdAt", "desc"),
+                    startAfter(lastDoc),
+                    limit(SCORES_PER_PAGE + 1)
+                );
+            } else {
+                q = query(
+                    collection(db, col("scores")),
+                    orderBy("createdAt", "desc"),
+                    limit(SCORES_PER_PAGE + 1)
+                );
+            }
+
             const snap = await getDocs(q);
             const scores = [];
+            let last = null;
+
             snap.forEach((d) => {
                 const data = d.data();
+                if (data.published === false) return;
                 const hasComposite = data.username && data.slug && data.instrument;
                 const id = hasComposite
                     ? `${data.username}/${slugify(data.instrument)}/${data.slug}`
@@ -39,33 +58,42 @@ export default function Contents() {
                 scores.push({
                     id,
                     title: data.name,
-                    noLink: data.published === false,
-                    rawTime: data.updatedAt || data.createdAt,
-                    publishDate: (data.updatedAt || data.createdAt)
-                        ? new Date(data.updatedAt || data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                    username: data.username,
+                    publishDate: data.createdAt
+                        ? new Date(data.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
                         : null,
-                    editLink: "/tab-parser?edit=" + d.id,
-                    onDelete: async () => {
-                        if (!window.confirm(`Delete "${data.name}"?`)) return;
-                        try {
-                            await deleteDoc(doc(db, col("scores"), d.id));
-                            await loadScores();
-                        } catch (e) {
-                            console.error("Failed to delete score", e.code, e.message);
-                        }
-                    },
+                    rawTime: data.createdAt,
                 });
+                last = d;
             });
-            scores.sort((a, b) => (b.rawTime || 0) - (a.rawTime || 0));
-            setUserScores(scores);
+
+            if (scores.length > SCORES_PER_PAGE) {
+                scores.pop();
+                setHasMore(true);
+                setLastDoc(last);
+            } else {
+                setHasMore(false);
+                setLastDoc(null);
+            }
+
+            if (loadMore) {
+                setLatestScores(prev => [...prev, ...scores]);
+            } else {
+                setLatestScores(scores);
+            }
         } catch (e) {
-            console.error("Failed to load user scores", e);
+            console.error("Failed to load latest scores", e);
+            setLatestScores([]);
+        } finally {
+            setLoadingLatest(false);
         }
     };
 
     useEffect(() => {
-        loadScores();
-    }, [user]);
+        if (isScores && !searchQuery.trim()) {
+            loadLatestScores(false);
+        }
+    }, [type, searchQuery]);
 
     const searchProfiles = useCallback(async (q) => {
         if (!q.trim()) { setProfiles([]); return; }
@@ -258,61 +286,62 @@ export default function Contents() {
                 )}
                 {isScores ? (
                     <Col xs={12} md={9} lg={8}>
-                        {user && (
-                            <div id="your-scores">
-                                <hr className="text-secondary" />
-                                <div className="d-flex align-items-center gap-3 mb-3">
-                                    <h4 style={{ color: window.findProp("pages.contents.musicHeadColor") }} className="mb-0">
-                                        Your Scores
-                                    </h4>
-                                    <a href="/tab-parser" className="btn btn-sm btn-outline-info">+ New</a>
+                        <div className="d-flex align-items-center gap-3 mb-3">
+                            <h4 style={{ color: window.findProp("pages.contents.musicHeadColor") }} className="mb-0">
+                                Latest Scores
+                            </h4>
+                            {user && <a href="/tab-parser" className="btn btn-sm btn-outline-info">+ New</a>}
+                        </div>
+
+                        {latestScores.length > 0 && !searchQuery.trim() && (
+                            <div>
+                                <div className="d-flex flex-column" style={{ gap: '6px' }}>
+                                    {latestScores.map(s => (
+                                        <Link key={s.id} to={`/content/${s.id}`}
+                                            className="d-flex align-items-center rounded border p-2 text-decoration-none"
+                                            style={{ gap: '10px', background: '#1e293b', borderColor: '#334155', transition: 'background 0.15s, border-color 0.15s', cursor: 'pointer' }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = '#243150'; e.currentTarget.style.borderColor = '#22d3ee'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.borderColor = '#334155'; }}>
+                                            {s.publishDate && (
+                                                <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap', width: '85px', flexShrink: 0 }}>
+                                                    {s.publishDate}
+                                                </span>
+                                            )}
+                                            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px', color: '#e2e8f0' }}>
+                                                {s.title}
+                                            </span>
+                                            {s.username && (
+                                                <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                                    @{s.username}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    ))}
                                 </div>
-                                {userScores.length > 0 ? (
-                                    <div className="d-flex flex-column" style={{ gap: '6px' }}>
-                                        {userScores.map(s => (
-                                            <div key={s.id} className="d-flex align-items-center rounded border p-2"
-                                                style={{ gap: '10px', background: '#1e293b', borderColor: '#334155', transition: 'background 0.15s, border-color 0.15s', cursor: 'default' }}
-                                                onMouseEnter={e => { e.currentTarget.style.background = '#243150'; e.currentTarget.style.borderColor = '#22d3ee'; }}
-                                                onMouseLeave={e => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.borderColor = '#334155'; }}>
-                                                {s.publishDate && (
-                                                    <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap', width: '85px', flexShrink: 0 }}>
-                                                        {s.publishDate}
-                                                    </span>
-                                                )}
-                                                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px' }}>
-                                                    {s.noLink ? (
-                                                        <span className="text-secondary">{s.title}</span>
-                                                    ) : (
-                                                        <a href={"/content/" + s.id} className="text-decoration-none" style={{ color: '#e2e8f0' }}>
-                                                            {s.title}
-                                                        </a>
-                                                    )}
-                                                </span>
-                                                <span className="d-flex gap-1 flex-shrink-0">
-                                                    {s.editLink && (
-                                                        <a href={s.editLink} className="text-info text-decoration-none" title="Edit" style={{ padding: '2px 6px', border: '1px solid #334155', borderRadius: '3px', fontSize: '11px' }}>
-                                                            <FaPen size={10} />
-                                                        </a>
-                                                    )}
-                                                    {s.onDelete && (
-                                                        <a href="#" className="text-danger text-decoration-none" title="Delete" style={{ padding: '2px 6px', border: '1px solid #334155', borderRadius: '3px', fontSize: '11px' }}
-                                                            onClick={(e) => { e.preventDefault(); s.onDelete(); }}>
-                                                            <FaTrash size={10} />
-                                                        </a>
-                                                    )}
-                                                </span>
-                                            </div>
-                                        ))}
+                                {hasMore && (
+                                    <div className="text-center mt-3">
+                                        <button
+                                            className="btn btn-sm btn-outline-secondary"
+                                            onClick={() => loadLatestScores(true)}
+                                            disabled={loadingLatest}
+                                        >
+                                            {loadingLatest ? "Loading..." : "Load More"}
+                                        </button>
                                     </div>
-                                ) : (
-                                    <p className="text-secondary small">No scores yet. <a href="/tab-parser" className="text-info">Create one</a>.</p>
                                 )}
                             </div>
                         )}
+
+                        {latestScores.length === 0 && !searchQuery.trim() && !loadingLatest && (
+                            <div className="text-center text-secondary py-4 rounded border" style={{ background: '#1e293b', borderColor: '#334155' }}>
+                                <FaMusic size={32} className="mb-2 opacity-50" />
+                                <p className="small mb-0">No scores available yet. Be the first to create one!</p>
+                            </div>
+                        )}
+
                         {!user && (
-                            <div className="text-center mt-3 pt-3 border-top border-secondary">
-                                <p className="text-secondary mb-2">Sign in to create and save your own scores</p>
-                                <a href="/login" className="btn btn-outline-info">Sign In</a>
+                            <div className="text-center mt-3">
+                                <a href="/login" className="btn btn-sm btn-outline-secondary">Sign In to Create Scores</a>
                             </div>
                         )}
                     </Col>

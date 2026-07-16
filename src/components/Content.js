@@ -310,7 +310,7 @@ export default function Content() {
                         error={error}
                     />
                 </Col>
-                <Col md={6} lg={6}>
+                <Col md={6}>
                     {contentBody}
                     <Comments contentId={params.contentId} />
                 </Col>
