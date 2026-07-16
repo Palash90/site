@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import ReactGA from 'react-ga4';
 import useTracker from './hooks/useTracker';
-import { loadContents } from './config/findProp';
+import { loadContents, subscribeToConfig } from './config/findProp';
 
 const isLiveDomain = window.location.hostname.endsWith('palashkantikundu.in');
 
@@ -31,8 +31,12 @@ function RouteTracker() {
 }
 
 function ContentsLoader() {
-  const [loaded, setLoaded] = React.useState(false);
-  React.useEffect(() => { loadContents().then(() => setLoaded(true)); }, []);
+  const [, forceRender] = React.useState(0);
+  React.useEffect(() => {
+    const unsubscribe = subscribeToConfig(() => forceRender((value) => value + 1));
+    loadContents().catch(() => {});
+    return unsubscribe;
+  }, []);
   return null;
 }
 

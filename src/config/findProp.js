@@ -7,6 +7,11 @@ import baseConfig from './baseConfig';
 let mergedData = { ...baseConfig };
 let contentsPromise = null;
 let contentsLoadError = null;
+const configListeners = new Set();
+
+function notifyConfigListeners() {
+  configListeners.forEach((listener) => listener());
+}
 
 export function findProp(path) {
   if (!mergedData) return undefined;
@@ -17,6 +22,11 @@ export function findProp(path) {
     obj = obj[part];
   }
   return obj !== undefined ? obj : undefined;
+}
+
+export function subscribeToConfig(listener) {
+  configListeners.add(listener);
+  return () => configListeners.delete(listener);
 }
 
 export async function loadContents() {
@@ -52,7 +62,8 @@ export async function loadContents() {
         }
       }
       if (remote.contents) {
-        mergedData = { ...baseConfig, contents: remote.contents };
+        mergedData = { ...baseConfig, ...remote, contents: remote.contents };
+        notifyConfigListeners();
       }
       return mergedData.contents;
     } catch (err) {
