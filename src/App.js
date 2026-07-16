@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import ReactGA from 'react-ga4';
 import useTracker from './hooks/useTracker';
-import { loadContents, subscribeToConfig } from './config/findProp';
+import { ConfigProvider, useConfig } from './config/findProp';
 
 const isLiveDomain = window.location.hostname.endsWith('palashkantikundu.in');
 
@@ -30,17 +30,7 @@ function RouteTracker() {
   return null;
 }
 
-function ContentsLoader() {
-  const [, forceRender] = React.useState(0);
-  React.useEffect(() => {
-    const unsubscribe = subscribeToConfig(() => forceRender((value) => value + 1));
-    loadContents().catch(() => {});
-    return unsubscribe;
-  }, []);
-  return null;
-}
-
-function Header() {
+function Header({ siteName, navLinks }) {
   const [expanded, setExpanded] = React.useState(false);
   const navigate = useNavigate();
   const { user, profile, loading, logout } = useAuth();
@@ -55,11 +45,11 @@ function Header() {
     <>
       <Navbar expanded={expanded} onToggle={(val) => setExpanded(val)} expand="lg" bg="dark" className="border-bottom border-light border-opacity-10 py-1" sticky='top'>
       <Container fluid>
-        <Navbar.Brand href="/" onClick={() => setExpanded(false)}>{window.findProp("name")}</Navbar.Brand>
+        <Navbar.Brand href="/" onClick={() => setExpanded(false)}>{siteName}</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="justify-content-lg-end flex-grow-1 pe-6">
-            {(window.findProp("navLinks") || []).map((l) => (
+            {(navLinks || []).map((l) => (
               <Nav.Link key={l.link} href={l.link} onClick={() => setExpanded(false)}>
                 {l.label}
               </Nav.Link>
@@ -115,7 +105,7 @@ function Header() {
   );
 }
 
-function Footer() {
+function Footer({ siteName }) {
   return <Navbar className="site-footer border-top border-light border-opacity-10 flex-column" sticky='bottom'>
     <Container fluid className='justify-content-center footer-socials'>
       <a href="https://github.com/palash90" target="_blank" rel="noreferrer"><FaGithub /></a>
@@ -124,23 +114,35 @@ function Footer() {
       <a href="mailto:connect@palashkantikundu.in" target="_blank" rel="noreferrer"><RiMailSendFill /></a>
     </Container>
     <Container fluid className='justify-content-center'>
-      <Navbar.Text style={{ fontSize: '11px', lineHeight: '1' }}><FaRegCopyright size={10} /> {(window.findProp("name") || "Site") + " " + new Date().getFullYear()}</Navbar.Text>
+      <Navbar.Text style={{ fontSize: '11px', lineHeight: '1' }}><FaRegCopyright size={10} /> {(siteName || "Site") + " " + new Date().getFullYear()}</Navbar.Text>
     </Container>
   </Navbar>;
 }
 
+
+function AppShell() {
+  const { config } = useConfig();
+  const siteName = config?.name || "Site";
+  const navLinks = config?.navLinks || [];
+  const pageStyle = config?.pages?.home?.mainStyle || "";
+
+  return (
+    <div className={pageStyle}>
+      <Header siteName={siteName} navLinks={navLinks} />
+      <RouteResolver />
+      <Footer siteName={siteName} />
+    </div>
+  );
+}
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <RouteTracker />
-        <ContentsLoader />
-        <div className={window.findProp("pages.home.mainStyle")}>
-          <Header/>
-          <RouteResolver />
-          <Footer />
-        </div>
+        <ConfigProvider>
+          <AppShell />
+        </ConfigProvider>
       </Router>
     </AuthProvider>
   );

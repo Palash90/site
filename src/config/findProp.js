@@ -2,6 +2,7 @@
 // Common config is bundled locally (baseConfig.js) so the page renders correctly.
 // Only blog/article contents (swe, music, drafts) are fetched from GitHub Pages at runtime.
 
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import baseConfig from './baseConfig';
 
 let mergedData = { ...baseConfig };
@@ -9,14 +10,20 @@ let contentsPromise = null;
 let contentsLoadError = null;
 const configListeners = new Set();
 
+const ConfigContext = createContext({
+  config: mergedData,
+  findProp: () => undefined,
+  isContentsLoaded: false,
+});
+
 function notifyConfigListeners() {
   configListeners.forEach((listener) => listener());
 }
 
-export function findProp(path) {
-  if (!mergedData) return undefined;
+function resolveConfigValue(config, path) {
+  if (!config) return undefined;
   const parts = path.split('.');
-  let obj = mergedData;
+  let obj = config;
   for (const part of parts) {
     if (obj == null || typeof obj !== 'object') return undefined;
     obj = obj[part];
@@ -24,9 +31,50 @@ export function findProp(path) {
   return obj !== undefined ? obj : undefined;
 }
 
+export function findProp(path) {
+  return resolveConfigValue(mergedData, path);
+}
+
 export function subscribeToConfig(listener) {
   configListeners.add(listener);
   return () => configListeners.delete(listener);
+}
+
+export function useConfig() {
+  return useContext(ConfigContext);
+}
+
+export function ConfigProvider({ children }) {
+  const [config, setConfig] = useState(mergedData);
+  const [isContentsLoaded, setIsContentsLoaded] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToConfig(() => {
+      setConfig({ ...mergedData });
+    });
+
+    let cancelled = false;
+    loadContents()
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) {
+          setIsContentsLoaded(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
+
+  const value = useMemo(() => ({
+    config,
+    findProp: (path) => resolveConfigValue(config, path),
+    isContentsLoaded,
+  }), [config, isContentsLoaded]);
+
+  return <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>;
 }
 
 export async function loadContents() {
