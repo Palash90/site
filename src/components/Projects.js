@@ -68,36 +68,28 @@ function ProjectCard(props) {
     }
 
     return (
-        <Card style={{ width: '100%', height: '100%' }}>
+        <Card className="h-100" style={{ width: '100%' }}>
             <Card.Body>
                 <Card.Title className={window.findProp("pages.home.mainStyle")} style={{ color: window.findProp("pages.projects.titleColor") }}>{name}</Card.Title>
                 <Card.Text style={{ color: window.findProp("pages.projects.bodyColor") }}>{desc}</Card.Text>
                 <Card.Text>{window.findProp("pages.projects.techStack")}{getTechStackIcon()}</Card.Text>
             </Card.Body>
-            <Card.Footer>
-                <Container fluid>
-                    <Row>
-                        {
-                            playUrl ? <Col>
-                                <Card.Link href={playUrl} target={type === "react" ? '' : '_blank'}>
-                                    {type === "react" ? <IoGameControllerOutline /> : <FaExternalLinkAlt />}
-                                </Card.Link>
-                            </Col> : <></>
-                        }
-                        {
-                            githubUrl ? <Col>
-                                <Card.Link href={githubUrl} target={type === "react" ? '' : '_blank'}>
-                                    <FaGithub />
-                                </Card.Link>
-                            </Col> : <></>
-                        }
-                        {
-                            mdUrl ? <Col>
-                                <ProjectModal title={name} mdUrl={mdUrl} />
-                            </Col> : <></>
-                        }
-                    </Row>
-                </Container>
+            <Card.Footer className="mt-auto">
+                <div className="d-flex flex-wrap gap-3 align-items-center">
+                    {
+                        playUrl ? <Card.Link href={playUrl} target={type === "react" ? '' : '_blank'}>
+                            {type === "react" ? <IoGameControllerOutline /> : <FaExternalLinkAlt />}
+                        </Card.Link> : <></>
+                    }
+                    {
+                        githubUrl ? <Card.Link href={githubUrl} target={type === "react" ? '' : '_blank'}>
+                            <FaGithub />
+                        </Card.Link> : <></>
+                    }
+                    {
+                        mdUrl ? <ProjectModal title={name} mdUrl={mdUrl} /> : <></>
+                    }
+                </div>
             </Card.Footer>
         </Card>
     );
@@ -111,8 +103,8 @@ export default function Projects() {
                 h1Color={window.findProp("pages.projects.h1Color")}
                 pColor={window.findProp("pages.projects.pColor")}
             />
-            <Row>
-                {(window.findProp("projects") || []).map(p => <Col key={p.id}>
+            <Row xs={1} md={2} xl={3} className="g-4">
+                {(window.findProp("projects") || []).map(p => <Col key={p.id} className="d-flex">
                     <ProjectCard
                         name={p.name}
                         desc={p.desc}
