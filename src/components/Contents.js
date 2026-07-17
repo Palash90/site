@@ -24,6 +24,7 @@ export default function Contents() {
     const [hasMore, setHasMore] = useState(true);
     const [loadingLatest, setLoadingLatest] = useState(false);
     var intro, header, h1Color;
+    const isScores = type === "scores";
 
     const loadLatestScores = async (loadMore = false) => {
         setLoadingLatest(true);
@@ -32,6 +33,7 @@ export default function Contents() {
             if (loadMore && lastDoc) {
                 q = query(
                     collection(db, col("scores")),
+                    where("published", "==", true),
                     orderBy("createdAt", "desc"),
                     startAfter(lastDoc),
                     limit(SCORES_PER_PAGE + 1)
@@ -39,6 +41,7 @@ export default function Contents() {
             } else {
                 q = query(
                     collection(db, col("scores")),
+                    where("published", "==", true),
                     orderBy("createdAt", "desc"),
                     limit(SCORES_PER_PAGE + 1)
                 );
@@ -50,7 +53,6 @@ export default function Contents() {
 
             snap.forEach((d) => {
                 const data = d.data();
-                if (data.published === false) return;
                 const hasComposite = data.username && data.slug && data.instrument;
                 const id = hasComposite
                     ? `${data.username}/${slugify(data.instrument)}/${data.slug}`
@@ -188,7 +190,6 @@ export default function Contents() {
     const siteName = window.findProp("name") || "Site";
     const isDefault = !type;
     const isMusic = type === "music";
-    const isScores = type === "scores";
     const showSearch = isScores || isMusic;
     const filterProp = searchQuery.trim() || undefined;
 
