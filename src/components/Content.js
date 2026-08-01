@@ -18,6 +18,7 @@ import slugify from "../utils/slugify";
 import { getCached, setCached } from "../utils/cache";
 import { col } from "../utils/firestorePath";
 import { getContentsLoadError } from "../config/findProp";
+import { useConfig } from "../config/findProp";
 
 function friendlyFetchError(msg) {
     if (!msg) return "Content data failed to load.";
@@ -94,6 +95,7 @@ export default function Content() {
 
     let params = useParams()
     const { user } = useAuth();
+    const { isContentsLoaded } = useConfig();
 
     const loadUserScore = async (scoreId) => {
         setError(null);
@@ -155,6 +157,8 @@ export default function Content() {
     };
 
     useEffect(() => {
+        if (!isContentsLoaded) return;
+
         const { contentId, username, instrument, titleSlug } = params;
 
         if (username && instrument && titleSlug) {
