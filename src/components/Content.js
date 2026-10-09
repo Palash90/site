@@ -202,7 +202,7 @@ export default function Content() {
                 : window.findProp("labels.contentNotExists");
             setError({ message: reason });
         }
-    }, [params.contentId, params.username, params.instrument, params.titleSlug, user]);
+    }, [params.contentId, params.username, params.instrument, params.titleSlug, user, isContentsLoaded]);
 
     const handleMdLoaded = (text) => {
         setMdText(text);
