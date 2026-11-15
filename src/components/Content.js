@@ -222,8 +222,7 @@ export default function Content() {
                 This page will be available on{" "}
                 <b>
                     {new Date(scheduledFor).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                </b>{" "}
-                (your local time).
+                </b>.
             </Alert>
         </Container>
     );
