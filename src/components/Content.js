@@ -200,7 +200,7 @@ export default function Content() {
         } else {
             const scheduled = getScheduledContent(contentId);
             if (scheduled) {
-                setScheduledFor(scheduled.publishDate);
+                setScheduledFor(scheduled.sortBy || scheduled.publishDate);
                 return;
             }
             const loadErr = getContentsLoadError();
@@ -218,8 +218,12 @@ export default function Content() {
 
     if (scheduledFor) return (
         <Container className="mt-4">
-            <Alert variant="info">
-                This page will be available on <b>{scheduledFor}</b>.
+            <Alert variant="warning">
+                This page will be available on{" "}
+                <b>
+                    {new Date(scheduledFor).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                </b>{" "}
+                (your local time).
             </Alert>
         </Container>
     );
