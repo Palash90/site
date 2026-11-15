@@ -299,8 +299,12 @@ export default function Content() {
     const sameTypeContents = allEnriched.filter(
         (c) => c.contentType === currentContent?.contentType
     );
+    // "In this series" hides drafts on public pages; while previewing a draft,
+    // keep the whole series (draft parts included) so the author can navigate.
     const seriesArticles = currentContent?.series
-        ? sameTypeContents.filter((c) => c.series === currentContent.series)
+        ? sameTypeContents.filter(
+            (c) => c.series === currentContent.series && (currentContent.draft || !c.draft)
+        )
         : [];
 
     return (

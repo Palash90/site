@@ -1,15 +1,30 @@
+// Future-dated entries stay hidden from all list views until their date arrives.
+// sortBy (ISO timestamp) is the reliable field; publishDate is a display string.
+function isReleased(c) {
+  const t = c.sortBy
+    ? new Date(c.sortBy).getTime()
+    : c.publishDate
+      ? new Date(c.publishDate).getTime()
+      : 0;
+  return !t || t <= Date.now(); // no date, or date already arrived
+}
+
 export function getEnrichedSwe() {
-  return (window.findProp("contents.swe") || []).map(c => ({
-    ...c,
-    contentType: "swe",
-  }));
+  return (window.findProp("contents.swe") || [])
+    .filter(isReleased)
+    .map(c => ({
+      ...c,
+      contentType: "swe",
+    }));
 }
 
 export function getEnrichedMusic() {
-  return (window.findProp("contents.music") || []).map(c => ({
-    ...c,
-    contentType: "music",
-  }));
+  return (window.findProp("contents.music") || [])
+    .filter(isReleased)
+    .map(c => ({
+      ...c,
+      contentType: "music",
+    }));
 }
 
 export function getEnrichedDrafts() {

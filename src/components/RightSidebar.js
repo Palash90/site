@@ -6,7 +6,7 @@ const sidebarStyle = {
   maxHeight: "calc(100vh - 80px)",
   overflowY: "auto",
   padding: "1rem 0.5rem",
-  fontSize: "13px",
+  fontSize: "14px",
   borderLeft: "1px solid rgba(255,255,255,0.06)",
 };
 
@@ -15,10 +15,10 @@ const sectionStyle = {
 };
 
 const headerStyle = {
-  fontSize: "11px",
+  fontSize: "12px",
   textTransform: "uppercase",
   letterSpacing: "1px",
-  color: "#6c757d",
+  color: "#94a3b8",
   marginBottom: "8px",
 };
 
@@ -37,13 +37,13 @@ const seriesCardStyle = {
 
 const articleLinkStyle = {
   display: "block",
-  padding: "4px 8px",
-  color: "#8892b0",
+  padding: "5px 8px",
+  color: "#c3cde4",
   textDecoration: "none",
   borderRadius: "4px",
-  fontSize: "12px",
-  lineHeight: 1.4,
-  transition: "background 0.15s",
+  fontSize: "13px",
+  lineHeight: 1.45,
+  transition: "background 0.15s, color 0.15s",
 };
 
 function getDateVal(c) {
@@ -55,6 +55,7 @@ export default function RightSidebar({ allContents, contentType }) {
   const standalone = [];
 
   for (const c of allContents) {
+    if (c.draft) continue; // drafts are not public — never list them
     if (c.series) {
       if (!seriesMap[c.series]) seriesMap[c.series] = [];
       seriesMap[c.series].push(c);
@@ -89,10 +90,10 @@ export default function RightSidebar({ allContents, contentType }) {
             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
           >
-            <div style={{ color: "#38bdf8", fontWeight: 600, fontSize: "12px", marginBottom: "2px" }}>
+            <div style={{ color: "#38bdf8", fontWeight: 600, fontSize: "13px", marginBottom: "2px" }}>
               {s.name}
             </div>
-            <div style={{ color: "#6c757d", fontSize: "10px" }}>
+            <div style={{ color: "#94a3b8", fontSize: "11px" }}>
               {s.count} {s.count === 1 ? "part" : "parts"}
             </div>
           </Link>
@@ -103,8 +104,14 @@ export default function RightSidebar({ allContents, contentType }) {
             key={a.id}
             to={`/content/${a.id}`}
             style={articleLinkStyle}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(34,211,238,0.08)";
+              e.currentTarget.style.color = "#22d3ee";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#c3cde4";
+            }}
           >
             {a.title}
           </Link>

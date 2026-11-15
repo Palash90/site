@@ -612,19 +612,25 @@ body {
   border-bottom: none;
 }
 
-/* Content containers */
+/* Content containers — reading pane takes 70% of the width, 15% each side */
 .tech-blog-content, .blog-content {
-  max-width: 800px;
+  width: 70%;
   margin: 0 auto;
   padding: 0 8px;
 }
 
-/* Reading width — keep paragraphs at 70ch, let code/tables breathe */
+@media (max-width: 768px) {
+  .tech-blog-content, .blog-content {
+    width: 92%;
+  }
+}
+
+/* Reading width — paragraphs fill the 70% pane */
 .tech-blog-content p,
 .tech-blog-content li,
 .blog-content p,
 .blog-content li {
-  max-width: 70ch;
+  max-width: 100%;
   line-height: 1.85;
   margin-bottom: 1.35em;
   font-size: 1.05rem;
@@ -820,7 +826,8 @@ table th {
 }
 .markdown-color th {
   background-color: var(--md-dark);
-  color: var(--md-ultra-dark);
+  color: var(--md-ultra-light);
+  font-weight: 600;
 }
 .markdown-color tr:nth-child(even) {
   background-color: var(--md-ultra-dark);
