@@ -13,7 +13,7 @@ import Comments from "./Comments";
 import LeftSidebar from "./LeftSidebar";
 import RightSidebar from "./RightSidebar";
 import { Row, Col, Container, Spinner, Alert } from "react-bootstrap";
-import { getAllEnriched, extractHeadings } from "../utils/mockData";
+import { getAllEnriched, extractHeadings, getScheduledContent } from "../utils/mockData";
 import slugify from "../utils/slugify";
 import { getCached, setCached } from "../utils/cache";
 import { col } from "../utils/firestorePath";
@@ -80,6 +80,7 @@ export default function Content() {
     const [mdUrl, setMdUrl] = useState(null);
     const [tab, setTab] = useState(null);
     const [error, setError] = useState(null);
+    const [scheduledFor, setScheduledFor] = useState(null);
     const [publishDate, setPublishDate] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [scoreUser, setScoreUser] = useState(null);
@@ -179,6 +180,7 @@ export default function Content() {
 
         var content = allContents.find(b => b.id === contentId)
         if (content) {
+            setScheduledFor(null);
             setCurrentContent(content);
             if (content.mdUrl && content.videoId) {
                 setType("both")
@@ -196,6 +198,11 @@ export default function Content() {
             setYtId(content.videoId);
             setTab(content.tab);
         } else {
+            const scheduled = getScheduledContent(contentId);
+            if (scheduled) {
+                setScheduledFor(scheduled.publishDate);
+                return;
+            }
             const loadErr = getContentsLoadError();
             const reason = allContents.length === 0 && loadErr
                 ? friendlyFetchError(loadErr)
@@ -208,6 +215,14 @@ export default function Content() {
         setMdText(text);
         setHeadings(extractHeadings(text));
     };
+
+    if (scheduledFor) return (
+        <Container className="mt-4">
+            <Alert variant="info">
+                This page will be available on <b>{scheduledFor}</b>.
+            </Alert>
+        </Container>
+    );
 
     if (error) return (
         <Container className="mt-4">

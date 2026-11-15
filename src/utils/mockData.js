@@ -9,6 +9,15 @@ function isReleased(c) {
   return !t || t <= Date.now(); // no date, or date already arrived
 }
 
+// A scheduled post: exists in data, hidden from lists until its date arrives.
+export function getScheduledContent(contentId) {
+  const c = [
+    ...(window.findProp("contents.swe") || []),
+    ...(window.findProp("contents.music") || []),
+  ].find(e => e.id === contentId);
+  return c && !isReleased(c) ? c : undefined;
+}
+
 export function getEnrichedSwe() {
   return (window.findProp("contents.swe") || [])
     .filter(isReleased)
